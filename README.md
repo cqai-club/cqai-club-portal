@@ -20,6 +20,8 @@
 
 三个页面由同一个 Express 服务提供，不需要分别启动或配置跨域。
 
+服务器原来的 `/var/www/club` 是 `web/` 的旧部署副本。新版本会把 `web/` 直接打包进统一应用镜像，旧目录只保留用于紧急回滚，不再作为正式站点单独发布。
+
 ## 本地运行
 
 要求 Node.js 20 或更高版本。
@@ -65,3 +67,9 @@ ADMIN_PASSWORD="your-long-random-password"
 ```bash
 npm test
 ```
+
+## 自动部署
+
+生产环境通过 [`.github/workflows/deploy.yml`](./.github/workflows/deploy.yml) 发布到 `cqaiclub.asia`。CI 成功后，工作流会把同一个已测试提交上传到服务器，构建 Docker 镜像，使用生产数据库副本验证候选版本，再备份正式 SQLite 数据并切换容器。
+
+自动发布默认由仓库变量 `DEPLOY_ENABLED` 控制。首次部署和 Nginx 切换验证完成前应保持为 `false`；之后设为 `true`，每次 `main` 分支 CI 成功后自动发布。服务器账号、GitHub 变量和密钥配置见 [DEPLOYMENT_MANUAL.md](./DEPLOYMENT_MANUAL.md)。

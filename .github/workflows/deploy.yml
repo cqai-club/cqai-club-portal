@@ -1,0 +1,91 @@
+name: Deploy production
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (vars.DEPLOY_ENABLED == 'true' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    env:
+      DEPLOY_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+      DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+      DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
+      DEPLOY_BASE: /data/cqai-club-portal
+      SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+
+    steps:
+      - name: Validate deployment configuration
+        run: |
+          test -n "$DEPLOY_HOST"
+          test -n "$DEPLOY_USER"
+          test -n "$DEPLOY_PORT"
+          test -n "$SSH_KEY"
+          test -n "$KNOWN_HOSTS"
+
+      - name: Checkout tested revision
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.DEPLOY_SHA }}
+
+      - name: Configure SSH
+        run: |
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/id_ed25519" "$HOME/.ssh/known_hosts"
+
+      - name: Package release
+        run: |
+          tar \
+            --exclude=.git \
+            --exclude=node_modules \
+            --exclude=.env \
+            --exclude='prisma/*.db' \
+            --exclude='prisma/*.db-journal' \
+            -czf "$RUNNER_TEMP/release.tgz" .
+
+      - name: Upload release
+        run: |
+          scp -i "$HOME/.ssh/id_ed25519" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -P "$DEPLOY_PORT" "$RUNNER_TEMP/release.tgz" \
+            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_BASE/incoming/$DEPLOY_SHA.tgz"
+          scp -i "$HOME/.ssh/id_ed25519" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -P "$DEPLOY_PORT" deploy/remote-deploy.sh \
+            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_BASE/incoming/remote-deploy-$DEPLOY_SHA.sh"
+
+      - name: Deploy with rollback protection
+        run: |
+          ssh -i "$HOME/.ssh/id_ed25519" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "bash '$DEPLOY_BASE/incoming/remote-deploy-$DEPLOY_SHA.sh' '$DEPLOY_SHA'"
+
+      - name: Verify production
+        run: |
+          curl --fail --silent --show-error --retry 12 --retry-delay 5 \
+            https://cqaiclub.asia/health
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 \
+            https://cqaiclub.asia/ | grep -q '重庆AI创享俱乐部'
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 \
+            https://cqaiclub.asia/apply/ | grep -q '入会申请'
