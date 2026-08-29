@@ -20,6 +20,7 @@ const checkWebsiteAssets = () => {
 
   const html = fs.readFileSync(entryFile, 'utf8');
   assert.match(html, /<title>重庆AI创享俱乐部/, 'official website should have the expected title');
+  assert.match(html, /rel=["']icon["'][^>]+href=["']\/images\/logo-nav\.png["']/, 'official website should use the club favicon');
   assert.match(html, /href=["']\/apply\/["']/, 'official website should link to the local application route');
   assert.doesNotMatch(
     html,
@@ -168,10 +169,12 @@ const main = async () => {
   const applicationPage = await request(baseUrl, '/apply/');
   assert.equal(applicationPage.response.status, 200, 'member application page should load');
   assert.match(applicationPage.body, /重庆AI创享俱乐部 入会申请/);
+  assert.match(applicationPage.body, /rel=["']icon["'][^>]+href=["']\/images\/logo-nav\.png["']/);
   assert.match(applicationPage.body, /href=["']\/["']>← 返回俱乐部官网/);
 
   const adminPage = await request(baseUrl, '/admin/');
   assert.equal(adminPage.response.status, 200, 'admin page should load');
+  assert.match(adminPage.body, /rel=["']icon["'][^>]+href=["']\/images\/logo-nav\.png["']/);
 
   const legacyAdminPage = await request(baseUrl, '/admin.html');
   assert.equal(legacyAdminPage.response.status, 200, 'legacy admin URL should remain compatible');
