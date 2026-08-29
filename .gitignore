@@ -17,5 +17,9 @@ prisma/*.db-journal
 .idea/
 .vscode/
 
+# Local website exports and backup copies
+web/*.bak
+web/index_TED.html
+
 # Local security reports
 .gstack/

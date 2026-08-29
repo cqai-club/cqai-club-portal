@@ -13,6 +13,41 @@ const adminUsername = 'ci-admin';
 const adminPassword = 'ci-password-for-tests-only';
 let applicationProcess;
 
+const checkWebsiteAssets = () => {
+  const websiteRoot = path.join(projectRoot, 'web');
+  const entryFile = path.join(websiteRoot, 'index.html');
+  assert.ok(fs.existsSync(entryFile), 'official website entry should exist');
+
+  const html = fs.readFileSync(entryFile, 'utf8');
+  assert.match(html, /<title>重庆AI创享俱乐部/, 'official website should have the expected title');
+  assert.doesNotMatch(
+    html,
+    /https?:\/\/(?:localhost|127\.0\.0\.1|8\.137\.71\.156)(?=[:/]|$)/,
+    'official website should not link to a local or retired server address'
+  );
+
+  const references = [
+    ...Array.from(html.matchAll(/\b(?:src|href)=["']([^"']+)["']/gi), match => match[1]),
+    ...Array.from(html.matchAll(/url\(\s*["']?([^"')]+)["']?\s*\)/gi), match => match[1])
+  ];
+
+  const localReferences = references
+    .filter(Boolean)
+    .filter(reference => !/^(?:[a-z][a-z0-9+.-]*:|#|\/\/)/i.test(reference));
+
+  for (const reference of new Set(localReferences)) {
+    const relativePath = reference.split(/[?#]/, 1)[0];
+    if (!relativePath) continue;
+
+    const assetPath = path.resolve(websiteRoot, relativePath);
+    assert.ok(
+      assetPath.startsWith(`${websiteRoot}${path.sep}`),
+      `website asset should remain inside web/: ${reference}`
+    );
+    assert.ok(fs.existsSync(assetPath), `website asset should exist: ${reference}`);
+  }
+};
+
 const prepareDatabase = async databaseUrl => {
   const prisma = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
   const migrationsDirectory = path.join(projectRoot, 'prisma', 'migrations');
@@ -90,6 +125,8 @@ const stopApplication = async () => {
 };
 
 const main = async () => {
+  checkWebsiteAssets();
+
   const port = await reservePort();
   const baseUrl = `http://127.0.0.1:${port}`;
   const env = {
@@ -192,7 +229,7 @@ const main = async () => {
   assert.match(exportResult.body, /CI 测试用户/);
   assert.match(exportResult.body, /'=CI_TEST_ORG/, 'CSV export should neutralize spreadsheet formulas');
 
-  console.log('Smoke test passed: pages, authentication, submission, member query, and CSV export.');
+  console.log('Smoke test passed: official website assets, pages, authentication, submission, member query, and CSV export.');
 
   if (applicationProcess.exitCode !== null && applicationProcess.exitCode !== 0) {
     throw new Error(`Application exited unexpectedly.\n${serverOutput}`);

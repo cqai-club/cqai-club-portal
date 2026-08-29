@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/cqai-club/cqai-club-portal/actions/workflows/ci.yml/badge.svg)](https://github.com/cqai-club/cqai-club-portal/actions/workflows/ci.yml)
 
-一个轻量的入会申请与会员管理系统，包含公开申请表单、会员数据管理、筛选分页和 CSV 导出。
+重庆 AI 创享俱乐部官网及轻量会员系统，包含官网展示、公开申请表单、会员数据管理、筛选分页和 CSV 导出。
 
 ## 技术栈
 
@@ -10,6 +10,12 @@
 - Prisma + SQLite
 - 原生 HTML/CSS/JavaScript
 - Vue 3 + Tailwind CSS（CDN）
+
+## 项目入口
+
+- 俱乐部官网：`web/index.html`
+- 入会申请：`public/index.html`
+- 管理后台：`public/admin.html`
 
 ## 本地运行
 
@@ -49,7 +55,7 @@ ADMIN_PASSWORD="your-long-random-password"
 
 ## 自动化检查
 
-推送到 `main` 或创建 Pull Request 时，GitHub Actions 会自动安装依赖，并使用独立的临时 SQLite 数据库检查公开页面、管理员登录、申请提交、会员查询和 CSV 导出。也可以在本地运行：
+推送到 `main` 或创建 Pull Request 时，GitHub Actions 会自动安装依赖，检查官网本地图片等资源是否完整，并使用独立的临时 SQLite 数据库检查公开页面、管理员登录、申请提交、会员查询和 CSV 导出。也可以在本地运行：
 
 ```bash
 npm test
