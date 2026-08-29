@@ -1,10 +1,10 @@
 require('dotenv').config();
 
 const express = require('express');
-const cors = require('cors');
 const xss = require('xss');
 const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
+const path = require('node:path');
 const { PrismaClient } = require('@prisma/client');
 const { Parser } = require('json2csv');
 
@@ -15,10 +15,11 @@ const ADMIN_USERNAME = process.env.ADMIN_USERNAME;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const ADMIN_SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 const adminSessions = new Map();
+const portalDirectory = path.join(__dirname, 'web');
+const applicationDirectory = path.join(__dirname, 'public');
 
-app.use(cors());
-app.use(express.json());
-app.use(express.static('public')); // Serve admin dashboard
+app.disable('x-powered-by');
+app.use(express.json({ limit: '100kb' }));
 
 // API Rate limit protecting /api/apply
 const applyLimiter = rateLimit({
@@ -80,16 +81,39 @@ const sanitizeCsvCell = (value) => {
   return value;
 };
 
+const parsePositiveInteger = (value, fallback, maximum) => {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed) || parsed < 1) return fallback;
+  return Math.min(parsed, maximum);
+};
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
 // 1. Submit application
 app.post('/api/apply', applyLimiter, async (req, res) => {
   try {
-    const rawData = req.body;
+    const rawData = req.body || {};
 
     // Basic validation
     if (!rawData.phone || !/^1[3-9]\d{9}$/.test(rawData.phone)) {
       return res.status(400).json({ error: '无效的手机号码' });
     }
-    if (!rawData.name || !rawData.organization) {
+
+    const requiredStringFields = [
+      'name',
+      'wechat',
+      'organization',
+      'title',
+      'orgType',
+      'purpose',
+      'timePref',
+      'city',
+      'roleIntent',
+      'privacy'
+    ];
+    if (requiredStringFields.some(field => typeof rawData[field] !== 'string' || !rawData[field].trim())) {
       return res.status(400).json({ error: '缺少必填字段' });
     }
 
@@ -98,6 +122,10 @@ app.post('/api/apply', applyLimiter, async (req, res) => {
     // Business Logic: Identify High-Value Members
     // Rules: provision of '资金/投资' or '产业场景/业务需求' or roleIntent uses '愿意成为理事/合作单位'
     const provideRes = Array.isArray(data.provideRes) ? data.provideRes : [];
+    if (provideRes.length < 1) {
+      return res.status(400).json({ error: '请至少选择一项可提供的资源' });
+    }
+
     let isHighValue = false;
     if (
       provideRes.includes('资金/投资') ||
@@ -111,6 +139,11 @@ app.post('/api/apply', applyLimiter, async (req, res) => {
     const needRes = Array.isArray(data.needRes) ? data.needRes : [];
     if (needRes.length < 1 || needRes.length > 3) {
       return res.status(400).json({ error: '希望链接的资源请选择1-3项' });
+    }
+
+    const events = Array.isArray(data.events) ? data.events : [];
+    if (events.length < 1) {
+      return res.status(400).json({ error: '请至少选择一项期待活动' });
     }
 
     await prisma.memberApplication.create({
@@ -129,7 +162,7 @@ app.post('/api/apply', applyLimiter, async (req, res) => {
         needResourcesOther: data.needResOther,
         joinPurpose: data.purpose,
         joinPurposeOther: data.purposeOther,
-        expectEvents: JSON.stringify(Array.isArray(data.events) ? data.events : []),
+        expectEvents: JSON.stringify(events),
         expectEventsOther: data.eventsOther,
         timePreference: data.timePref,
         city: data.city,
@@ -172,10 +205,12 @@ app.post('/api/admin/login', adminLoginLimiter, (req, res) => {
 // 3. Admin dashboard API to list members
 app.get('/api/admin/members', requireAdmin, async (req, res) => {
   try {
-    const { page = 1, limit = 10, orgType, city, isHighValue } = req.query;
+    const { orgType, city, isHighValue } = req.query;
+    const page = parsePositiveInteger(req.query.page, 1, 1_000_000);
+    const limit = parsePositiveInteger(req.query.limit, 10, 100);
     const skip = (page - 1) * limit;
 
-    let where = {};
+    const where = {};
     if (orgType) where.orgType = orgType;
     if (city) where.city = city;
     if (isHighValue === 'true') where.isHighValue = true;
@@ -183,8 +218,8 @@ app.get('/api/admin/members', requireAdmin, async (req, res) => {
     const [members, total] = await Promise.all([
       prisma.memberApplication.findMany({
         where,
-        skip: parseInt(skip),
-        take: parseInt(limit),
+        skip,
+        take: limit,
         orderBy: { createdAt: 'desc' }
       }),
       prisma.memberApplication.count({ where })
@@ -198,7 +233,7 @@ app.get('/api/admin/members', requireAdmin, async (req, res) => {
         expectEvents: JSON.parse(m.expectEvents)
       })),
       total,
-      page: parseInt(page),
+      page,
       totalPages: Math.ceil(total / limit)
     });
   } catch (error) {
@@ -232,6 +267,45 @@ app.get('/api/admin/members/export', requireAdmin, async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+// Frontend entries: official portal, member application, and admin dashboard.
+const sendApplicationPage = (req, res) => {
+  res.set('Cache-Control', 'no-cache');
+  res.sendFile(path.join(applicationDirectory, 'index.html'));
+};
+
+const sendAdminPage = (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.sendFile(path.join(applicationDirectory, 'admin.html'));
+};
+
+app.get(['/apply', '/apply/', '/apply/index.html'], sendApplicationPage);
+app.get(['/admin', '/admin/', '/admin.html'], sendAdminPage);
+
+app.use(express.static(portalDirectory, {
+  setHeaders: (res, filePath) => {
+    if (/\.(?:avif|gif|jpe?g|png|svg|webp)$/i.test(filePath)) {
+      res.set('Cache-Control', 'public, max-age=604800');
+      return;
+    }
+    res.set('Cache-Control', 'no-cache');
+  }
+}));
+
+const server = app.listen(PORT, () => {
+  console.log(`Club portal is running at http://localhost:${PORT}`);
 });
+
+const shutdown = signal => {
+  console.log(`Received ${signal}, shutting down.`);
+  const forceExitTimer = setTimeout(() => process.exit(1), 10_000);
+  forceExitTimer.unref();
+
+  server.close(async () => {
+    clearTimeout(forceExitTimer);
+    await prisma.$disconnect();
+    process.exit(0);
+  });
+};
+
+process.once('SIGINT', () => shutdown('SIGINT'));
+process.once('SIGTERM', () => shutdown('SIGTERM'));

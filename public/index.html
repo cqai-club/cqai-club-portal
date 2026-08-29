@@ -72,6 +72,19 @@
             letter-spacing: -0.5px;
         }
 
+        .portal-link {
+            display: inline-flex;
+            align-items: center;
+            color: var(--primary);
+            font-size: 14px;
+            margin-bottom: 24px;
+            transition: opacity 0.2s ease;
+        }
+
+        .portal-link:hover {
+            opacity: 0.75;
+        }
+
         .section {
             margin-bottom: 48px;
         }
@@ -315,6 +328,7 @@
 <body>
 
     <div class="container">
+        <a class="portal-link" href="/">← 返回俱乐部官网</a>
         <h1>重庆AI创享俱乐部 入会申请</h1>
 
         <form id="aiClubForm">

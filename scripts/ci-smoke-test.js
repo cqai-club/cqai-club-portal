@@ -20,6 +20,7 @@ const checkWebsiteAssets = () => {
 
   const html = fs.readFileSync(entryFile, 'utf8');
   assert.match(html, /<title>重庆AI创享俱乐部/, 'official website should have the expected title');
+  assert.match(html, /href=["']\/apply\/["']/, 'official website should link to the local application route');
   assert.doesNotMatch(
     html,
     /https?:\/\/(?:localhost|127\.0\.0\.1|8\.137\.71\.156)(?=[:/]|$)/,
@@ -33,7 +34,7 @@ const checkWebsiteAssets = () => {
 
   const localReferences = references
     .filter(Boolean)
-    .filter(reference => !/^(?:[a-z][a-z0-9+.-]*:|#|\/\/)/i.test(reference));
+    .filter(reference => !/^(?:[a-z][a-z0-9+.-]*:|#|\/)/i.test(reference));
 
   for (const reference of new Set(localReferences)) {
     const relativePath = reference.split(/[?#]/, 1)[0];
@@ -151,11 +152,29 @@ const main = async () => {
 
   await waitForServer(baseUrl);
 
-  const publicPage = await request(baseUrl, '/');
-  assert.equal(publicPage.response.status, 200, 'public application page should load');
+  const health = await request(baseUrl, '/health');
+  assert.equal(health.response.status, 200, 'health endpoint should load');
+  assert.deepEqual(JSON.parse(health.body), { status: 'ok' });
 
-  const adminPage = await request(baseUrl, '/admin.html');
+  const portalPage = await request(baseUrl, '/');
+  assert.equal(portalPage.response.status, 200, 'official portal should load');
+  assert.match(portalPage.body, /重庆AI创享俱乐部 \| 在重庆，做AI/);
+  assert.equal(portalPage.response.headers.get('x-powered-by'), null, 'server signature should be hidden');
+
+  const portalImage = await request(baseUrl, '/images/logo-nav.png');
+  assert.equal(portalImage.response.status, 200, 'official portal assets should load');
+  assert.match(portalImage.response.headers.get('content-type') || '', /image\/png/);
+
+  const applicationPage = await request(baseUrl, '/apply/');
+  assert.equal(applicationPage.response.status, 200, 'member application page should load');
+  assert.match(applicationPage.body, /重庆AI创享俱乐部 入会申请/);
+  assert.match(applicationPage.body, /href=["']\/["']>← 返回俱乐部官网/);
+
+  const adminPage = await request(baseUrl, '/admin/');
   assert.equal(adminPage.response.status, 200, 'admin page should load');
+
+  const legacyAdminPage = await request(baseUrl, '/admin.html');
+  assert.equal(legacyAdminPage.response.status, 200, 'legacy admin URL should remain compatible');
 
   const unauthorizedMembers = await request(baseUrl, '/api/admin/members');
   assert.equal(unauthorizedMembers.response.status, 401, 'admin API should reject anonymous access');
@@ -202,6 +221,13 @@ const main = async () => {
     privacy: '同意俱乐部内部使用'
   };
 
+  const incompleteSubmission = await request(baseUrl, '/api/apply', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ ...application, events: [] })
+  });
+  assert.equal(incompleteSubmission.response.status, 400, 'incomplete application should be rejected');
+
   const submission = await request(baseUrl, '/api/apply', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -223,13 +249,19 @@ const main = async () => {
   assert.equal(membersPayload.total, 1, 'member query should return the submitted application');
   assert.equal(membersPayload.data[0].phone, application.phone);
 
+  const boundedMembers = await request(baseUrl, '/api/admin/members?page=-1&limit=1000', {
+    headers: authorization
+  });
+  assert.equal(boundedMembers.response.status, 200, 'invalid pagination values should be normalized');
+  assert.equal(JSON.parse(boundedMembers.body).page, 1);
+
   const exportResult = await request(baseUrl, '/api/admin/members/export', { headers: authorization });
   assert.equal(exportResult.response.status, 200, `CSV export should succeed: ${exportResult.body}`);
   assert.match(exportResult.response.headers.get('content-type') || '', /text\/csv/);
   assert.match(exportResult.body, /CI 测试用户/);
   assert.match(exportResult.body, /'=CI_TEST_ORG/, 'CSV export should neutralize spreadsheet formulas');
 
-  console.log('Smoke test passed: official website assets, pages, authentication, submission, member query, and CSV export.');
+  console.log('Smoke test passed: portal, application, admin, authentication, submission, member query, and CSV export.');
 
   if (applicationProcess.exitCode !== null && applicationProcess.exitCode !== 0) {
     throw new Error(`Application exited unexpectedly.\n${serverOutput}`);

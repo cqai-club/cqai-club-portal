@@ -13,26 +13,31 @@
 
 ## 项目入口
 
-- 俱乐部官网：`web/index.html`
-- 入会申请：`public/index.html`
-- 管理后台：`public/admin.html`
+- 俱乐部官网：`/`（源码：`web/index.html`）
+- 入会申请：`/apply/`（源码：`public/index.html`）
+- 管理后台：`/admin/`（源码：`public/admin.html`）
+- 后端接口：`/api/*`
+
+三个页面由同一个 Express 服务提供，不需要分别启动或配置跨域。
 
 ## 本地运行
 
-要求 Node.js 18 或更高版本。
+要求 Node.js 20 或更高版本。
 
 ```bash
-npm install
+npm ci
 cp .env.example .env
 npx prisma generate
-npx prisma db push
+npx prisma migrate deploy
 npm start
 ```
 
 启动后访问：
 
-- 入会申请：`http://localhost:3000/`
-- 管理后台：`http://localhost:3000/admin.html`
+- 俱乐部官网：`http://localhost:3000/`
+- 入会申请：`http://localhost:3000/apply/`
+- 管理后台：`http://localhost:3000/admin/`
+- 健康检查：`http://localhost:3000/health`
 
 首次运行前，请在 `.env` 中设置长随机管理员密码：
 
@@ -55,7 +60,7 @@ ADMIN_PASSWORD="your-long-random-password"
 
 ## 自动化检查
 
-推送到 `main` 或创建 Pull Request 时，GitHub Actions 会自动安装依赖，检查官网本地图片等资源是否完整，并使用独立的临时 SQLite 数据库检查公开页面、管理员登录、申请提交、会员查询和 CSV 导出。也可以在本地运行：
+推送到 `main` 或创建 Pull Request 时，GitHub Actions 会自动安装依赖，检查官网资源与三个页面入口，并使用独立的临时 SQLite 数据库检查参数校验、管理员登录、申请提交、会员查询和 CSV 导出。也可以在本地运行：
 
 ```bash
 npm test
