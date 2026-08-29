@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI俱乐部后台管理系统</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <div id="app" class="min-h-screen">
+        <!-- 登录界面 -->
+        <div v-if="!isLoggedIn" class="flex items-center justify-center min-h-screen bg-gray-100">
+            <div class="px-8 py-6 text-left bg-white shadow-lg rounded-lg w-full max-w-md">
+                <h3 class="text-2xl font-bold text-center mb-6">管理后台登录</h3>
+                <form @submit.prevent="login">
+                    <div class="mt-4">
+                        <div>
+                            <label class="block">管理员账号</label>
+                            <input type="text" v-model="username" placeholder="请输入管理员账户" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600">
+                        </div>
+                        <div class="mt-4">
+                            <label class="block">密码</label>
+                            <input type="password" v-model="password" placeholder="请输入密码" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600">
+                        </div>
+                        <div class="flex items-baseline justify-between mt-6">
+                            <button class="w-full px-6 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-900">登录</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 后台面板 -->
+        <div v-else class="flex flex-col h-screen">
+            <!-- 头部 -->
+            <header class="bg-white shadow px-6 py-4 flex justify-between items-center">
+                <h1 class="text-xl font-bold text-gray-800">重庆AI创享俱乐部 - 入会申请管理</h1>
+                <div class="flex items-center space-x-4">
+                    <button @click="exportCSV" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow flex items-center">
+                        导出 CSV
+                    </button>
+                    <button @click="logout" class="text-gray-600 hover:text-gray-900">退出</button>
+                </div>
+            </header>
+
+            <!-- 筛选栏 -->
+            <div class="bg-gray-100 p-4 border-b flex flex-wrap gap-4 items-center">
+                <div>
+                    <label class="text-sm text-gray-600 block">高价值会员筛选:</label>
+                    <select v-model="filters.isHighValue" class="border rounded px-3 py-1 bg-white mt-1">
+                        <option value="">全部</option>
+                        <option value="true">仅看高价值</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-sm text-gray-600 block">单位性质:</label>
+                    <select v-model="filters.orgType" class="border rounded px-3 py-1 bg-white mt-1">
+                        <option value="">全部类别</option>
+                        <option value="高校/科研院所">高校/科研院所</option>
+                        <option value="国有企业">国有企业</option>
+                        <option value="民营企业">民营企业</option>
+                        <option value="外企">外企</option>
+                        <option value="政府/事业单位">政府/事业单位</option>
+                        <option value="自由职业/创业者">自由职业/创业者</option>
+                        <option value="在校学生">在校学生</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-sm text-gray-600 block">城市:</label>
+                    <input type="text" v-model="filters.city" placeholder="输入城市搜索..." class="border rounded px-3 py-1 mt-1 p-1" style="line-height: normal;">
+                </div>
+                <div class="pt-5 flex items-center">
+                    <button @click="fetchMembers(1)" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1.5 rounded shadow">
+                        搜索
+                    </button>
+                    <button @click="resetFilters" class="ml-3 text-gray-500 hover:text-gray-700 underline text-sm">
+                        重置
+                    </button>
+                </div>
+            </div>
+
+            <!-- 数据表格 -->
+            <div class="flex-1 overflow-auto p-6">
+                <div class="bg-white rounded shadow relative">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 border-b border-gray-200 text-sm">
+                                <th class="p-4 font-medium text-gray-600">标识</th>
+                                <th class="p-4 font-medium text-gray-600">姓名及联系方式</th>
+                                <th class="p-4 font-medium text-gray-600">工作单位与性质</th>
+                                <th class="p-4 font-medium text-gray-600">加入目的</th>
+                                <th class="p-4 font-medium text-gray-600 w-1/4">提供与需求</th>
+                                <th class="p-4 font-medium text-gray-600">申请时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="loading" class="border-b">
+                                <td colspan="6" class="p-6 text-center text-gray-500">正在加载数据...</td>
+                            </tr>
+                            <tr v-else-if="members.length === 0" class="border-b">
+                                <td colspan="6" class="p-6 text-center text-gray-500">没找到符合条件的申请记录。</td>
+                            </tr>
+                            <tr v-for="m in members" :key="m.id" :class="{'bg-yellow-50 border-yellow-200': m.isHighValue, 'border-gray-200 border-b': true, 'hover:bg-gray-50': true}">
+                                <td class="p-4 text-center">
+                                    <span v-if="m.isHighValue" class="inline-block px-2 text-xs font-semibold text-yellow-800 bg-yellow-200 rounded-full">VIP</span>
+                                    <span v-else class="text-gray-400">-</span>
+                                </td>
+                                <td class="p-4">
+                                    <div class="font-bold text-gray-800">{{ m.name }}</div>
+                                    <div class="text-sm text-gray-500">📞 {{ m.phone }}</div>
+                                    <div class="text-sm text-gray-500">💬 {{ m.wechat }}</div>
+                                </td>
+                                <td class="p-4 text-sm">
+                                    <div class="font-medium text-blue-700">{{ m.organization }}</div>
+                                    <div class="text-gray-600">{{ m.title }} | {{ m.orgType }}</div>
+                                    <div class="text-gray-400">城市: {{ m.city === '其他' ? m.cityOther : m.city }}</div>
+                                </td>
+                                <td class="p-4 text-sm max-w-xs truncate" :title="m.joinPurpose">
+                                    {{ m.joinPurpose === '其他' ? m.joinPurposeOther : m.joinPurpose }}<br>
+                                    <span class="text-gray-400 text-xs shrink-0">意向角色: {{m.roleIntent}}</span>
+                                </td>
+                                <td class="p-4 text-xs">
+                                    <div><strong class="text-green-600">提供:</strong> {{ m.provideResources.join(', ') }} {{ m.provideResources.includes('其他') ? ('('+m.provideResourcesOther+')') : '' }}</div>
+                                    <div class="mt-1"><strong class="text-red-500">需求:</strong> {{ m.needResources.join(', ') }} {{ m.needResources.includes('其他') ? ('('+m.needResourcesOther+')') : '' }}</div>
+                                </td>
+                                <td class="p-4 text-sm text-gray-500 whitespace-nowrap">
+                                    {{ new Date(m.createdAt).toLocaleString('zh-CN') }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页 -->
+                <div class="mt-4 flex justify-between items-center bg-white p-4 shadow rounded" v-if="totalPages > 0">
+                    <span class="text-sm text-gray-600">共 {{ total }} 条记录，第 {{ page }} / {{ totalPages }} 页</span>
+                    <div class="space-x-2">
+                        <button @click="fetchMembers(page - 1)" :disabled="page <= 1" class="px-3 py-1 border rounded text-sm disabled:opacity-50 hover:bg-gray-50">上一页</button>
+                        <button @click="fetchMembers(page + 1)" :disabled="page >= totalPages" class="px-3 py-1 border rounded text-sm disabled:opacity-50 hover:bg-gray-50">下一页</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    isLoggedIn: false,
+                    username: '',
+                    password: '',
+                    adminToken: '',
+                    members: [],
+                    total: 0,
+                    page: 1,
+                    limit: 10,
+                    totalPages: 0,
+                    loading: false,
+                    filters: {
+                        isHighValue: '',
+                        orgType: '',
+                        city: ''
+                    }
+                }
+            },
+            methods: {
+                async login() {
+                    try {
+                        const response = await fetch('/api/admin/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                username: this.username,
+                                password: this.password
+                            })
+                        });
+                        const result = await response.json();
+                        if (!response.ok) {
+                            alert(result.error || '登录失败，请稍后重试。');
+                            return;
+                        }
+
+                        this.adminToken = result.token;
+                        this.password = '';
+                        this.isLoggedIn = true;
+                        this.fetchMembers();
+                    } catch (error) {
+                        console.error('登录失败', error);
+                        alert('登录失败，请检查服务是否正常运行。');
+                    }
+                },
+                logout() {
+                    this.isLoggedIn = false;
+                    this.adminToken = '';
+                    this.members = [];
+                    this.username = '';
+                    this.password = '';
+                },
+                async fetchMembers(targetPage = 1) {
+                    this.loading = true;
+                    this.page = targetPage;
+                    try {
+                        const params = new URLSearchParams({
+                            page: this.page,
+                            limit: this.limit
+                        });
+
+                        if (this.filters.isHighValue !== '') params.append('isHighValue', this.filters.isHighValue);
+                        if (this.filters.orgType) params.append('orgType', this.filters.orgType);
+                        if (this.filters.city) params.append('city', this.filters.city);
+
+                        const response = await fetch(`/api/admin/members?${params.toString()}`, {
+                            headers: { Authorization: `Bearer ${this.adminToken}` }
+                        });
+                        if (response.status === 401) {
+                            this.logout();
+                            alert('登录已失效，请重新登录。');
+                            return;
+                        }
+                        const res = await response.json();
+                        if (!response.ok) throw new Error(res.error || '获取列表失败');
+                        this.members = res.data;
+                        this.total = res.total;
+                        this.totalPages = res.totalPages;
+                    } catch (error) {
+                        console.error("加载数据失败", error);
+                        alert("获取列表失败，请检查后端服务是否启动。");
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                resetFilters() {
+                    this.filters = { isHighValue: '', orgType: '', city: '' };
+                    this.fetchMembers(1);
+                },
+                async exportCSV() {
+                    try {
+                        const response = await fetch('/api/admin/members/export', {
+                            headers: { Authorization: `Bearer ${this.adminToken}` }
+                        });
+                        if (response.status === 401) {
+                            this.logout();
+                            alert('登录已失效，请重新登录。');
+                            return;
+                        }
+                        if (!response.ok) throw new Error('导出失败');
+
+                        const blob = await response.blob();
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = 'members.csv';
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                        URL.revokeObjectURL(url);
+                    } catch (error) {
+                        console.error('导出失败', error);
+                        alert('导出失败，请稍后重试。');
+                    }
+                }
+            }
+        }).mount('#app')
+    </script>
+</body>
+</html>

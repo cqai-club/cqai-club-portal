@@ -1,0 +1,709 @@
+<!-- 风格1：硅谷AI科技风 -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>重庆AI创享俱乐部</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0A0F1A;
+            --card-bg: rgba(16, 24, 39, 0.8);
+            --primary: #00F0FF;
+            --secondary: #7000FF;
+            --text-main: #FFFFFF;
+            --text-muted: #A0AEC0;
+            --border-color: rgba(0, 240, 255, 0.2);
+            --error: #FF3366;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+            background-image:
+                radial-gradient(circle at 15% 50%, rgba(112, 0, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(0, 240, 255, 0.15) 0%, transparent 50%);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 0 40px rgba(0, 240, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary), var(--secondary), transparent);
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 40px;
+            background: linear-gradient(90deg, #FFFFFF, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .section {
+            margin-bottom: 48px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, var(--border-color), transparent);
+            margin-left: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .label-hint {
+            font-size: 12px;
+            color: var(--primary);
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+
+        input[type="text"],
+        input[type="tel"],
+        input[type="email"],
+        select,
+        textarea {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            padding: 14px 16px;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.15);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        select option {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .radio-group,
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .radio-label,
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+
+        .match-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+
+        .radio-label:hover,
+        .checkbox-label:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        input[type="radio"],
+        input[type="checkbox"] {
+            accent-color: var(--primary);
+            width: 18px;
+            height: 18px;
+            margin-right: 12px;
+            flex-shrink: 0;
+            background: transparent;
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #fff;
+            border: none;
+            padding: 18px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(112, 0, 255, 0.4);
+        }
+
+        .error-message {
+            color: var(--error);
+            font-size: 13px;
+            margin-top: 6px;
+            display: none;
+        }
+
+        .other-input {
+            margin-top: 8px;
+            display: none;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 15, 26, 0.85);
+            backdrop-filter: blur(8px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 480px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(0, 240, 255, 0.2);
+            position: relative;
+        }
+
+        .success-icon {
+            font-size: 64px;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            margin-bottom: 16px;
+            color: #fff;
+        }
+
+        .high-value-alert {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            color: #FFD700;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-weight: 500;
+            display: none;
+        }
+
+        .close-btn {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            padding: 10px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 24px;
+            transition: 0.3s;
+        }
+
+        .close-btn:hover {
+            color: #fff;
+            border-color: #fff;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 24px;
+            }
+
+            .radio-group,
+            .checkbox-group {
+                grid-template-columns: 1fr;
+            }
+
+            .match-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>重庆AI创享俱乐部 入会申请</h1>
+
+        <form id="aiClubForm">
+            <!-- Part 1: Identity -->
+            <div class="section">
+                <div class="section-title">01 / 实名身份信息</div>
+
+                <div class="form-group">
+                    <label>姓名 *</label>
+                    <input type="text" name="name" required placeholder="请输入您的真实姓名">
+                </div>
+
+                <div class="form-group">
+                    <label>手机号 *</label>
+                    <input type="tel" name="phone" id="phone" required placeholder="请输入11位手机号">
+                    <div class="error-message" id="phoneError">请输入有效的11位手机号码</div>
+                </div>
+
+                <div class="form-group">
+                    <label>微信号 *</label>
+                    <input type="text" name="wechat" required placeholder="请输入您的微信号">
+                </div>
+
+                <div class="form-group">
+                    <label>邮箱 (选填)</label>
+                    <input type="email" name="email" placeholder="请输入您的电子邮箱">
+                </div>
+
+                <div class="form-group">
+                    <label>当前所属单位 *</label>
+                    <input type="text" name="organization" required placeholder="请输入企业/学校/机构全称">
+                </div>
+
+                <div class="form-group">
+                    <label>职务/职称 *</label>
+                    <input type="text" name="title" required placeholder="请输入您的职务或职称">
+                </div>
+
+                <div class="form-group">
+                    <label>单位性质 *</label>
+                    <div class="radio-group">
+                        <label class="radio-label"><input type="radio" name="orgType" value="高校/科研院所" required>
+                            高校/科研院所</label>
+                        <label class="radio-label"><input type="radio" name="orgType" value="国有企业"> 国有企业</label>
+                        <label class="radio-label"><input type="radio" name="orgType" value="民营企业"> 民营企业</label>
+                        <label class="radio-label"><input type="radio" name="orgType" value="外企"> 外企</label>
+                        <label class="radio-label"><input type="radio" name="orgType" value="政府/事业单位"> 政府/事业单位</label>
+                        <label class="radio-label"><input type="radio" name="orgType" value="自由职业/创业者"> 自由职业/创业者</label>
+                        <label class="radio-label"><input type="radio" name="orgType" value="在校学生"> 在校学生</label>
+                        <label class="radio-label"><input type="radio" name="orgType" value="其他"
+                                onchange="toggleOther(this, 'orgTypeOther')"> 其他</label>
+                    </div>
+                    <input type="text" id="orgTypeOther" name="orgTypeOther" class="other-input" placeholder="请填写具体性质">
+                </div>
+            </div>
+
+            <!-- Part 2: Resources Match -->
+            <div class="section">
+                <div class="section-title">02 / 资源盘点匹配</div>
+
+                <div class="match-grid">
+                    <div>
+                        <div class="form-group">
+                            <label>您/贵单位可提供哪些资源？ (多选) *</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label"><input type="checkbox" name="provideRes" value="资金/投资">
+                                    资金/投资</label>
+                                <label class="checkbox-label"><input type="checkbox" name="provideRes"
+                                        value="AI技术/算法能力"> AI技术/算法能力</label>
+                                <label class="checkbox-label"><input type="checkbox" name="provideRes" value="数据资源">
+                                    数据资源</label>
+                                <label class="checkbox-label"><input type="checkbox" name="provideRes"
+                                        value="产业场景/业务需求"> 产业场景/业务需求</label>
+                                <label class="checkbox-label"><input type="checkbox" name="provideRes" value="政府/政策资源">
+                                    政府/政策资源</label>
+                                <label class="checkbox-label"><input type="checkbox" name="provideRes" value="场地/活动支持">
+                                    场地/活动支持</label>
+                                <label class="checkbox-label"><input type="checkbox" name="provideRes" value="媒体/品牌推广">
+                                    媒体/品牌推广</label>
+                                <label class="checkbox-label"><input type="checkbox" name="provideRes" value="高校科研团队">
+                                    高校科研团队</label>
+                                <label class="checkbox-label"><input type="checkbox" name="provideRes" value="其他"
+                                        onchange="toggleOther(this, 'provideResOther')"> 其他</label>
+                            </div>
+                            <input type="text" id="provideResOther" name="provideResOther" class="other-input"
+                                placeholder="请填写具体资源">
+                            <div class="error-message" id="provideResError">请至少选择一项可提供的资源</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="form-group">
+                            <label>您目前最希望链接的资源是？ (限1-3项) *</label>
+                            <div class="label-hint">请勾选1–3项最迫切的需求</div>
+                            <div class="checkbox-group" id="needResGroup">
+                                <label class="checkbox-label"><input type="checkbox" name="needRes" value="潜在客户">
+                                    潜在客户</label>
+                                <label class="checkbox-label"><input type="checkbox" name="needRes" value="技术合伙人/开发团队">
+                                    技术合伙人/开发团队</label>
+                                <label class="checkbox-label"><input type="checkbox" name="needRes" value="投资人/融资渠道">
+                                    投资人/融资渠道</label>
+                                <label class="checkbox-label"><input type="checkbox" name="needRes" value="行业专家/导师">
+                                    行业专家/导师</label>
+                                <label class="checkbox-label"><input type="checkbox" name="needRes" value="供应链/渠道资源">
+                                    供应链/渠道资源</label>
+                                <label class="checkbox-label"><input type="checkbox" name="needRes" value="高校/科研合作">
+                                    高校/科研合作</label>
+                                <label class="checkbox-label"><input type="checkbox" name="needRes" value="其他"
+                                        onchange="toggleOther(this, 'needResOther')"> 其他</label>
+                            </div>
+                            <input type="text" id="needResOther" name="needResOther" class="other-input"
+                                placeholder="请填写具体资源">
+                            <div class="error-message" id="needResError">请选择1到3项需求</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Part 3: Motivation -->
+            <div class="section">
+                <div class="section-title">03 / 加入动机 & 期待</div>
+
+                <div class="form-group">
+                    <label>您加入俱乐部的主要目的 *</label>
+                    <div class="radio-group" style="grid-template-columns: 1fr;">
+                        <label class="radio-label"><input type="radio" name="purpose" value="拓展人脉/寻找合作机会" required>
+                            拓展人脉/寻找合作机会</label>
+                        <label class="radio-label"><input type="radio" name="purpose" value="学习AI新技术/新应用">
+                            学习AI新技术/新应用</label>
+                        <label class="radio-label"><input type="radio" name="purpose" value="寻找项目或投资机会">
+                            寻找项目或投资机会</label>
+                        <label class="radio-label"><input type="radio" name="purpose" value="寻找工作或兼职机会">
+                            寻找工作或兼职机会</label>
+                        <label class="radio-label"><input type="radio" name="purpose" value="寻找技术合伙人/团队成员">
+                            寻找技术合伙人/团队成员</label>
+                        <label class="radio-label"><input type="radio" name="purpose" value="品牌曝光/企业宣传">
+                            品牌曝光/企业宣传</label>
+                        <label class="radio-label"><input type="radio" name="purpose" value="其他"
+                                onchange="toggleOther(this, 'purposeOther')"> 其他</label>
+                    </div>
+                    <input type="text" id="purposeOther" name="purposeOther" class="other-input" placeholder="请填写具体目的">
+                </div>
+
+                <div class="form-group">
+                    <label>您最希望俱乐部举办哪类活动？ (多选) *</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label"><input type="checkbox" name="events" value="AI技术沙龙/讲座">
+                            AI技术沙龙/讲座</label>
+                        <label class="checkbox-label"><input type="checkbox" name="events" value="行业案例拆解">
+                            行业案例拆解（AI+制造/医疗/教育等）</label>
+                        <label class="checkbox-label"><input type="checkbox" name="events" value="项目路演/Demo Day">
+                            项目路演/Demo Day</label>
+                        <label class="checkbox-label"><input type="checkbox" name="events" value="黑客松/AI创新大赛">
+                            黑客松/AI创新大赛</label>
+                        <label class="checkbox-label"><input type="checkbox" name="events" value="企业参访/闭门交流会">
+                            企业参访/闭门交流会</label>
+                        <label class="checkbox-label"><input type="checkbox" name="events" value="投融资对接会">
+                            投融资对接会</label>
+                        <label class="checkbox-label"><input type="checkbox" name="events" value="政策申报/产业扶持解读">
+                            政策申报/产业扶持解读</label>
+                        <label class="checkbox-label"><input type="checkbox" name="events" value="其他"
+                                onchange="toggleOther(this, 'eventsOther')"> 其他</label>
+                    </div>
+                    <input type="text" id="eventsOther" name="eventsOther" class="other-input" placeholder="请填写具体活动">
+                    <div class="error-message" id="eventsError">请至少选择一项活动</div>
+                </div>
+
+                <div class="form-group">
+                    <label>您更倾向于哪种活动时间？ *</label>
+                    <div class="radio-group">
+                        <label class="radio-label"><input type="radio" name="timePref" value="工作日晚上" required>
+                            工作日晚上（19:00–21:30）</label>
+                        <label class="radio-label"><input type="radio" name="timePref" value="周六上午"> 周六上午</label>
+                        <label class="radio-label"><input type="radio" name="timePref" value="周六下午"> 周六下午</label>
+                        <label class="radio-label"><input type="radio" name="timePref" value="周六晚上"> 周六晚上</label>
+                        <label class="radio-label"><input type="radio" name="timePref" value="周日上午"> 周日上午</label>
+                        <label class="radio-label"><input type="radio" name="timePref" value="周日下午"> 周日下午</label>
+                        <label class="radio-label"><input type="radio" name="timePref" value="周日晚上"> 周日晚上</label>
+                        <label class="radio-label"><input type="radio" name="timePref" value="无所谓，看内容质量">
+                            无所谓，看内容质量</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Part 4: Supplementary -->
+            <div class="section">
+                <div class="section-title">04 / 补充信息</div>
+                <div
+                    style="font-size: 13px; color: var(--text-muted); margin-top: -16px; margin-bottom: 24px; line-height: 1.5;">
+                    说明：为了向您提供更精准的圈层推荐，我们收集以下信息以帮助建立高效的匹配沟通机制，方便后续为您定制并开展针对性更强的专属活动。
+                </div>
+
+                <div class="form-group">
+                    <label>所在城市 *</label>
+                    <select name="city" id="citySelect" required onchange="toggleOtherSelect(this, 'cityOther')">
+                        <option value="" disabled selected>选择城市</option>
+                        <option value="重庆主城">重庆主城</option>
+                        <option value="重庆区县">重庆区县</option>
+                        <option value="其他">其他城市</option>
+                    </select>
+                    <input type="text" id="cityOther" name="cityOther" class="other-input" placeholder="请填写具体城市">
+                </div>
+
+                <div class="form-group">
+                    <label>是否有意向成为俱乐部志愿者/理事单位？ *</label>
+                    <div class="radio-group" style="grid-template-columns: 1fr;">
+                        <label class="radio-label"><input type="radio" name="roleIntent" value="愿意担任志愿者" required>
+                            愿意担任志愿者</label>
+                        <label class="radio-label"><input type="radio" name="roleIntent" value="愿意成为理事/合作单位">
+                            愿意成为理事/合作单位（可后续对接）</label>
+                        <label class="radio-label"><input type="radio" name="roleIntent" value="暂时不考虑"> 暂时不考虑</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>一句话自我介绍 (选填，限100字)</label>
+                    <textarea name="bio" maxlength="100" placeholder="例如：重庆理工大学讲师，研究方向为多模态学习，希望链接智能制造场景。"></textarea>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="form-group">
+                    <label>是否愿意公开您的部分信息到《重庆AI创享俱乐部会员名录》？ *</label>
+                    <div class="radio-group">
+                        <label class="radio-label"><input type="radio" name="privacy" value="仅对会员可见" required>
+                            仅对会员可见</label>
+                        <label class="radio-label"><input type="radio" name="privacy" value="完全公开"> 完全公开</label>
+                        <label class="radio-label"><input type="radio" name="privacy" value="暂不公开"> 暂不公开</label>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit">提交入会申请 ➜</button>
+        </form>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal" id="successModal">
+        <div class="modal-content">
+            <div class="success-icon">✓</div>
+            <h2 class="modal-title">提交成功！</h2>
+            <p style="color: var(--text-muted); line-height: 1.6;">您的申请已收到，工作人员将在3个工作日内与您联系。</p>
+
+            <button class="close-btn" onclick="closeModal()">关闭</button>
+        </div>
+    </div>
+
+    <script>
+        function toggleOther(el, inputId) {
+            const input = document.getElementById(inputId);
+            input.style.display = el.checked && el.value === '其他' ? 'block' : 'none';
+            if (el.type === 'radio') {
+                const groupName = el.name;
+                const radios = document.querySelectorAll(`input[name="${groupName}"]`);
+                let hasOther = false;
+                radios.forEach(r => { if (r.checked && r.value === '其他') hasOther = true; });
+                input.style.display = hasOther ? 'block' : 'none';
+            }
+        }
+
+        function toggleOtherSelect(el, inputId) {
+            const input = document.getElementById(inputId);
+            input.style.display = el.value === '其他' ? 'block' : 'none';
+        }
+
+        // Limit Need Resources to 1-3
+        const needResCheckboxes = document.querySelectorAll('input[name="needRes"]');
+        needResCheckboxes.forEach(cb => {
+            cb.addEventListener('change', () => {
+                const checkedCount = document.querySelectorAll('input[name="needRes"]:checked').length;
+                if (checkedCount > 3) {
+                    cb.checked = false;
+                    alert('最多只能选择3项最迫切的需求！');
+                }
+            });
+        });
+
+        document.getElementById('aiClubForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            // Validation
+            let isValid = true;
+            let firstErrorEl = null;
+
+            // Phone validation
+            const phone = document.getElementById('phone').value;
+            const phoneRegex = /^1[3-9]\d{9}$/;
+            if (!phoneRegex.test(phone)) {
+                document.getElementById('phoneError').style.display = 'block';
+                isValid = false;
+                firstErrorEl = document.getElementById('phoneError');
+            } else {
+                document.getElementById('phoneError').style.display = 'none';
+            }
+
+            // Provide Resources Checkbox Validation
+            const provideResCount = document.querySelectorAll('input[name="provideRes"]:checked').length;
+            if (provideResCount === 0) {
+                document.getElementById('provideResError').style.display = 'block';
+                isValid = false;
+                firstErrorEl = firstErrorEl || document.getElementById('provideResError');
+            } else {
+                document.getElementById('provideResError').style.display = 'none';
+            }
+
+            // Need Resources Checkbox Validation
+            const needResCount = document.querySelectorAll('input[name="needRes"]:checked').length;
+            if (needResCount === 0 || needResCount > 3) {
+                document.getElementById('needResError').style.display = 'block';
+                isValid = false;
+                firstErrorEl = firstErrorEl || document.getElementById('needResError');
+            } else {
+                document.getElementById('needResError').style.display = 'none';
+            }
+
+            // Events Checkbox Validation
+            const eventsCount = document.querySelectorAll('input[name="events"]:checked').length;
+            if (eventsCount === 0) {
+                document.getElementById('eventsError').style.display = 'block';
+                isValid = false;
+                firstErrorEl = firstErrorEl || document.getElementById('eventsError');
+            } else {
+                document.getElementById('eventsError').style.display = 'none';
+            }
+
+            if (!isValid) {
+                if (firstErrorEl) {
+                    firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // 如果有高亮需求，可以暂时给它加个动画
+                    firstErrorEl.parentElement.style.animation = 'shake 0.5s';
+                    setTimeout(() => firstErrorEl.parentElement.style.animation = '', 500);
+                }
+                return;
+            }
+
+            // Collect Data
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+
+            // Handle arrays for checkboxes
+            data.provideRes = Array.from(formData.getAll('provideRes'));
+            data.needRes = Array.from(formData.getAll('needRes'));
+            data.events = Array.from(formData.getAll('events'));
+
+            const submitBtn = document.querySelector('.btn-submit');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '正在提交...';
+            submitBtn.disabled = true;
+
+            fetch('/api/apply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(async res => {
+                let json = {};
+                try {
+                    json = await res.json();
+                } catch(e) {
+                    console.warn("JSON Parse Error", e);
+                }
+                return { status: res.status, body: json };
+            })
+            .then(({ status, body }) => {
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+
+                if (status >= 400) {
+                    alert(body.error || '提交失败，因为该手机号可能已提交或请求受限。');
+                    return;
+                }
+
+                // Show modal on success
+                document.getElementById('successModal').style.display = 'flex';
+            })
+            .catch(err => {
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+                alert('网络连接错误详细信息：' + err.message + '\n请检查网络连接或稍后重试。');
+                console.error('Fetch caught error:', err);
+            });
+        });
+
+        function closeModal() {
+            document.getElementById('successModal').style.display = 'none';
+            document.getElementById('aiClubForm').reset();
+            document.querySelectorAll('.other-input').forEach(el => el.style.display = 'none');
+        }
+    </script>
+</body>
+
+</html>

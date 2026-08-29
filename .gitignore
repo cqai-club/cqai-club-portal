@@ -1,0 +1,21 @@
+node_modules/
+
+# Local environment variables and credentials
+.env
+.env.*
+!.env.example
+
+# Local databases and generated database files
+prisma/*.db
+prisma/*.db-journal
+*.sqlite
+*.sqlite3
+
+# Local/editor artifacts
+.DS_Store
+*.log
+.idea/
+.vscode/
+
+# Local security reports
+.gstack/

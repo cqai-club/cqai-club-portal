@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model MemberApplication {
+  id                      String   @id @default(uuid())
+  name                    String
+  phone                   String   @unique
+  wechat                  String
+  email                   String?
+  organization            String
+  title                   String
+  orgType                 String
+  orgTypeOther            String?
+
+  provideResources        String   // Storing JSON as string
+  provideResourcesOther   String?
+  needResources           String   // Storing JSON as string
+  needResourcesOther      String?
+
+  joinPurpose             String
+  joinPurposeOther        String?
+  expectEvents            String   // Storing JSON as string
+  expectEventsOther       String?
+  timePreference          String
+
+  city                    String
+  cityOther               String?
+  roleIntent              String
+  bio                     String?
+  privacyPreference       String
+
+  isHighValue             Boolean  @default(false)
+
+  createdAt               DateTime @default(now())
+  ipAddress               String?
+}
