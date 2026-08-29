@@ -86,7 +86,7 @@ ADMIN_PASSWORD="use-a-long-random-password"
 
 | 类型 | 名称 | 值 |
 |---|---|---|
-| Repository variable | `DEPLOY_HOST` | `8.137.71.156` |
+| Repository variable | `DEPLOY_HOST` | `<服务器公网地址>` |
 | Repository variable | `DEPLOY_USER` | `cqai-deploy` |
 | Repository variable | `DEPLOY_PORT` | `22` |
 | Repository variable | `DEPLOY_ENABLED` | 首次上线前为 `false`，验证后改为 `true` |
@@ -111,9 +111,10 @@ ADMIN_PASSWORD="use-a-long-random-password"
 正常情况下应在 GitHub 仓库的 Actions 页面手动运行 `Deploy production`。如果 GitHub 暂时不可用，可在可信机器上打包当前提交并上传，然后在服务器执行同一部署脚本：
 
 ```bash
+server_ip="<服务器公网地址>"
 git archive --format=tar.gz --output=release.tgz HEAD
-scp release.tgz cqai-deploy@8.137.71.156:/data/cqai-club-portal/incoming/<完整提交SHA>.tgz
-scp deploy/remote-deploy.sh cqai-deploy@8.137.71.156:/data/cqai-club-portal/incoming/remote-deploy-<完整提交SHA>.sh
+scp release.tgz "cqai-deploy@$server_ip:/data/cqai-club-portal/incoming/<完整提交SHA>.tgz"
+scp deploy/remote-deploy.sh "cqai-deploy@$server_ip:/data/cqai-club-portal/incoming/remote-deploy-<完整提交SHA>.sh"
 ```
 
 然后登录服务器执行：
