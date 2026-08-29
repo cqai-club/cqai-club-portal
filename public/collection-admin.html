@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>项目征集资料管理</title>
+    <link rel="icon" type="image/png" href="/images/logo-nav.png">
+    <style>
+        :root {
+            color-scheme: light;
+            --ink: #17213d;
+            --muted: #65708c;
+            --line: #e5e9f2;
+            --surface: #fff;
+            --soft: #f5f7fb;
+            --primary: #252b82;
+            --primary-soft: #eef0ff;
+            --success: #147a5b;
+            --warning: #9b6500;
+            --danger: #a63b3b;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-width: 320px;
+            color: var(--ink);
+            background: var(--soft);
+            font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+        }
+        button, input, select { font: inherit; }
+        button { cursor: pointer; }
+        .hidden { display: none !important; }
+        .login-page {
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            background: linear-gradient(135deg, #eef1ff, #f7fbff);
+        }
+        .login-card {
+            width: min(100%, 410px);
+            padding: 34px;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            box-shadow: 0 20px 60px rgba(37, 43, 130, .12);
+        }
+        .login-card h1 { margin: 0 0 8px; font-size: 24px; }
+        .login-card p { margin: 0 0 24px; color: var(--muted); }
+        .field { display: grid; gap: 7px; margin-top: 16px; }
+        .field label { font-size: 13px; color: var(--muted); }
+        .field input, .field select {
+            width: 100%;
+            min-height: 42px;
+            padding: 0 12px;
+            border: 1px solid #d3d9e8;
+            border-radius: 8px;
+            background: #fff;
+        }
+        .field input:focus, .field select:focus { outline: 3px solid #dfe4ff; border-color: #8290dc; }
+        .primary-btn, .secondary-btn, .danger-btn {
+            min-height: 40px;
+            border-radius: 8px;
+            padding: 0 15px;
+            border: 1px solid transparent;
+            font-weight: 650;
+        }
+        .primary-btn { color: #fff; background: var(--primary); }
+        .primary-btn:hover { background: #1b205f; }
+        .secondary-btn { color: var(--ink); background: #fff; border-color: #d7ddeb; }
+        .secondary-btn:hover { background: #f3f5fb; }
+        .danger-btn { color: var(--danger); background: #fff; border-color: #e9caca; }
+        .error { min-height: 20px; margin: 12px 0 0; color: var(--danger); font-size: 13px; }
+        .app { min-height: 100vh; }
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 18px 28px;
+            background: #fff;
+            border-bottom: 1px solid var(--line);
+        }
+        .topbar h1 { margin: 0; font-size: 21px; }
+        .topbar p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+        .topbar-actions { display: flex; gap: 8px; align-items: center; }
+        .content { max-width: 1440px; margin: 0 auto; padding: 24px 28px 40px; }
+        .filters {
+            display: grid;
+            grid-template-columns: 170px 170px minmax(180px, 1fr) auto auto;
+            gap: 12px;
+            align-items: end;
+            padding: 16px;
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+        }
+        .filters .field { margin-top: 0; }
+        .summary { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0 12px; color: var(--muted); font-size: 13px; }
+        .summary span { padding: 6px 10px; background: #fff; border: 1px solid var(--line); border-radius: 999px; }
+        .table-wrap { overflow: auto; background: #fff; border: 1px solid var(--line); border-radius: 10px; }
+        table { width: 100%; min-width: 900px; border-collapse: collapse; }
+        th, td { padding: 14px 15px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+        th { color: var(--muted); background: #fafbfe; font-size: 12px; font-weight: 700; white-space: nowrap; }
+        td { font-size: 14px; }
+        tbody tr:last-child td { border-bottom: 0; }
+        tbody tr:hover { background: #fbfcff; }
+        .name { font-weight: 700; }
+        .meta { margin-top: 4px; color: var(--muted); font-size: 12px; }
+        .type-badge, .status-badge {
+            display: inline-flex;
+            align-items: center;
+            min-height: 26px;
+            padding: 0 9px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .type-badge { color: var(--primary); background: var(--primary-soft); }
+        .status-new { color: var(--primary); background: #edf0ff; }
+        .status-reviewing { color: var(--warning); background: #fff5dc; }
+        .status-approved { color: var(--success); background: #e4f6ef; }
+        .status-rejected { color: var(--danger); background: #fdeaea; }
+        .status-select { min-height: 32px; padding: 0 8px; border: 1px solid #d7ddeb; border-radius: 7px; background: #fff; }
+        .empty, .loading { padding: 44px 20px; text-align: center; color: var(--muted); }
+        .pagination { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; color: var(--muted); font-size: 13px; }
+        .pagination-actions { display: flex; gap: 8px; }
+        .drawer-backdrop {
+            position: fixed;
+            inset: 0;
+            display: grid;
+            justify-items: end;
+            background: rgba(17, 26, 67, .32);
+            z-index: 10;
+        }
+        .drawer {
+            width: min(680px, 100%);
+            height: 100%;
+            padding: 24px;
+            overflow: auto;
+            background: #fff;
+            box-shadow: -10px 0 40px rgba(17, 26, 67, .16);
+        }
+        .drawer-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+        .drawer-header h2 { margin: 0; font-size: 21px; }
+        .close-btn { width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); background: #fff; font-size: 20px; line-height: 1; }
+        .detail-grid { display: grid; grid-template-columns: 120px 1fr; gap: 0; margin-top: 24px; border-top: 1px solid var(--line); }
+        .detail-grid dt, .detail-grid dd { margin: 0; padding: 11px 0; border-bottom: 1px solid var(--line); }
+        .detail-grid dt { color: var(--muted); font-size: 13px; }
+        .detail-grid dd { white-space: pre-wrap; overflow-wrap: anywhere; }
+        .payload-section { margin-top: 26px; }
+        .payload-section h3 { margin: 0 0 10px; font-size: 15px; }
+        .payload-list { display: grid; gap: 10px; }
+        .payload-item { padding: 12px; background: var(--soft); border-radius: 8px; }
+        .payload-item strong { display: block; margin-bottom: 4px; color: var(--muted); font-size: 12px; }
+        .assets { display: flex; flex-wrap: wrap; gap: 10px; }
+        .asset-link { color: var(--primary); text-decoration: none; }
+        .asset-link:hover { text-decoration: underline; }
+        @media (max-width: 900px) {
+            .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .filters .field:nth-child(3) { grid-column: 1 / -1; }
+        }
+        @media (max-width: 620px) {
+            .topbar { align-items: flex-start; flex-direction: column; padding: 16px 18px; }
+            .topbar-actions { width: 100%; }
+            .topbar-actions button, .topbar-actions a { flex: 1; }
+            .content { padding: 16px 14px 28px; }
+            .filters { grid-template-columns: 1fr; }
+            .filters .field:nth-child(3) { grid-column: auto; }
+            .pagination { align-items: stretch; flex-direction: column; }
+            .pagination-actions { width: 100%; }
+            .pagination-actions button { flex: 1; }
+            .drawer { padding: 20px 16px; }
+        }
+    </style>
+</head>
+<body>
+    <section class="login-page" id="loginPage">
+        <form class="login-card" id="loginForm">
+            <h1>项目征集资料</h1>
+            <p>登录后查看会员、企业与 AI 项目提交记录。</p>
+            <div class="field">
+                <label for="username">管理员账号</label>
+                <input id="username" name="username" autocomplete="username" required>
+            </div>
+            <div class="field">
+                <label for="password">管理员密码</label>
+                <input id="password" name="password" type="password" autocomplete="current-password" required>
+            </div>
+            <p class="error" id="loginError" role="alert"></p>
+            <button class="primary-btn" type="submit" style="width:100%;margin-top:8px">登录后台</button>
+        </form>
+    </section>
+
+    <main class="app hidden" id="app">
+        <header class="topbar">
+            <div>
+                <h1>项目征集资料管理</h1>
+                <p>审核来自征集 H5 的会员、企业和 AI 项目资料</p>
+            </div>
+            <div class="topbar-actions">
+                <a class="secondary-btn" href="/admin/" style="display:inline-flex;align-items:center;text-decoration:none">入会申请后台</a>
+                <button class="secondary-btn" id="exportButton" type="button">导出 CSV</button>
+                <button class="danger-btn" id="logoutButton" type="button">退出</button>
+            </div>
+        </header>
+
+        <section class="content">
+            <form class="filters" id="filterForm">
+                <div class="field">
+                    <label for="typeFilter">征集类型</label>
+                    <select id="typeFilter">
+                        <option value="">全部类型</option>
+                        <option value="member">会员资料</option>
+                        <option value="enterprise">企业资料</option>
+                        <option value="project">AI 项目</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="statusFilter">审核状态</label>
+                    <select id="statusFilter">
+                        <option value="">全部状态</option>
+                        <option value="new">待审核</option>
+                        <option value="reviewing">审核中</option>
+                        <option value="approved">已通过</option>
+                        <option value="rejected">已拒绝</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="searchFilter">搜索</label>
+                    <input id="searchFilter" placeholder="姓名、企业、项目或联系方式">
+                </div>
+                <button class="primary-btn" type="submit">筛选</button>
+                <button class="secondary-btn" id="resetButton" type="button">重置</button>
+            </form>
+
+            <div class="summary">
+                <span id="totalSummary">共 0 条</span>
+                <span id="pageSummary">第 1 / 1 页</span>
+            </div>
+
+            <div class="table-wrap">
+                <div class="loading hidden" id="loading">正在加载资料...</div>
+                <div class="empty hidden" id="empty">暂无符合条件的征集资料。</div>
+                <table id="submissionTable">
+                    <thead>
+                        <tr>
+                            <th>类型</th>
+                            <th>名称</th>
+                            <th>联系方式</th>
+                            <th>审核状态</th>
+                            <th>提交时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="submissionRows"></tbody>
+                </table>
+            </div>
+
+            <div class="pagination">
+                <span id="paginationText"></span>
+                <div class="pagination-actions">
+                    <button class="secondary-btn" id="prevButton" type="button">上一页</button>
+                    <button class="secondary-btn" id="nextButton" type="button">下一页</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="drawer-backdrop hidden" id="drawerBackdrop">
+        <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle">
+            <div class="drawer-header">
+                <div>
+                    <h2 id="drawerTitle">资料详情</h2>
+                    <div class="meta" id="drawerSubtitle"></div>
+                </div>
+                <button class="close-btn" id="closeDrawer" type="button" aria-label="关闭详情">×</button>
+            </div>
+            <dl class="detail-grid" id="detailGrid"></dl>
+            <section class="payload-section">
+                <h3>提交内容</h3>
+                <div class="payload-list" id="payloadList"></div>
+            </section>
+            <section class="payload-section">
+                <h3>附件</h3>
+                <div class="assets" id="assetList"></div>
+            </section>
+        </aside>
+    </div>
+
+    <script>
+        const state = {
+            token: '',
+            page: 1,
+            limit: 20,
+            totalPages: 1,
+            total: 0,
+            items: []
+        };
+
+        const $ = id => document.getElementById(id);
+        const typeLabels = { member: '会员资料', enterprise: '企业资料', project: 'AI 项目' };
+        const statusLabels = { new: '待审核', reviewing: '审核中', approved: '已通过', rejected: '已拒绝' };
+        const fieldLabels = {
+            name: '姓名', identity: '职务 / 身份', bio: '个人简介', focus: '专业领域 / 关注方向', works: '代表作 / 主要项目',
+            profileUrl: '个人主页 / 社交账号', phone: '联系手机', company: '企业 / 团队名称', companyBio: '企业简介',
+            business: '核心业务', products: '主要产品 / 服务', website: '企业官网链接', productUrl: '产品 / 业务介绍链接',
+            city: '所在城市', contact: '对接人及联系方式', projectName: '项目名称', owner: '项目负责人',
+            oneLine: '一句话项目简介', stage: '项目阶段', projectFocus: 'AI 技术 / 应用方向', projectBio: '项目介绍',
+            needs: '期望对接 / 合作方向', demoUrl: '官网 / 演示链接', projectContact: '联系方式', email: '邮箱'
+        };
+
+        function setLoggedIn(loggedIn) {
+            $('loginPage').classList.toggle('hidden', loggedIn);
+            $('app').classList.toggle('hidden', !loggedIn);
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[char]));
+        }
+
+        function formatDate(value) {
+            return value ? new Date(value).toLocaleString('zh-CN') : '-';
+        }
+
+        function statusBadge(status) {
+            return `<span class="status-badge status-${escapeHtml(status)}">${escapeHtml(statusLabels[status] || status)}</span>`;
+        }
+
+        async function api(path, options = {}) {
+            const headers = new Headers(options.headers || {});
+            headers.set('Authorization', `Bearer ${state.token}`);
+            if (options.body && typeof options.body !== 'string' && !(options.body instanceof FormData)) {
+                headers.set('Content-Type', 'application/json');
+                options.body = JSON.stringify(options.body);
+            }
+            const response = await fetch(path, { ...options, headers });
+            if (response.status === 401) {
+                logout();
+                throw new Error('登录已失效，请重新登录。');
+            }
+            return response;
+        }
+
+        async function login(event) {
+            event.preventDefault();
+            $('loginError').textContent = '';
+            const formData = new FormData($('loginForm'));
+            try {
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: formData.get('username'),
+                        password: formData.get('password')
+                    })
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    $('loginError').textContent = result.error || '登录失败，请重试。';
+                    return;
+                }
+                state.token = result.token;
+                $('password').value = '';
+                setLoggedIn(true);
+                await loadSubmissions();
+            } catch (error) {
+                $('loginError').textContent = '无法连接后台服务，请确认服务正在运行。';
+            }
+        }
+
+        function logout() {
+            state.token = '';
+            state.items = [];
+            setLoggedIn(false);
+        }
+
+        function currentQuery() {
+            const params = new URLSearchParams({
+                page: String(state.page),
+                limit: String(state.limit)
+            });
+            const type = $('typeFilter').value;
+            const status = $('statusFilter').value;
+            const search = $('searchFilter').value.trim();
+            if (type) params.set('type', type);
+            if (status) params.set('status', status);
+            if (search) params.set('search', search);
+            return params.toString();
+        }
+
+        async function loadSubmissions() {
+            $('loading').classList.remove('hidden');
+            $('empty').classList.add('hidden');
+            $('submissionTable').classList.add('hidden');
+            try {
+                const response = await api(`/api/admin/collection-submissions?${currentQuery()}`);
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || '加载失败');
+                state.items = result.data || [];
+                state.total = result.total || 0;
+                state.totalPages = Math.max(result.totalPages || 1, 1);
+                renderRows();
+                $('totalSummary').textContent = `共 ${state.total} 条`;
+                $('pageSummary').textContent = `第 ${state.page} / ${state.totalPages} 页`;
+                $('paginationText').textContent = state.total ? `当前显示 ${state.items.length} 条` : '';
+                $('prevButton').disabled = state.page <= 1;
+                $('nextButton').disabled = state.page >= state.totalPages;
+            } catch (error) {
+                if (state.token) alert(error.message || '加载资料失败。');
+            } finally {
+                $('loading').classList.add('hidden');
+            }
+        }
+
+        function renderRows() {
+            const rows = $('submissionRows');
+            rows.innerHTML = state.items.map(item => `
+                <tr>
+                    <td><span class="type-badge">${escapeHtml(typeLabels[item.type] || item.type)}</span></td>
+                    <td><div class="name">${escapeHtml(item.displayName)}</div><div class="meta">${escapeHtml(item.id)}</div></td>
+                    <td><div>${escapeHtml(item.contact)}</div><div class="meta">${escapeHtml(item.email || '')}</div></td>
+                    <td>
+                        <select class="status-select" data-status-id="${escapeHtml(item.id)}" aria-label="修改审核状态">
+                            ${Object.entries(statusLabels).map(([value, label]) => `<option value="${value}" ${item.status === value ? 'selected' : ''}>${label}</option>`).join('')}
+                        </select>
+                        <div style="margin-top:6px">${statusBadge(item.status)}</div>
+                    </td>
+                    <td class="meta">${escapeHtml(formatDate(item.createdAt))}</td>
+                    <td><button class="secondary-btn" type="button" data-detail-id="${escapeHtml(item.id)}">查看详情</button></td>
+                </tr>
+            `).join('');
+            $('submissionTable').classList.toggle('hidden', state.items.length === 0);
+            $('empty').classList.toggle('hidden', state.items.length !== 0);
+            rows.querySelectorAll('[data-detail-id]').forEach(button => button.addEventListener('click', () => openDetail(button.dataset.detailId)));
+            rows.querySelectorAll('[data-status-id]').forEach(select => select.addEventListener('change', () => updateStatus(select.dataset.statusId, select.value)));
+        }
+
+        async function updateStatus(id, status) {
+            try {
+                const response = await api(`/api/admin/collection-submissions/${encodeURIComponent(id)}/status`, {
+                    method: 'PATCH',
+                    body: { status }
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || '更新失败');
+                const item = state.items.find(entry => entry.id === id);
+                if (item) item.status = result.status;
+                renderRows();
+            } catch (error) {
+                alert(error.message || '更新审核状态失败。');
+                await loadSubmissions();
+            }
+        }
+
+        async function openAsset(url) {
+            try {
+                const response = await api(url);
+                if (!response.ok) throw new Error('读取附件失败');
+                const blob = await response.blob();
+                const objectUrl = URL.createObjectURL(blob);
+                window.open(objectUrl, '_blank', 'noopener');
+                window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+            } catch (error) {
+                alert(error.message || '读取附件失败。');
+            }
+        }
+
+        async function openDetail(id) {
+            try {
+                const response = await api(`/api/admin/collection-submissions/${encodeURIComponent(id)}`);
+                const item = await response.json();
+                if (!response.ok) throw new Error(item.error || '获取详情失败');
+                $('drawerTitle').textContent = item.displayName || '资料详情';
+                $('drawerSubtitle').textContent = `${typeLabels[item.type] || item.type} · ${formatDate(item.createdAt)}`;
+                $('detailGrid').innerHTML = [
+                    ['审核状态', statusBadge(item.status)],
+                    ['联系方式', escapeHtml(item.contact)],
+                    ['手机', escapeHtml(item.phone || '-')],
+                    ['邮箱', escapeHtml(item.email || '-')],
+                    ['授权', item.consent ? '已同意' : '未同意'],
+                    ['提交 IP', escapeHtml(item.ipAddress || '-')],
+                    ['提交编号', escapeHtml(item.id)]
+                ].map(([label, value]) => `<dt>${label}</dt><dd>${value}</dd>`).join('');
+                const entries = Object.entries(item.payload || {});
+                $('payloadList').innerHTML = entries.length
+                    ? entries.map(([key, value]) => `<div class="payload-item"><strong>${escapeHtml(fieldLabels[key] || key)}</strong><div>${escapeHtml(Array.isArray(value) ? value.join('、') : value)}</div></div>`).join('')
+                    : '<div class="meta">暂无其他字段</div>';
+                $('assetList').innerHTML = (item.assets || []).length
+                    ? item.assets.map(asset => `<button class="secondary-btn asset-link" type="button" data-asset-url="${escapeHtml(asset.downloadUrl)}">${escapeHtml(asset.kind === 'avatar' ? '查看头像' : '查看企业 Logo')}</button>`).join('')
+                    : '<span class="meta">无附件</span>';
+                $('assetList').querySelectorAll('[data-asset-url]').forEach(button => {
+                    button.addEventListener('click', () => openAsset(button.dataset.assetUrl));
+                });
+                $('drawerBackdrop').classList.remove('hidden');
+            } catch (error) {
+                alert(error.message || '获取详情失败。');
+            }
+        }
+
+        async function exportCsv() {
+            try {
+                const response = await api(`/api/admin/collection-submissions/export?${currentQuery()}`);
+                if (!response.ok) throw new Error('导出失败');
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'collection-submissions.csv';
+                link.click();
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                alert(error.message || '导出失败。');
+            }
+        }
+
+        $('loginForm').addEventListener('submit', login);
+        $('filterForm').addEventListener('submit', event => { event.preventDefault(); state.page = 1; loadSubmissions(); });
+        $('resetButton').addEventListener('click', () => {
+            $('typeFilter').value = '';
+            $('statusFilter').value = '';
+            $('searchFilter').value = '';
+            state.page = 1;
+            loadSubmissions();
+        });
+        $('prevButton').addEventListener('click', () => { if (state.page > 1) { state.page -= 1; loadSubmissions(); } });
+        $('nextButton').addEventListener('click', () => { if (state.page < state.totalPages) { state.page += 1; loadSubmissions(); } });
+        $('exportButton').addEventListener('click', exportCsv);
+        $('logoutButton').addEventListener('click', logout);
+        $('closeDrawer').addEventListener('click', () => $('drawerBackdrop').classList.add('hidden'));
+        $('drawerBackdrop').addEventListener('click', event => { if (event.target === $('drawerBackdrop')) $('drawerBackdrop').classList.add('hidden'); });
+    </script>
+</body>
+</html>

@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#23277c">
+  <meta name="description" content="重庆AI创享俱乐部会员、企业与AI项目征集页面">
+  <title>重庆AI创享俱乐部 · 资料征集</title>
+  <style>
+    :root {
+      --ink: #111a43;
+      --navy: #252b82;
+      --blue: #4778ee;
+      --cyan: #55c9ed;
+      --coral: #f08b78;
+      --mint: #35c7a9;
+      --muted: #6d7896;
+      --line: #dfe5f3;
+      --surface: #ffffff;
+      --soft: #f4f6fc;
+      --shadow: 0 20px 60px rgba(31, 46, 112, .12);
+      --radius: 24px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background:
+        linear-gradient(rgba(92, 121, 185, .07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(92, 121, 185, .07) 1px, transparent 1px),
+        radial-gradient(circle at 12% 6%, rgba(102, 203, 235, .22), transparent 27rem),
+        radial-gradient(circle at 90% 30%, rgba(240, 139, 120, .11), transparent 25rem),
+        #f8faff;
+      background-size: 36px 36px, 36px 36px, auto, auto, auto;
+      font-family: "Avenir Next", "PingFang SC", "Microsoft YaHei", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input, textarea, select { font: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; }
+
+    .page-shell { width: min(100%, 1040px); margin: 0 auto; padding: 22px 20px 64px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 18px; }
+    .brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; }
+    .brand-mark {
+      width: 54px; height: 54px; flex: 0 0 54px; border-radius: 17px; overflow: hidden;
+      border: 4px solid rgba(255,255,255,.92); box-shadow: 0 6px 22px rgba(37,43,130,.22);
+      background: var(--navy);
+    }
+    .brand-mark img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .brand-copy { line-height: 1.15; }
+    .brand-copy strong { display: block; font-size: 15px; letter-spacing: .05em; }
+    .brand-copy span { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; letter-spacing: .08em; }
+    .top-note { color: var(--muted); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+
+    .hero { text-align: center; padding: 60px 0 34px; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 10px; padding: 9px 16px; border-radius: 999px;
+      color: var(--navy); background: rgba(255,255,255,.88); border: 1px solid rgba(65, 91, 170, .13);
+      box-shadow: 0 7px 20px rgba(31, 46, 112, .08); font-size: 11px; font-weight: 800; letter-spacing: .22em;
+    }
+    .eyebrow::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 4px rgba(85,201,237,.15); }
+    h1 { max-width: 780px; margin: 23px auto 16px; font-size: 58px; line-height: 1.1; letter-spacing: -.045em; }
+    .hero-lead { max-width: 620px; margin: 0 auto; color: #4d5b7c; font-size: 18px; line-height: 1.85; }
+    .hero-lead b { color: var(--navy); font-weight: 700; }
+    .hero-actions { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 13px; margin-top: 28px; }
+    .primary-btn, .quiet-btn {
+      min-height: 48px; padding: 0 22px; border-radius: 999px; border: 0; font-weight: 750; transition: transform .2s, box-shadow .2s, background .2s;
+    }
+    .primary-btn { color: #fff; background: var(--navy); box-shadow: 0 11px 24px rgba(37,43,130,.2); }
+    .primary-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 28px rgba(37,43,130,.27); }
+    .quiet-btn { color: var(--navy); background: rgba(255,255,255,.7); border: 1px solid var(--line); }
+    .quiet-btn:hover { background: #fff; }
+    .btn-arrow { margin-left: 7px; font-size: 19px; line-height: 0; vertical-align: -1px; }
+
+    .signals { display: flex; justify-content: center; flex-wrap: wrap; gap: 9px; margin: 26px auto 0; }
+    .signal { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; color: #566482; background: rgba(255,255,255,.66); border: 1px solid rgba(115, 135, 187, .16); border-radius: 999px; font-size: 12px; }
+    .signal i { width: 7px; height: 7px; border-radius: 50%; display: block; background: var(--coral); }
+    .signal:nth-child(2) i { background: var(--mint); }
+    .signal:nth-child(3) i { background: var(--blue); }
+
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); max-width: 620px; margin: 30px auto 0; padding: 9px; border: 1px solid rgba(117, 136, 187, .15); border-radius: 20px; background: rgba(255,255,255,.85); box-shadow: 0 10px 28px rgba(31, 46, 112, .07); }
+    .stat { padding: 10px 14px; text-align: center; border-right: 1px solid var(--line); }
+    .stat:last-child { border-right: 0; }
+    .stat strong { display: block; color: var(--navy); font-size: 20px; line-height: 1.1; }
+    .stat span { display: block; margin-top: 5px; color: var(--muted); font-size: 12px; }
+
+    .form-panel { overflow: hidden; margin-top: 42px; border: 1px solid rgba(113, 131, 180, .19); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+    .panel-head { position: relative; padding: 32px 34px 27px; background: linear-gradient(135deg, #f3f6ff 0%, #fcfdff 72%); border-bottom: 1px solid var(--line); }
+    .panel-head::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, var(--navy), var(--cyan), var(--coral)); }
+    .panel-kicker { margin: 0 0 9px; color: var(--blue); font-size: 11px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    .panel-head h2 { margin: 0; font-size: 30px; letter-spacing: -.035em; }
+    .panel-head p { margin: 9px 0 0; color: var(--muted); font-size: 14px; line-height: 1.7; }
+    .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 26px 34px 0; }
+    .tab { display: flex; align-items: center; gap: 10px; min-height: 58px; padding: 8px 13px; color: var(--muted); text-align: left; background: #f6f8fd; border: 1px solid transparent; border-radius: 14px; transition: .2s; }
+    .tab:hover { border-color: #cdd8f2; color: var(--navy); }
+    .tab[aria-selected="true"] { color: var(--navy); background: #fff; border-color: #b9c8ef; box-shadow: 0 7px 18px rgba(37,43,130,.09); }
+    .tab-number { display: grid; place-items: center; width: 29px; height: 29px; flex: 0 0 29px; color: #fff; border-radius: 9px; background: #a6b3d1; font-size: 12px; font-weight: 800; }
+    .tab[aria-selected="true"] .tab-number { background: var(--navy); }
+    .tab-copy strong { display: block; font-size: 13px; }
+    .tab-copy span { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+
+    .progress-wrap { padding: 18px 34px 0; }
+    .progress-meta { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; }
+    .progress-meta strong { color: var(--navy); }
+    .progress-track { height: 6px; margin-top: 9px; overflow: hidden; border-radius: 999px; background: #e8edf8; }
+    .progress-bar { width: 8%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--navy), var(--cyan)); transition: width .25s ease; }
+
+    .form-body { padding: 28px 34px 34px; }
+    .form-intro { display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; margin-bottom: 22px; }
+    .form-intro h3 { margin: 0; font-size: 20px; letter-spacing: -.02em; }
+    .form-intro p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+    .required-note { flex: 0 0 auto; color: var(--muted); font-size: 11px; }
+    .required-note b { color: var(--coral); }
+    .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 19px 16px; }
+    .field { min-width: 0; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { display: flex; align-items: baseline; gap: 4px; margin-bottom: 8px; color: #3d4b6e; font-size: 13px; font-weight: 700; }
+    .field label em { color: var(--coral); font-style: normal; }
+    .field-hint { margin: -3px 0 8px; color: #9aa5be; font-size: 11px; }
+    input[type="text"], input[type="url"], input[type="tel"], select, textarea {
+      width: 100%; border: 1px solid var(--line); border-radius: 12px; outline: none; color: var(--ink); background: #fbfcff; transition: border .2s, box-shadow .2s, background .2s;
+    }
+    input[type="text"], input[type="url"], input[type="tel"], select { height: 48px; padding: 0 14px; }
+    textarea { min-height: 112px; padding: 13px 14px; resize: vertical; line-height: 1.7; }
+    input::placeholder, textarea::placeholder { color: #aeb8cd; }
+    input:focus, select:focus, textarea:focus { background: #fff; border-color: #7d98e8; box-shadow: 0 0 0 4px rgba(71,120,238,.11); }
+    select:invalid { color: #aeb8cd; }
+    select option { color: var(--ink); }
+    .upload { display: flex; align-items: center; gap: 12px; min-height: 72px; padding: 12px 14px; color: var(--muted); border: 1px dashed #b8c7ea; border-radius: 12px; background: #fbfcff; }
+    .upload input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    .upload-icon { display: grid; place-items: center; width: 35px; height: 35px; color: var(--blue); border-radius: 10px; background: #eaf0ff; font-size: 23px; }
+    .upload-copy strong { display: block; color: #536184; font-size: 12px; }
+    .upload-copy span { display: block; margin-top: 3px; font-size: 11px; }
+    .consent { display: flex; align-items: flex-start; gap: 10px; grid-column: 1 / -1; padding: 14px 15px; color: #687694; background: #f8faff; border: 1px solid #e8edf8; border-radius: 12px; font-size: 12px; line-height: 1.65; }
+    .consent input { width: 17px; height: 17px; flex: 0 0 17px; margin: 1px 0 0; accent-color: var(--navy); }
+    .consent a { color: var(--blue); text-underline-offset: 2px; }
+    .form-actions { display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--line); }
+    .form-tip { color: var(--muted); font-size: 11px; line-height: 1.55; }
+    .submit-btn { min-height: 50px; padding: 0 22px; color: #fff; background: var(--navy); border: 0; border-radius: 12px; box-shadow: 0 9px 18px rgba(37,43,130,.18); font-weight: 750; transition: .2s; }
+    .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 23px rgba(37,43,130,.25); }
+    .submit-btn:active { transform: translateY(0); }
+
+    .info-band { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 25px; margin-top: 28px; padding: 26px 30px; border: 1px solid rgba(113,131,180,.18); border-radius: 20px; background: rgba(255,255,255,.78); }
+    .info-band h3 { margin: 0; font-size: 17px; }
+    .info-band p { max-width: 580px; margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.75; }
+    .contact-link { display: inline-flex; align-items: center; gap: 7px; padding: 0; white-space: nowrap; color: var(--navy); background: transparent; border: 0; font-size: 13px; font-weight: 750; text-decoration: none; }
+    .contact-link span { display: grid; place-items: center; width: 26px; height: 26px; color: #fff; border-radius: 8px; background: var(--coral); font-size: 15px; }
+    .footer { display: flex; justify-content: space-between; align-items: center; gap: 28px; margin-top: 28px; padding: 28px 4px 0; border-top: 1px solid rgba(113,131,180,.18); }
+    .footer-copy strong { display: block; font-size: 13px; }
+    .footer-copy p { margin: 6px 0 0; color: var(--muted); font-size: 11px; line-height: 1.65; }
+    .qr-wrap { display: flex; align-items: center; gap: 12px; }
+    .qr-wrap img { width: 70px; height: 70px; padding: 4px; border-radius: 10px; background: #fff; border: 1px solid var(--line); }
+    .qr-wrap span { color: var(--muted); font-size: 11px; line-height: 1.6; }
+
+    dialog { width: min(92vw, 420px); padding: 0; color: var(--ink); border: 0; border-radius: 22px; box-shadow: 0 28px 80px rgba(17,26,67,.27); }
+    dialog::backdrop { background: rgba(17,26,67,.42); backdrop-filter: blur(4px); }
+    .dialog-body { padding: 30px; text-align: center; }
+    .success-icon { display: grid; place-items: center; width: 56px; height: 56px; margin: 0 auto 16px; color: #fff; border-radius: 18px; background: var(--mint); font-size: 28px; font-weight: 800; }
+    .dialog-body h2 { margin: 0; font-size: 24px; }
+    .dialog-body p { margin: 10px 0 22px; color: var(--muted); font-size: 13px; line-height: 1.7; }
+    .dialog-actions { display: flex; justify-content: center; gap: 10px; }
+    .dialog-actions button { min-height: 43px; padding: 0 18px; border-radius: 10px; font-weight: 700; }
+    .dialog-close { color: var(--navy); background: #f2f5fc; border: 1px solid var(--line); }
+    .dialog-done { color: #fff; background: var(--navy); border: 0; }
+    .toast { position: fixed; left: 50%; bottom: 24px; z-index: 10; max-width: calc(100vw - 36px); padding: 11px 16px; color: #fff; background: var(--ink); border-radius: 10px; box-shadow: 0 12px 26px rgba(17,26,67,.22); font-size: 12px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; transition: .25s; }
+    .toast.show { transform: translate(-50%, 0); opacity: 1; }
+
+    @media (max-width: 700px) {
+      .page-shell { padding: 16px 14px 42px; }
+      .top-note { display: none; }
+      .hero { padding: 47px 0 25px; }
+      h1 { margin-top: 20px; font-size: 37px; }
+      .hero-lead { font-size: 15px; line-height: 1.75; }
+      .stats { margin-top: 24px; }
+      .stat { padding: 9px 5px; }
+      .stat strong { font-size: 17px; }
+      .stat span { font-size: 11px; }
+      .form-panel { margin-top: 28px; border-radius: 20px; }
+      .panel-head { padding: 27px 19px 21px; }
+      .panel-head h2 { font-size: 25px; }
+      .tabs { gap: 6px; margin: 21px 19px 0; }
+      .tab { justify-content: center; min-height: 46px; padding: 6px; }
+      .tab-number { width: 24px; height: 24px; flex-basis: 24px; border-radius: 7px; font-size: 10px; }
+      .tab-copy strong { font-size: 12px; }
+      .tab-copy span { display: none; }
+      .progress-wrap { padding: 15px 19px 0; }
+      .form-body { padding: 23px 19px 25px; }
+      .form-intro { display: block; }
+      .required-note { display: block; margin-top: 10px; }
+      .fields { grid-template-columns: 1fr; gap: 17px; }
+      .field.full, .consent { grid-column: auto; }
+      .form-actions { display: block; }
+      .form-tip { margin-bottom: 14px; }
+      .submit-btn { width: 100%; }
+      .info-band { grid-template-columns: 1fr; gap: 16px; padding: 21px; }
+      .footer { display: block; }
+      .qr-wrap { margin-top: 18px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-shell">
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="重庆AI创享俱乐部首页">
+        <span class="brand-mark"><img src="assets/club-logo.jpg" alt="重庆AI创享俱乐部 Logo"></span>
+        <span class="brand-copy"><strong>重庆AI创享俱乐部</strong><span>CHONGQING AI INNOVATION CLUB</span></span>
+      </a>
+      <span class="top-note">CITY · COMMUNITY · CREATION</span>
+    </header>
+
+    <section class="hero" id="top">
+      <span class="eyebrow">AI INNOVATION CLUB</span>
+      <h1>一起把好想法，<br><span style="color:var(--navy)">放到真实世界里</span></h1>
+      <p class="hero-lead">重庆 AI 创享俱乐部正在征集 <b>会员故事、企业名片与 AI 项目</b>，让每一份专业被看见，让每一次连接更有价值。</p>
+      <div class="hero-actions">
+        <button class="primary-btn" type="button" data-scroll-form>开始填写 <span class="btn-arrow">↓</span></button>
+        <a class="quiet-btn" href="#what-we-collect" style="display:inline-flex;align-items:center;text-decoration:none">了解征集内容 <span class="btn-arrow">↘</span></a>
+      </div>
+      <div class="signals" aria-label="征集内容">
+        <span class="signal"><i></i>会员资料</span>
+        <span class="signal"><i></i>企业资料</span>
+        <span class="signal"><i></i>AI 项目</span>
+      </div>
+      <div class="stats" aria-label="填写信息">
+        <div class="stat"><strong>3 类</strong><span>征集方向</span></div>
+        <div class="stat"><strong>约 3 分钟</strong><span>填写时间</span></div>
+        <div class="stat"><strong>1 张</strong><span>官网名片</span></div>
+      </div>
+    </section>
+
+    <section class="form-panel" id="collection-form" aria-labelledby="form-title">
+      <div class="panel-head">
+        <p class="panel-kicker">JOIN THE NETWORK</p>
+        <h2 id="form-title">提交您的资料</h2>
+        <p>选择一个方向开始填写。带 <span style="color:var(--coral)">*</span> 的信息为必填项。</p>
+        <div class="tabs" role="tablist" aria-label="资料类型">
+          <button class="tab" type="button" role="tab" aria-selected="true" data-type="member">
+            <span class="tab-number">01</span><span class="tab-copy"><strong>会员资料</strong><span>认识每一位共建者</span></span>
+          </button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-type="enterprise">
+            <span class="tab-number">02</span><span class="tab-copy"><strong>企业资料</strong><span>展示你的业务与产品</span></span>
+          </button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-type="project">
+            <span class="tab-number">03</span><span class="tab-copy"><strong>AI 项目</strong><span>让项目找到伙伴</span></span>
+          </button>
+        </div>
+      </div>
+      <div class="progress-wrap" aria-live="polite">
+        <div class="progress-meta"><span>填写进度</span><strong id="progress-label">0%</strong></div>
+        <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
+      </div>
+      <form class="form-body" id="intake-form" novalidate>
+        <div class="form-intro">
+          <div><h3 id="form-subtitle">会员资料</h3><p id="form-description">让俱乐部认识你的专业与代表作。</p></div>
+          <span class="required-note"><b>*</b> 必填信息</span>
+        </div>
+        <div class="fields" id="fields"></div>
+        <div class="form-actions">
+          <p class="form-tip">正式上线后，俱乐部团队会在 3 个工作日内与你联系确认。</p>
+          <button class="submit-btn" type="submit">提交资料 <span class="btn-arrow">→</span></button>
+        </div>
+      </form>
+    </section>
+
+    <section class="info-band" id="what-we-collect">
+      <div><h3>每一份资料，都会成为官网上的一张名片</h3><p>我们将精选会员、企业与项目内容，用于俱乐部官网展示、活动介绍和合作对接。公开内容会在发布前与你确认。</p></div>
+      <button class="contact-link" type="button" data-contact><span>⌁</span> 扫码联系俱乐部</button>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-copy"><strong>重庆 AI 创享俱乐部</strong><p>连接创新力量，共建 AI 生态。<br>资料仅用于俱乐部相关展示与合作沟通。</p></div>
+      <div class="qr-wrap"><img src="assets/club-qr.png" alt="俱乐部微信群二维码"><span>扫码加入<br>俱乐部交流网络</span></div>
+    </footer>
+  </main>
+
+  <dialog id="success-dialog" aria-labelledby="success-title">
+    <div class="dialog-body">
+      <div class="success-icon">✓</div>
+      <h2 id="success-title">资料已提交</h2>
+      <p id="success-copy">这是页面演示，信息尚未发送到后台。正式上线时可接入飞书表格或官网后台，继续完成官网展示确认。</p>
+      <div class="dialog-actions"><button class="dialog-close" type="button" data-dialog-close>返回修改</button><button class="dialog-done" type="button" data-dialog-done>完成</button></div>
+    </div>
+  </dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const typeConfig = {
+      member: {
+        label: "会员资料", description: "让俱乐部认识你的专业与代表作。", submitNote: "会员资料",
+        fields: [
+          { name: "name", label: "姓名", type: "text", placeholder: "请输入真实姓名", required: true },
+          { name: "identity", label: "职务 / 身份", type: "text", placeholder: "例如：创始人、产品负责人、投资人", required: true },
+          { name: "bio", label: "个人简介", type: "textarea", placeholder: "用 100 - 200 字介绍你的经历、关注方向或正在做的事", required: true, full: true },
+          { name: "focus", label: "专业领域 / 关注方向", type: "text", placeholder: "例如：AI 营销、智能制造、教育科技" },
+          { name: "works", label: "代表作 / 主要项目", type: "textarea", placeholder: "请填写项目名称、你的角色及项目成果", full: true },
+          { name: "profileUrl", label: "个人主页 / 社交账号", type: "url", placeholder: "https://" },
+          { name: "phone", label: "联系手机", type: "tel", placeholder: "便于团队与你确认信息" },
+          { name: "avatar", label: "个人头像", type: "file", hint: "JPG / PNG，建议正方形，不超过 5MB" }
+        ]
+      },
+      enterprise: {
+        label: "企业资料", description: "展示你的业务、产品与合作可能。", submitNote: "企业资料",
+        fields: [
+          { name: "company", label: "企业 / 团队名称", type: "text", placeholder: "请输入企业或团队全称", required: true },
+          { name: "companyBio", label: "企业简介", type: "textarea", placeholder: "用 100 - 200 字介绍企业定位、发展阶段与核心优势", required: true, full: true },
+          { name: "business", label: "核心业务", type: "textarea", placeholder: "你们主要为谁解决什么问题？", required: true, full: true },
+          { name: "products", label: "主要产品 / 服务", type: "textarea", placeholder: "产品名称 + 一句话价值说明", required: true, full: true },
+          { name: "website", label: "企业官网链接", type: "url", placeholder: "https://", required: true },
+          { name: "productUrl", label: "产品 / 业务介绍链接", type: "url", placeholder: "https://" },
+          { name: "city", label: "所在城市", type: "text", placeholder: "例如：重庆 · 渝中区" },
+          { name: "contact", label: "对接人及联系方式", type: "text", placeholder: "姓名 + 手机 / 微信", required: true },
+          { name: "companyLogo", label: "企业 Logo", type: "file", hint: "PNG / JPG，建议透明底或正方形，不超过 5MB" }
+        ]
+      },
+      project: {
+        label: "AI 项目", description: "让项目找到资源、伙伴与第一批用户。", submitNote: "AI 项目",
+        fields: [
+          { name: "projectName", label: "项目名称", type: "text", placeholder: "请输入项目名称", required: true },
+          { name: "owner", label: "项目负责人", type: "text", placeholder: "姓名 / 团队名称", required: true },
+          { name: "oneLine", label: "一句话项目简介", type: "text", placeholder: "用一句话说清项目为谁创造什么价值", required: true, full: true },
+          { name: "stage", label: "项目阶段", type: "select", required: true, options: [["", "请选择当前阶段"], ["idea", "构想验证"], ["build", "开发中"], ["pilot", "试点运行"], ["live", "已上线"]] },
+          { name: "projectFocus", label: "AI 技术 / 应用方向", type: "text", placeholder: "例如：智能体、视觉识别、AI+文旅", required: true },
+          { name: "projectBio", label: "项目介绍", type: "textarea", placeholder: "项目背景、目标用户、当前进展与已取得的成果", required: true, full: true },
+          { name: "needs", label: "期望对接 / 合作方向", type: "textarea", placeholder: "例如：场景试点、技术伙伴、融资、渠道资源", full: true },
+          { name: "demoUrl", label: "官网 / 演示链接", type: "url", placeholder: "https://" },
+          { name: "projectContact", label: "联系方式", type: "tel", placeholder: "手机或微信号", required: true }
+        ]
+      }
+    };
+
+    const form = document.getElementById("intake-form");
+    const fields = document.getElementById("fields");
+    const formSubtitle = document.getElementById("form-subtitle");
+    const formDescription = document.getElementById("form-description");
+    const progressBar = document.getElementById("progress-bar");
+    const progressLabel = document.getElementById("progress-label");
+    const successDialog = document.getElementById("success-dialog");
+    const toast = document.getElementById("toast");
+    let currentType = "member";
+    const drafts = { member: {}, enterprise: {}, project: {} };
+
+    function fieldMarkup(field) {
+      const required = field.required ? " required" : "";
+      const star = field.required ? " <em>*</em>" : "";
+      const classes = ["field", field.full ? "full" : ""].filter(Boolean).join(" ");
+      let control = "";
+      if (field.type === "textarea") {
+        control = `<textarea id="${field.name}" name="${field.name}" placeholder="${field.placeholder || ""}"${required}></textarea>`;
+      } else if (field.type === "select") {
+        control = `<select id="${field.name}" name="${field.name}"${required}>${field.options.map(([value, text]) => `<option value="${value}">${text}</option>`).join("")}</select>`;
+      } else if (field.type === "file") {
+        control = `<label class="upload" for="${field.name}"><span class="upload-icon">＋</span><span class="upload-copy"><strong>点击上传文件</strong><span id="${field.name}-name">${field.hint || "支持 JPG / PNG"}</span></span><input id="${field.name}" name="${field.name}" type="file" accept="image/png,image/jpeg"></label>`;
+      } else {
+        control = `<input id="${field.name}" name="${field.name}" type="${field.type}" placeholder="${field.placeholder || ""}"${required}>`;
+      }
+      return `<div class="${classes}"><label for="${field.name}">${field.label}${star}</label>${control}</div>`;
+    }
+
+    function renderForm() {
+      const config = typeConfig[currentType];
+      formSubtitle.textContent = config.label;
+      formDescription.textContent = config.description;
+      fields.innerHTML = config.fields.map(fieldMarkup).join("") + `<label class="consent"><input id="consent" name="consent" type="checkbox" required><span>我同意重庆 AI 创享俱乐部在发布前与我确认，并在获得授权后，将以上内容用于官网展示、活动介绍和合作对接。</span></label>`;
+      const draft = drafts[currentType];
+      Object.entries(draft).forEach(([name, value]) => {
+        const element = form.elements[name];
+        if (!element || element.type === "file") return;
+        if (element.type === "checkbox") element.checked = value === true || value === "on";
+        else element.value = value;
+      });
+      fields.querySelectorAll('input[type="file"]').forEach(input => input.addEventListener("change", () => {
+        const label = document.getElementById(`${input.id}-name`);
+        if (input.files[0] && label) label.textContent = input.files[0].name;
+      }));
+      updateProgress();
+    }
+
+    function saveDraft() {
+      const draft = {};
+      Array.from(form.elements).forEach(element => {
+        if (!element.name || element.type === "file") return;
+        draft[element.name] = element.type === "checkbox" ? element.checked : element.value;
+      });
+      drafts[currentType] = draft;
+    }
+
+    function updateProgress() {
+      const required = Array.from(form.querySelectorAll("[required]"));
+      const filled = required.filter(element => element.type === "checkbox" ? element.checked : element.value.trim() !== "").length;
+      const percent = required.length ? Math.round((filled / required.length) * 100) : 0;
+      progressBar.style.width = `${Math.max(8, percent)}%`;
+      progressLabel.textContent = `${percent}%`;
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 2600);
+    }
+
+    document.querySelectorAll(".tab").forEach(tab => tab.addEventListener("click", () => {
+      if (tab.dataset.type === currentType) return;
+      saveDraft();
+      currentType = tab.dataset.type;
+      document.querySelectorAll(".tab").forEach(item => item.setAttribute("aria-selected", String(item === tab)));
+      renderForm();
+    }));
+
+    form.addEventListener("input", updateProgress);
+    form.addEventListener("change", updateProgress);
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        showToast("请先补充带 * 的必填信息");
+        return;
+      }
+      saveDraft();
+      const submitButton = form.querySelector(".submit-btn");
+      const originalButtonText = submitButton.innerHTML;
+      submitButton.disabled = true;
+      submitButton.innerHTML = "正在提交...";
+
+      try {
+        const formData = new FormData(form);
+        formData.append("type", currentType);
+        const response = await fetch("/api/collection-submissions", {
+          method: "POST",
+          body: formData
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          showToast(result.error || "提交失败，请稍后重试。");
+          return;
+        }
+
+        document.getElementById("success-title").textContent = `${typeConfig[currentType].label}已提交`;
+        document.getElementById("success-copy").textContent = `资料已进入俱乐部后台审核。提交编号：${result.id}`;
+        successDialog.showModal();
+        form.reset();
+        drafts[currentType] = {};
+        updateProgress();
+      } catch (error) {
+        console.error("Collection submission failed:", error);
+        showToast("网络连接失败，请稍后重试。");
+      } finally {
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalButtonText;
+      }
+    });
+
+    document.querySelector("[data-scroll-form]").addEventListener("click", () => document.getElementById("collection-form").scrollIntoView({ behavior: "smooth", block: "start" }));
+    document.querySelectorAll("[data-dialog-close], [data-dialog-done]").forEach(button => button.addEventListener("click", () => successDialog.close()));
+    successDialog.addEventListener("click", event => { if (event.target === successDialog) successDialog.close(); });
+    document.querySelector("[data-contact]").addEventListener("click", () => document.querySelector(".qr-wrap").scrollIntoView({ behavior: "smooth", block: "center" }));
+    renderForm();
+  </script>
+</body>
+</html>
