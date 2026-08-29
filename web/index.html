@@ -1285,6 +1285,55 @@
         }
 
         /* ============ 弹窗 ============ */
+        .collection-fab {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            z-index: 998;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 46px;
+            padding: 0 16px;
+            border: 1px solid rgba(255, 255, 255, 0.42);
+            border-radius: 999px;
+            color: var(--white);
+            background: var(--primary);
+            box-shadow: 0 10px 24px rgba(52, 36, 104, 0.24);
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+        }
+
+        .collection-fab:hover {
+            color: var(--white);
+            background: var(--deep);
+            box-shadow: 0 14px 28px rgba(52, 36, 104, 0.3);
+            transform: translateY(-3px);
+        }
+
+        .collection-fab:focus-visible {
+            outline: 3px solid rgba(255, 255, 255, 0.92);
+            outline-offset: 3px;
+        }
+
+        .collection-fab .fa-icon {
+            width: 14px;
+            height: 14px;
+            fill: currentColor;
+        }
+
+        @media (max-width: 480px) {
+            .collection-fab {
+                right: 16px;
+                bottom: 16px;
+                min-height: 44px;
+                padding: 0 14px;
+                font-size: 13px;
+            }
+        }
+
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -2729,6 +2778,13 @@
             © 2026 重庆AI创享俱乐部 · 重庆义凡文化传媒有限公司 运营
         </div>
     </footer>
+
+    <a class="collection-fab" href="/collect/" aria-label="打开会员、企业与 AI 项目征集表格">
+        <svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false">
+            <path d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z"/>
+        </svg>
+        项目征集
+    </a>
 
     <!-- ========== 联系弹窗 ========== -->
     <div class="modal-overlay" id="contactModal">

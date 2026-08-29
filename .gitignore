@@ -11,6 +11,9 @@ prisma/*.db-journal
 *.sqlite
 *.sqlite3
 
+# Uploaded collection assets
+storage/
+
 # Local/editor artifacts
 .DS_Store
 *.log

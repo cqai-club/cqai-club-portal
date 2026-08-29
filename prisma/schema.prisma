@@ -40,3 +40,38 @@ model MemberApplication {
   createdAt               DateTime @default(now())
   ipAddress               String?
 }
+
+model CollectionSubmission {
+  id          String   @id @default(uuid())
+  type        String
+  status      String   @default("new")
+  displayName String
+  contact     String
+  phone       String?
+  email       String?
+  payloadJson String
+  consent     Boolean  @default(false)
+  consentAt   DateTime?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  assets      SubmissionAsset[]
+
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model SubmissionAsset {
+  id           String               @id @default(uuid())
+  submissionId String
+  kind         String
+  storageKey   String
+  originalName String
+  mimeType     String
+  size         Int
+  createdAt    DateTime             @default(now())
+  submission   CollectionSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([submissionId])
+}

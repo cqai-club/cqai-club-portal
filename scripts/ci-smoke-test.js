@@ -264,7 +264,56 @@ const main = async () => {
   assert.match(exportResult.body, /CI 测试用户/);
   assert.match(exportResult.body, /'=CI_TEST_ORG/, 'CSV export should neutralize spreadsheet formulas');
 
-  console.log('Smoke test passed: portal, application, admin, authentication, submission, member query, and CSV export.');
+  const collectionApplication = {
+    type: 'project',
+    projectName: 'CI Collection Project',
+    owner: 'CI Owner',
+    oneLine: 'A collection smoke test',
+    stage: 'pilot',
+    projectFocus: 'Automation',
+    projectBio: 'Collection submission for automated testing',
+    projectContact: '19900000001',
+    consent: 'true'
+  };
+  const collectionSubmission = await request(baseUrl, '/api/collection-submissions', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(collectionApplication)
+  });
+  assert.equal(collectionSubmission.response.status, 201, `collection submission should be accepted: ${collectionSubmission.body}`);
+  const collectionId = JSON.parse(collectionSubmission.body).id;
+  assert.ok(collectionId, 'collection submission should return an id');
+
+  const collectionList = await request(baseUrl, '/api/admin/collection-submissions?limit=10', {
+    headers: authorization
+  });
+  assert.equal(collectionList.response.status, 200, `collection query should succeed: ${collectionList.body}`);
+  const collectionListPayload = JSON.parse(collectionList.body);
+  assert.equal(collectionListPayload.total, 1, 'collection query should return the submitted project');
+  assert.equal(collectionListPayload.data[0].id, collectionId);
+
+  const collectionDetail = await request(baseUrl, `/api/admin/collection-submissions/${collectionId}`, {
+    headers: authorization
+  });
+  assert.equal(collectionDetail.response.status, 200, 'collection detail should load');
+  assert.equal(JSON.parse(collectionDetail.body).payload.projectName, collectionApplication.projectName);
+
+  const collectionStatus = await request(baseUrl, `/api/admin/collection-submissions/${collectionId}/status`, {
+    method: 'PATCH',
+    headers: { ...authorization, 'content-type': 'application/json' },
+    body: JSON.stringify({ status: 'approved' })
+  });
+  assert.equal(collectionStatus.response.status, 200, 'collection status should update');
+  assert.equal(JSON.parse(collectionStatus.body).status, 'approved');
+
+  const collectionExport = await request(baseUrl, '/api/admin/collection-submissions/export', {
+    headers: authorization
+  });
+  assert.equal(collectionExport.response.status, 200, `collection CSV export should succeed: ${collectionExport.body}`);
+  assert.match(collectionExport.response.headers.get('content-type') || '', /text\/csv/);
+  assert.match(collectionExport.body, /CI Collection Project/);
+
+  console.log('Smoke test passed: portal, application, admin, authentication, member and collection submissions, status updates, and CSV exports.');
 
   if (applicationProcess.exitCode !== null && applicationProcess.exitCode !== 0) {
     throw new Error(`Application exited unexpectedly.\n${serverOutput}`);
