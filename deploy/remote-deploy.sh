@@ -58,6 +58,14 @@ backup_database() {
   chmod 660 "$destination"
 }
 
+url_contains() {
+  local url="$1"
+  local expected_text="$2"
+  local response_body
+  response_body="$(curl -fsS "$url")" || return 1
+  [[ "$response_body" == *"$expected_text"* ]]
+}
+
 if [[ ! -d "$release_directory" ]]; then
   mkdir -p "$release_directory"
   tar -xzf "$archive_file" -C "$release_directory"
@@ -88,9 +96,9 @@ fi
 candidate_ready=false
 for _ in $(seq 1 60); do
   if curl -fsS "http://127.0.0.1:$candidate_port/health" >/dev/null \
-    && curl -fsS "http://127.0.0.1:$candidate_port/" | grep -q '重庆AI创享俱乐部' \
-    && curl -fsS "http://127.0.0.1:$candidate_port/apply/" | grep -q '入会申请' \
-    && curl -fsS "http://127.0.0.1:$candidate_port/admin/" | grep -q '管理后台登录'; then
+    && url_contains "http://127.0.0.1:$candidate_port/" '重庆AI创享俱乐部' \
+    && url_contains "http://127.0.0.1:$candidate_port/apply/" '入会申请' \
+    && url_contains "http://127.0.0.1:$candidate_port/admin/" '管理后台登录'; then
     candidate_ready=true
     break
   fi
@@ -186,9 +194,9 @@ fi
 production_ready=false
 for _ in $(seq 1 60); do
   if curl -fsS http://127.0.0.1:3000/health >/dev/null \
-    && curl -fsS http://127.0.0.1:3000/ | grep -q '重庆AI创享俱乐部' \
-    && curl -fsS http://127.0.0.1:3000/apply/ | grep -q '入会申请' \
-    && curl -fsS http://127.0.0.1:3000/admin/ | grep -q '管理后台登录'; then
+    && url_contains http://127.0.0.1:3000/ '重庆AI创享俱乐部' \
+    && url_contains http://127.0.0.1:3000/apply/ '入会申请' \
+    && url_contains http://127.0.0.1:3000/admin/ '管理后台登录'; then
     production_ready=true
     break
   fi

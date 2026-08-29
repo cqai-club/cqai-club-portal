@@ -86,6 +86,13 @@ jobs:
           curl --fail --silent --show-error --retry 12 --retry-delay 5 \
             https://cqaiclub.asia/health
           curl --fail --silent --show-error --retry 5 --retry-delay 3 \
-            https://cqaiclub.asia/ | grep -q '重庆AI创享俱乐部'
+            --output "$RUNNER_TEMP/portal.html" https://cqaiclub.asia/
+          grep -q '重庆AI创享俱乐部' "$RUNNER_TEMP/portal.html"
           curl --fail --silent --show-error --retry 5 --retry-delay 3 \
-            https://cqaiclub.asia/apply/ | grep -q '入会申请'
+            --output "$RUNNER_TEMP/apply.html" https://cqaiclub.asia/apply/
+          grep -q '入会申请' "$RUNNER_TEMP/apply.html"
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 \
+            --output "$RUNNER_TEMP/admin.html" https://cqaiclub.asia/admin/
+          grep -q '管理后台登录' "$RUNNER_TEMP/admin.html"
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            https://cqaiclub.asia/api/admin/members)" = '401'
