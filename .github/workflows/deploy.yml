@@ -34,6 +34,8 @@ jobs:
       DEPLOY_BASE: /data/cqai-club-portal
       SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
       KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+      LOGTO_CLIENT_ID: ${{ secrets.LOGTO_CLIENT_ID }}
+      LOGTO_CLIENT_SECRET: ${{ secrets.LOGTO_CLIENT_SECRET }}
 
     steps:
       - name: Validate deployment configuration
@@ -43,6 +45,8 @@ jobs:
           test -n "$DEPLOY_PORT"
           test -n "$SSH_KEY"
           test -n "$KNOWN_HOSTS"
+          test -n "$LOGTO_CLIENT_ID"
+          test -n "$LOGTO_CLIENT_SECRET"
 
       - name: Checkout tested revision
         uses: actions/checkout@v5
@@ -66,6 +70,20 @@ jobs:
             --exclude='prisma/*.db-journal' \
             -czf "$RUNNER_TEMP/release.tgz" .
 
+      - name: Prepare production auth configuration
+        run: |
+          umask 077
+          python3 - <<'PY'
+          import json
+          import os
+
+          with open(os.path.join(os.environ['RUNNER_TEMP'], 'auth-config.json'), 'w', encoding='utf-8') as destination:
+              json.dump({
+                  'LOGTO_CLIENT_ID': os.environ['LOGTO_CLIENT_ID'],
+                  'LOGTO_CLIENT_SECRET': os.environ['LOGTO_CLIENT_SECRET'],
+              }, destination)
+          PY
+
       - name: Upload release
         run: |
           scp -i "$HOME/.ssh/id_ed25519" -o BatchMode=yes -o StrictHostKeyChecking=yes \
@@ -74,6 +92,20 @@ jobs:
           scp -i "$HOME/.ssh/id_ed25519" -o BatchMode=yes -o StrictHostKeyChecking=yes \
             -P "$DEPLOY_PORT" deploy/remote-deploy.sh \
             "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_BASE/incoming/remote-deploy-$DEPLOY_SHA.sh"
+          scp -i "$HOME/.ssh/id_ed25519" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -P "$DEPLOY_PORT" deploy/sync-production-env.sh \
+            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_BASE/incoming/sync-production-env-$DEPLOY_SHA.sh"
+          scp -i "$HOME/.ssh/id_ed25519" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -P "$DEPLOY_PORT" "$RUNNER_TEMP/auth-config.json" \
+            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_BASE/incoming/auth-config-$DEPLOY_SHA.json"
+
+      - name: Synchronize production environment
+        run: |
+          ssh -i "$HOME/.ssh/id_ed25519" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "bash '$DEPLOY_BASE/incoming/sync-production-env-$DEPLOY_SHA.sh' \
+            '/data/informationCollection/.env' \
+            '$DEPLOY_BASE/incoming/auth-config-$DEPLOY_SHA.json'"
 
       - name: Deploy with rollback protection
         run: |
@@ -96,3 +128,6 @@ jobs:
           grep -q '管理后台登录' "$RUNNER_TEMP/admin.html"
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
             https://cqaiclub.asia/api/admin/members)" = '401'
+          curl --fail --silent --show-error --location --max-redirs 5 \
+            --output "$RUNNER_TEMP/logto-sign-in.html" \
+            https://cqaiclub.asia/auth/login

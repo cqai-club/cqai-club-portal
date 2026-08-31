@@ -1,22 +1,37 @@
-require('dotenv').config();
+const fs = require('node:fs');
+const dotenv = require('dotenv');
+const environmentFile = fs.existsSync('.env') ? '.env' : (fs.existsSync('.env.local') ? '.env.local' : null);
+dotenv.config(environmentFile ? { path: environmentFile } : undefined);
 
 const express = require('express');
 const xss = require('xss');
 const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
-const fs = require('node:fs');
 const path = require('node:path');
 const { PrismaClient } = require('@prisma/client');
 const { Parser } = require('json2csv');
 const multer = require('multer');
+const { createRemoteJWKSet, jwtVerify } = require('jose');
 
 const app = express();
 const prisma = new PrismaClient();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const LOGTO_ISSUER = String(process.env.LOGTO_ISSUER || '').replace(/\/$/, '');
+const LOGTO_CLIENT_ID = process.env.LOGTO_CLIENT_ID || '';
+const LOGTO_CLIENT_SECRET = process.env.LOGTO_CLIENT_SECRET || '';
+const LOGTO_REDIRECT_URI = process.env.LOGTO_REDIRECT_URI || `http://localhost:${PORT}/auth/callback`;
+const LOGTO_POST_LOGOUT_REDIRECT_URI = process.env.LOGTO_POST_LOGOUT_REDIRECT_URI || `http://localhost:${PORT}/admin/`;
+const LOGTO_ADMIN_ROLE = process.env.LOGTO_ADMIN_ROLE || 'club-admin';
+const LEGACY_ADMIN_LOGIN_ENABLED = process.env.LEGACY_ADMIN_LOGIN_ENABLED === 'true';
+const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 const ADMIN_SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 const adminSessions = new Map();
+const oidcTransactions = new Map();
+let oidcConfigurationPromise;
+let oidcJwks;
 const portalDirectory = path.join(__dirname, 'web');
 const applicationDirectory = path.join(__dirname, 'public');
 const collectionUploadDirectory = path.join(__dirname, 'storage', 'uploads', 'collection');
@@ -80,7 +95,79 @@ const safeEqual = (left, right) => {
   return leftBuffer.length === rightBuffer.length && crypto.timingSafeEqual(leftBuffer, rightBuffer);
 };
 
+const parseCookies = header => Object.fromEntries(
+  String(header || '').split(';').map(part => part.trim()).filter(Boolean).map(part => {
+    const index = part.indexOf('=');
+    return index === -1 ? [part, ''] : [part.slice(0, index), decodeURIComponent(part.slice(index + 1))];
+  })
+);
+
+const setSessionCookie = (res, value, maxAgeSeconds = ADMIN_SESSION_TTL_MS / 1000) => {
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  const signature = crypto.createHmac('sha256', SESSION_SECRET).update(value).digest('base64url');
+  res.set('Set-Cookie', `cqai_session=${encodeURIComponent(`${value}.${signature}`)}; Max-Age=${maxAgeSeconds}; Path=/; HttpOnly; SameSite=Lax${secure}`);
+};
+
+const clearSessionCookie = res => {
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  res.set('Set-Cookie', `cqai_session=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax${secure}`);
+};
+
+const getSessionId = req => {
+  const raw = parseCookies(req.get('cookie')).cqai_session || '';
+  const separator = raw.lastIndexOf('.');
+  if (separator < 1) return '';
+  const sessionId = raw.slice(0, separator);
+  const signature = raw.slice(separator + 1);
+  const expected = crypto.createHmac('sha256', SESSION_SECRET).update(sessionId).digest('base64url');
+  return safeEqual(signature, expected) ? sessionId : '';
+};
+
+const logtoConfigured = () => Boolean(LOGTO_ISSUER && LOGTO_CLIENT_ID && LOGTO_CLIENT_SECRET);
+
+const getOidcConfiguration = async () => {
+  if (!logtoConfigured()) throw new Error('Logto 尚未配置完整。');
+  if (!oidcConfigurationPromise) {
+    oidcConfigurationPromise = fetch(`${LOGTO_ISSUER}/.well-known/openid-configuration`)
+      .then(async response => {
+        if (!response.ok) throw new Error(`Logto discovery failed: ${response.status}`);
+        const configuration = await response.json();
+        if (configuration.issuer !== LOGTO_ISSUER) throw new Error('Logto issuer 与 discovery 配置不一致。');
+        return configuration;
+      })
+      .catch(error => {
+        oidcConfigurationPromise = undefined;
+        throw error;
+      });
+  }
+  return oidcConfigurationPromise;
+};
+
+const randomToken = (bytes = 32) => crypto.randomBytes(bytes).toString('base64url');
+const pkceChallenge = verifier => crypto.createHash('sha256').update(verifier).digest('base64url');
+
+const requireSameOrigin = (req, res, next) => {
+  const origin = req.get('origin');
+  const forwardedProtocol = req.get('x-forwarded-proto') || req.protocol;
+  if (origin && origin !== `${forwardedProtocol}://${req.get('host')}`) {
+    return res.status(403).json({ error: '请求来源不受信任。' });
+  }
+  next();
+};
+
 const requireAdmin = (req, res, next) => {
+  const sessionId = getSessionId(req);
+  const session = sessionId ? adminSessions.get(sessionId) : null;
+  if (session && session.expiresAt > Date.now()) {
+    req.admin = session.user;
+    return next();
+  }
+  if (sessionId) adminSessions.delete(sessionId);
+
+  if (!LEGACY_ADMIN_LOGIN_ENABLED) {
+    return res.status(401).json({ error: '请先使用 Logto 登录。' });
+  }
+
   const authorization = req.get('authorization') || '';
   const token = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
   const expiresAt = adminSessions.get(token);
@@ -238,6 +325,135 @@ const serializeCollectionSubmission = submission => {
     }))
   };
 };
+
+app.get('/auth/login', async (req, res) => {
+  if (!logtoConfigured()) return res.status(503).send('Logto 尚未配置，请先设置 LOGTO_ISSUER、LOGTO_CLIENT_ID 和 LOGTO_CLIENT_SECRET。');
+  try {
+    const configuration = await getOidcConfiguration();
+    const state = randomToken();
+    const nonce = randomToken();
+    const verifier = randomToken(48);
+    const requestedReturnTo = typeof req.query.returnTo === 'string'
+      && req.query.returnTo.startsWith('/')
+      && !req.query.returnTo.startsWith('//')
+      ? req.query.returnTo
+      : '/admin/';
+    oidcTransactions.set(state, { nonce, verifier, returnTo: requestedReturnTo, createdAt: Date.now() });
+    const authorizationUrl = new URL(configuration.authorization_endpoint);
+    authorizationUrl.search = new URLSearchParams({
+      response_type: 'code',
+      client_id: LOGTO_CLIENT_ID,
+      redirect_uri: LOGTO_REDIRECT_URI,
+      scope: 'openid profile email roles',
+      state,
+      nonce,
+      code_challenge: pkceChallenge(verifier),
+      code_challenge_method: 'S256'
+    }).toString();
+    res.redirect(authorizationUrl.toString());
+  } catch (error) {
+    console.error('Logto login initialization error:', error);
+    res.status(503).send('暂时无法连接 Logto，请稍后重试。');
+  }
+});
+
+app.get('/auth/callback', async (req, res) => {
+  const { code, state, error, error_description: errorDescription } = req.query;
+  const transaction = state ? oidcTransactions.get(state) : null;
+  if (state) oidcTransactions.delete(state);
+  if (error) return res.status(401).send(`Logto 登录未完成：${errorDescription || error}`);
+  if (!code || !transaction || Date.now() - transaction.createdAt > 10 * 60 * 1000) {
+    return res.status(400).send('登录请求已失效，请重新登录。');
+  }
+
+  try {
+    const configuration = await getOidcConfiguration();
+    const tokenResponse = await fetch(configuration.token_endpoint, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: String(code),
+        client_id: LOGTO_CLIENT_ID,
+        client_secret: LOGTO_CLIENT_SECRET,
+        redirect_uri: LOGTO_REDIRECT_URI,
+        code_verifier: transaction.verifier
+      })
+    });
+    const tokenResult = await tokenResponse.json().catch(() => ({}));
+    if (!tokenResponse.ok || !tokenResult.id_token) {
+      throw new Error(tokenResult.error_description || `Logto token exchange failed: ${tokenResponse.status}`);
+    }
+
+    oidcJwks ||= createRemoteJWKSet(new URL(configuration.jwks_uri));
+    const { payload } = await jwtVerify(tokenResult.id_token, oidcJwks, {
+      issuer: LOGTO_ISSUER,
+      audience: LOGTO_CLIENT_ID
+    });
+    if (payload.nonce !== transaction.nonce) throw new Error('Logto nonce 校验失败。');
+
+    let userInfo = {};
+    if (configuration.userinfo_endpoint && tokenResult.access_token) {
+      const userInfoResponse = await fetch(configuration.userinfo_endpoint, {
+        headers: { Authorization: `Bearer ${tokenResult.access_token}` }
+      });
+      if (userInfoResponse.ok) userInfo = await userInfoResponse.json();
+    }
+    const user = {
+      id: String(payload.sub || userInfo.sub || ''),
+      name: String(userInfo.name || payload.name || userInfo.username || payload.username || ''),
+      email: String(userInfo.email || payload.email || ''),
+      roles: Array.isArray(userInfo.roles) ? userInfo.roles : (Array.isArray(payload.roles) ? payload.roles : [])
+    };
+    if (!user.id) throw new Error('Logto 未返回用户标识。');
+    if (LOGTO_ADMIN_ROLE && !user.roles.includes(LOGTO_ADMIN_ROLE)) {
+      return res.status(403).send('你的 Logto 账号没有俱乐部后台权限。');
+    }
+
+    const sessionId = randomToken();
+    adminSessions.set(sessionId, { user, idToken: tokenResult.id_token, expiresAt: Date.now() + ADMIN_SESSION_TTL_MS });
+    setSessionCookie(res, sessionId);
+    res.redirect(transaction.returnTo || '/admin/');
+  } catch (error) {
+    console.error('Logto callback error:', error);
+    res.status(401).send('Logto 登录校验失败，请检查应用配置后重试。');
+  }
+});
+
+app.get('/auth/logout', async (req, res) => {
+  const sessionId = getSessionId(req);
+  const session = sessionId ? adminSessions.get(sessionId) : null;
+  if (sessionId) adminSessions.delete(sessionId);
+  clearSessionCookie(res);
+  if (logtoConfigured() && session?.idToken) {
+    try {
+      const configuration = await getOidcConfiguration();
+      if (configuration.end_session_endpoint) {
+        const logoutUrl = new URL(configuration.end_session_endpoint);
+        logoutUrl.search = new URLSearchParams({
+          id_token_hint: session.idToken,
+          post_logout_redirect_uri: LOGTO_POST_LOGOUT_REDIRECT_URI,
+          client_id: LOGTO_CLIENT_ID
+        }).toString();
+        return res.redirect(logoutUrl.toString());
+      }
+    } catch (error) {
+      console.error('Logto logout initialization error:', error);
+    }
+  }
+  res.redirect(LOGTO_POST_LOGOUT_REDIRECT_URI);
+});
+
+app.get('/api/auth/me', (req, res) => {
+  const sessionId = getSessionId(req);
+  const session = sessionId ? adminSessions.get(sessionId) : null;
+  if (!session || session.expiresAt <= Date.now()) {
+    if (sessionId) adminSessions.delete(sessionId);
+    return res.json({ authenticated: false });
+  }
+  res.set('Cache-Control', 'no-store');
+  res.json({ authenticated: true, user: session.user });
+});
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
@@ -413,6 +629,9 @@ app.post('/api/collection-submissions', collectionLimiter, collectionUploadMiddl
 
 // 2. Admin login. Credentials are configured locally through environment variables.
 app.post('/api/admin/login', adminLoginLimiter, (req, res) => {
+  if (!LEGACY_ADMIN_LOGIN_ENABLED) {
+    return res.status(410).json({ error: '账号密码登录已停用，请使用 Logto 登录。' });
+  }
   if (!ADMIN_USERNAME || !ADMIN_PASSWORD) {
     return res.status(503).json({ error: '管理员账号尚未配置。' });
   }
@@ -585,7 +804,7 @@ app.get('/api/admin/collection-submissions/:id', requireAdmin, async (req, res) 
   }
 });
 
-app.patch('/api/admin/collection-submissions/:id/status', requireAdmin, async (req, res) => {
+app.patch('/api/admin/collection-submissions/:id/status', requireAdmin, requireSameOrigin, async (req, res) => {
   const status = typeof req.body?.status === 'string' ? req.body.status : '';
   if (!collectionStatuses.has(status)) {
     return res.status(400).json({ error: '无效的审核状态。' });
