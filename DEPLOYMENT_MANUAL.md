@@ -48,14 +48,24 @@ npm start
 ```dotenv
 DATABASE_URL="file:./dev.db"
 PORT=3000
-ADMIN_USERNAME="change-me"
-ADMIN_PASSWORD="use-a-long-random-password"
+LOGTO_ISSUER="http://localhost:3001/oidc"
+LOGTO_CLIENT_ID="..."
+LOGTO_CLIENT_SECRET="..."
+LOGTO_REDIRECT_URI="http://localhost:3000/auth/callback"
+LOGTO_POST_LOGOUT_REDIRECT_URI="http://localhost:3000/admin/"
+LOGTO_ADMIN_ROLE="club-admin"
+SESSION_SECRET="..."
+LEGACY_ADMIN_LOGIN_ENABLED="false"
 ```
 
 - `DATABASE_URL`：SQLite 文件地址。默认文件位于 `prisma/dev.db`。
 - `PORT`：服务监听端口。
-- `ADMIN_USERNAME`：管理后台账号。
-- `ADMIN_PASSWORD`：管理后台密码，生产环境必须换成长随机密码。
+- `LOGTO_ISSUER`：Logto OIDC issuer，例如本地的 `http://localhost:3001/oidc`。
+- `LOGTO_CLIENT_ID` / `LOGTO_CLIENT_SECRET`：Logto Web 应用凭据。
+- `LOGTO_REDIRECT_URI`：必须在 Logto 应用中登记的回调地址。
+- `LOGTO_ADMIN_ROLE`：允许访问后台的 Logto 角色，默认 `club-admin`。
+- `SESSION_SECRET`：服务端会话密钥。
+- `LEGACY_ADMIN_LOGIN_ENABLED`：仅迁移期间临时开启旧账号密码登录，默认关闭。
 
 `.env` 和 SQLite 数据库均已被 Git 忽略，禁止手动加入版本库。
 
@@ -92,6 +102,8 @@ ADMIN_PASSWORD="use-a-long-random-password"
 | Repository variable | `DEPLOY_ENABLED` | 首次上线前为 `false`，验证后改为 `true` |
 | Environment secret | `DEPLOY_SSH_KEY` | 专用部署私钥 |
 | Environment secret | `DEPLOY_KNOWN_HOSTS` | 服务器 SSH 主机公钥记录 |
+| Environment secret | `LOGTO_CLIENT_ID` | 生产 Logto“我的应用”App ID |
+| Environment secret | `LOGTO_CLIENT_SECRET` | 生产 Logto“我的应用”App Secret |
 
 部署必须使用专用的 `cqai-deploy` 账号和密钥，不复用个人 root 密钥。该账号需要 Docker 权限，以及下列目录和生产数据文件的最小读写权限：
 
@@ -103,6 +115,8 @@ ADMIN_PASSWORD="use-a-long-random-password"
 /data/informationCollection/.env
 /data/informationCollection/prisma/dev.db
 ```
+
+部署工作流会把 GitHub `production` Environment 中的两个 Logto Secret 安全同步到现有 `/data/informationCollection/.env`，并补充生产 issuer、回调地址、`club-admin` 角色和稳定的 `SESSION_SECRET`。Secret 不会进入发布包或 Git 历史。资料征集附件挂载到 `/data/cqai-club-portal/storage`，需要由 `cqai-deploy` 持有写权限。
 
 首次上线时，先保持 `DEPLOY_ENABLED=false`，手动执行工作流并完成 Nginx 切换。确认官网、报名表、后台和健康检查均正常后，再开启自动部署。旧 Nginx 的 `/apply/` 规则会去掉路径前缀，因此不能在统一应用上线后继续保留。
 
@@ -150,22 +164,26 @@ server {
 
 提交入会申请。服务端会校验必填字段、手机号、资源选项和活动选项，同一 IP 每分钟最多提交 5 次。
 
-### `POST /api/admin/login`
+### `GET /auth/login`、`GET /auth/callback`、`GET /auth/logout`
 
-使用 `.env` 中的管理员账号登录，成功后返回有效期 8 小时的临时 Bearer Token。服务重启后需要重新登录。
+后台使用 OIDC Authorization Code + PKCE 跳转 Logto 登录。登录成功后，服务端创建 HttpOnly 会话 Cookie；浏览器不保存 Logto Token。
+
+### `GET /api/auth/me`
+
+返回当前后台会话状态。没有会话时返回 `{ "authenticated": false }`。
 
 ### `GET /api/admin/members`
 
-查询申请记录，需要 Bearer Token。支持 `page`、`limit`、`orgType`、`city` 和 `isHighValue`；单页最多返回 100 条。
+查询申请记录，需要 Logto 管理员会话。支持 `page`、`limit`、`orgType`、`city` 和 `isHighValue`；单页最多返回 100 条。
 
 ### `GET /api/admin/members/export`
 
-导出 UTF-8 CSV，需要 Bearer Token。导出内容会处理可能被 Excel 识别为公式的用户输入。
+导出 UTF-8 CSV，需要 Logto 管理员会话。导出内容会处理可能被 Excel 识别为公式的用户输入。
 
 ## 10. 安全与数据
 
 - 官网、报名表和后台为同源访问，默认不开放跨域调用。
-- 管理后台页面可以公开访问，但会员 API 必须登录后才能调用。
+- 管理后台页面可以公开访问，但会员和资料征集 API 必须通过 Logto 管理员会话后才能调用。
 - SQLite 数据包含姓名、手机号、微信、邮箱和单位等个人信息，应限制文件权限并定期备份。
 - 不要把 `.env`、数据库备份、服务器日志或导出的会员 CSV 上传到 GitHub。
 - 如需迁移到 PostgreSQL/MySQL，必须重新设计 Prisma datasource 和迁移文件，不能只替换连接地址。

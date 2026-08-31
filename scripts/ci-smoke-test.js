@@ -136,7 +136,8 @@ const main = async () => {
     DATABASE_URL: `file:${databasePath}`,
     PORT: String(port),
     ADMIN_USERNAME: adminUsername,
-    ADMIN_PASSWORD: adminPassword
+    ADMIN_PASSWORD: adminPassword,
+    LEGACY_ADMIN_LOGIN_ENABLED: 'true'
   };
 
   await prepareDatabase(env.DATABASE_URL);
@@ -175,6 +176,11 @@ const main = async () => {
   const adminPage = await request(baseUrl, '/admin/');
   assert.equal(adminPage.response.status, 200, 'admin page should load');
   assert.match(adminPage.body, /rel=["']icon["'][^>]+href=["']\/images\/logo-nav\.png["']/);
+  assert.match(adminPage.body, /使用 Logto 登录/);
+
+  const authState = await request(baseUrl, '/api/auth/me');
+  assert.equal(authState.response.status, 200, 'auth state endpoint should load');
+  assert.deepEqual(JSON.parse(authState.body), { authenticated: false });
 
   const legacyAdminPage = await request(baseUrl, '/admin.html');
   assert.equal(legacyAdminPage.response.status, 200, 'legacy admin URL should remain compatible');

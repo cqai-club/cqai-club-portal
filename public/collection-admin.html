@@ -175,22 +175,15 @@
         }
     </style>
 </head>
-<body>
+<body class="auth-pending">
+    <style>.auth-pending { visibility: hidden; }</style>
     <section class="login-page" id="loginPage">
-        <form class="login-card" id="loginForm">
+        <div class="login-card" id="loginForm">
             <h1>项目征集资料</h1>
-            <p>登录后查看会员、企业与 AI 项目提交记录。</p>
-            <div class="field">
-                <label for="username">管理员账号</label>
-                <input id="username" name="username" autocomplete="username" required>
-            </div>
-            <div class="field">
-                <label for="password">管理员密码</label>
-                <input id="password" name="password" type="password" autocomplete="current-password" required>
-            </div>
+            <p>使用 Logto 登录后查看会员、企业与 AI 项目提交记录。</p>
             <p class="error" id="loginError" role="alert"></p>
-            <button class="primary-btn" type="submit" style="width:100%;margin-top:8px">登录后台</button>
-        </form>
+            <button class="primary-btn" id="loginButton" type="button" style="width:100%;margin-top:8px">使用 Logto 登录</button>
+        </div>
     </section>
 
     <main class="app hidden" id="app">
@@ -291,7 +284,7 @@
 
     <script>
         const state = {
-            token: '',
+            authenticated: false,
             page: 1,
             limit: 20,
             totalPages: 1,
@@ -332,50 +325,43 @@
 
         async function api(path, options = {}) {
             const headers = new Headers(options.headers || {});
-            headers.set('Authorization', `Bearer ${state.token}`);
             if (options.body && typeof options.body !== 'string' && !(options.body instanceof FormData)) {
                 headers.set('Content-Type', 'application/json');
                 options.body = JSON.stringify(options.body);
             }
             const response = await fetch(path, { ...options, headers });
             if (response.status === 401) {
-                logout();
+                state.authenticated = false;
+                setLoggedIn(false);
                 throw new Error('登录已失效，请重新登录。');
             }
             return response;
         }
 
-        async function login(event) {
-            event.preventDefault();
-            $('loginError').textContent = '';
-            const formData = new FormData($('loginForm'));
-            try {
-                const response = await fetch('/api/admin/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username: formData.get('username'),
-                        password: formData.get('password')
-                    })
-                });
-                const result = await response.json().catch(() => ({}));
-                if (!response.ok) {
-                    $('loginError').textContent = result.error || '登录失败，请重试。';
-                    return;
-                }
-                state.token = result.token;
-                $('password').value = '';
-                setLoggedIn(true);
-                await loadSubmissions();
-            } catch (error) {
-                $('loginError').textContent = '无法连接后台服务，请确认服务正在运行。';
-            }
+        function login() {
+            window.location.href = '/auth/login?returnTo=/admin/collections/';
         }
 
         function logout() {
-            state.token = '';
-            state.items = [];
-            setLoggedIn(false);
+            window.location.href = '/auth/logout';
+        }
+
+        async function bootstrapAuth() {
+            try {
+                const response = await fetch('/api/auth/me', { cache: 'no-store' });
+                const result = await response.json();
+                state.authenticated = result.authenticated === true;
+                setLoggedIn(state.authenticated);
+                if (state.authenticated) {
+                    document.body.classList.remove('auth-pending');
+                    await loadSubmissions();
+                } else {
+                    window.location.replace('/auth/login?returnTo=/admin/collections/');
+                }
+            } catch {
+                document.body.classList.remove('auth-pending');
+                $('loginError').textContent = '无法连接认证服务，请稍后重试。';
+            }
         }
 
         function currentQuery() {
@@ -410,7 +396,7 @@
                 $('prevButton').disabled = state.page <= 1;
                 $('nextButton').disabled = state.page >= state.totalPages;
             } catch (error) {
-                if (state.token) alert(error.message || '加载资料失败。');
+                if (state.authenticated) alert(error.message || '加载资料失败。');
             } finally {
                 $('loading').classList.add('hidden');
             }
@@ -517,7 +503,7 @@
             }
         }
 
-        $('loginForm').addEventListener('submit', login);
+        $('loginButton').addEventListener('click', login);
         $('filterForm').addEventListener('submit', event => { event.preventDefault(); state.page = 1; loadSubmissions(); });
         $('resetButton').addEventListener('click', () => {
             $('typeFilter').value = '';
@@ -532,6 +518,7 @@
         $('logoutButton').addEventListener('click', logout);
         $('closeDrawer').addEventListener('click', () => $('drawerBackdrop').classList.add('hidden'));
         $('drawerBackdrop').addEventListener('click', event => { if (event.target === $('drawerBackdrop')) $('drawerBackdrop').classList.add('hidden'); });
+        bootstrapAuth();
     </script>
 </body>
 </html>

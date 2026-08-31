@@ -13,7 +13,9 @@
 |---|---|---|
 | 俱乐部官网 | `/` | 俱乐部介绍、活动体系、项目展示和入会入口 |
 | 入会申请 | `/apply/` | 收集申请信息、校验必填项并识别重点会员 |
-| 管理后台 | `/admin/` | 登录、分页查询、条件筛选和 CSV 导出 |
+| 管理后台 | `/admin/` | Logto 登录、分页查询、条件筛选和 CSV 导出 |
+| 资料征集 | `/collect/` | 会员、企业和 AI 项目资料提交 |
+| 资料征集后台 | `/admin/collections/` | 查看、审核和导出征集资料 |
 | 后端接口 | `/api/*` | 申请提交、管理员认证和会员数据管理 |
 | 健康检查 | `/health` | 返回当前服务运行状态 |
 
@@ -22,6 +24,7 @@
 - Node.js 20 + Express
 - Prisma + SQLite
 - 原生 HTML、CSS、JavaScript
+- 自建 Logto（OIDC）后台认证
 - Vue 3 + Tailwind CSS（管理后台 CDN 引入）
 - Docker + Nginx
 - GitHub Actions 持续集成与自动部署
@@ -63,11 +66,18 @@ npm start
 ```dotenv
 DATABASE_URL="file:./dev.db"
 PORT=3000
-ADMIN_USERNAME="change-me"
-ADMIN_PASSWORD="use-a-long-random-password"
+LOGTO_ISSUER="http://localhost:3001/oidc"
+LOGTO_CLIENT_ID="..."
+LOGTO_CLIENT_SECRET="..."
+LOGTO_REDIRECT_URI="http://localhost:3000/auth/callback"
+LOGTO_POST_LOGOUT_REDIRECT_URI="http://localhost:3000/admin/"
+LOGTO_ADMIN_ROLE="club-admin"
+SESSION_SECRET="..."
 ```
 
-生产环境必须使用独立管理员账号和长随机密码，不要把真实配置写入仓库。
+生产环境必须使用 HTTPS 的 Logto issuer、独立客户端密钥和长随机会话密钥，不要把真实配置写入仓库。Logto 应用的回调地址必须与 `LOGTO_REDIRECT_URI` 完全一致。
+
+生产部署从 GitHub `production` Environment secrets 读取 `LOGTO_CLIENT_ID` 和 `LOGTO_CLIENT_SECRET`，并在发布前同步到服务器环境文件。其他生产 OIDC 地址由部署脚本固定为 `https://auth.cqaiclub.asia/oidc` 和 `https://cqaiclub.asia/auth/callback`。资料征集附件持久化在服务器 `/data/cqai-club-portal/storage`，容器更新不会删除附件。
 
 ## 自动化测试
 

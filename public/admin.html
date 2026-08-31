@@ -9,27 +9,16 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-50 auth-pending">
+    <style>.auth-pending { visibility: hidden; }</style>
     <div id="app" class="min-h-screen">
         <!-- 登录界面 -->
         <div v-if="!isLoggedIn" class="flex items-center justify-center min-h-screen bg-gray-100">
             <div class="px-8 py-6 text-left bg-white shadow-lg rounded-lg w-full max-w-md">
                 <h3 class="text-2xl font-bold text-center mb-6">管理后台登录</h3>
-                <form @submit.prevent="login">
-                    <div class="mt-4">
-                        <div>
-                            <label class="block">管理员账号</label>
-                            <input type="text" v-model="username" placeholder="请输入管理员账户" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600">
-                        </div>
-                        <div class="mt-4">
-                            <label class="block">密码</label>
-                            <input type="password" v-model="password" placeholder="请输入密码" class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600">
-                        </div>
-                        <div class="flex items-baseline justify-between mt-6">
-                            <button class="w-full px-6 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-900">登录</button>
-                        </div>
-                    </div>
-                </form>
+                <p class="text-sm text-gray-500 text-center mb-5">后台账号由 Logto 统一管理</p>
+                <button @click="login" class="w-full px-6 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-900">使用 Logto 登录</button>
+                <p v-if="authError" class="text-sm text-red-600 text-center mt-4">{{ authError }}</p>
             </div>
         </div>
 
@@ -157,7 +146,8 @@
                     isLoggedIn: false,
                     username: '',
                     password: '',
-                    adminToken: '',
+                    user: null,
+                    authError: '',
                     members: [],
                     total: 0,
                     page: 1,
@@ -172,37 +162,28 @@
                 }
             },
             methods: {
-                async login() {
-                    try {
-                        const response = await fetch('/api/admin/login', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                username: this.username,
-                                password: this.password
-                            })
-                        });
-                        const result = await response.json();
-                        if (!response.ok) {
-                            alert(result.error || '登录失败，请稍后重试。');
-                            return;
-                        }
-
-                        this.adminToken = result.token;
-                        this.password = '';
-                        this.isLoggedIn = true;
-                        this.fetchMembers();
-                    } catch (error) {
-                        console.error('登录失败', error);
-                        alert('登录失败，请检查服务是否正常运行。');
-                    }
+                login() {
+                    window.location.href = '/auth/login?returnTo=/admin/';
                 },
-                logout() {
-                    this.isLoggedIn = false;
-                    this.adminToken = '';
-                    this.members = [];
-                    this.username = '';
-                    this.password = '';
+                async logout() {
+                    window.location.href = '/auth/logout';
+                },
+                async bootstrapAuth() {
+                    try {
+                        const response = await fetch('/api/auth/me', { cache: 'no-store' });
+                        const result = await response.json();
+                        this.isLoggedIn = result.authenticated === true;
+                        this.user = result.user || null;
+                        if (this.isLoggedIn) {
+                            document.body.classList.remove('auth-pending');
+                            this.fetchMembers();
+                        } else {
+                            window.location.replace('/auth/login?returnTo=/admin/');
+                        }
+                    } catch (error) {
+                        document.body.classList.remove('auth-pending');
+                        this.authError = '无法连接认证服务，请稍后重试。';
+                    }
                 },
                 async fetchMembers(targetPage = 1) {
                     this.loading = true;
@@ -217,9 +198,7 @@
                         if (this.filters.orgType) params.append('orgType', this.filters.orgType);
                         if (this.filters.city) params.append('city', this.filters.city);
 
-                        const response = await fetch(`/api/admin/members?${params.toString()}`, {
-                            headers: { Authorization: `Bearer ${this.adminToken}` }
-                        });
+                        const response = await fetch(`/api/admin/members?${params.toString()}`);
                         if (response.status === 401) {
                             this.logout();
                             alert('登录已失效，请重新登录。');
@@ -243,9 +222,7 @@
                 },
                 async exportCSV() {
                     try {
-                        const response = await fetch('/api/admin/members/export', {
-                            headers: { Authorization: `Bearer ${this.adminToken}` }
-                        });
+                        const response = await fetch('/api/admin/members/export');
                         if (response.status === 401) {
                             this.logout();
                             alert('登录已失效，请重新登录。');
@@ -268,7 +245,7 @@
                     }
                 }
             }
-        }).mount('#app')
+        }).mount('#app').bootstrapAuth()
     </script>
 </body>
 </html>

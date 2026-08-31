@@ -17,6 +17,7 @@
     "dotenv": "^16.6.1",
     "express": "^4.22.1",
     "express-rate-limit": "^7.5.1",
+    "jose": "^5.10.0",
     "json2csv": "^6.0.0-alpha.2",
     "multer": "^2.3.0",
     "prisma": "^5.22.0",
