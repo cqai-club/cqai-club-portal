@@ -1,6 +1,6 @@
 # 重庆 AI 创享俱乐部门户部署手册
 
-本项目是一个前后端一体化的 Node.js 应用，一个进程同时提供官网、入会申请、管理后台和 API。
+本项目是一个前后端一体化的 Next.js 应用，一个进程同时提供官网、入会申请、会员中心和 API。
 
 ## 1. 项目结构
 
@@ -8,7 +8,8 @@
 |---|---|---|
 | 俱乐部官网 | `/` | `web/index.html`、`web/images/` |
 | 入会申请 | `/apply/` | `public/index.html` |
-| 管理后台 | `/admin/` | `public/admin.html` |
+| 会员中心 | `/member/` | `app/member/` |
+| 会员管理 | `/member/dashboard/admin/members`、`/member/dashboard/admin/collections` | `app/member/dashboard/admin/` |
 | 后端接口 | `/api/*` | `index.js` |
 | 健康检查 | `/health` | `index.js` |
 | 数据库 | - | Prisma + SQLite |
@@ -36,10 +37,11 @@ npm start
 
 - 官网：`http://localhost:3000/`
 - 入会申请：`http://localhost:3000/apply/`
-- 管理后台：`http://localhost:3000/admin/`
+- 会员中心：`http://localhost:3000/member/login`
+- 会员管理：`http://localhost:3000/member/dashboard/admin/members`（登录且具备管理员角色后可见）
 - 健康检查：`http://localhost:3000/health`
 
-旧的 `/admin.html` 地址仍然可用，便于兼容已有书签。
+旧的 `/admin/`、`/admin.html` 和 `/collection-admin.html` 地址会跳转到会员中心对应的管理页面；旧静态管理页不再提供。
 
 ## 4. 环境变量
 
@@ -87,7 +89,7 @@ LEGACY_ADMIN_LOGIN_ENABLED="false"
 1. 打包已测试的提交，排除 `.env`、SQLite 和本地文件。
 2. 上传到服务器 `/data/cqai-club-portal/incoming/`。
 3. 构建带提交 SHA 标签的 Docker 镜像。
-4. 复制生产数据库，用副本运行迁移并检查 `/`、`/apply/`、`/admin/` 和 `/health`。
+4. 复制生产数据库，用副本运行迁移并检查 `/`、`/apply/`、会员中心登录和 `/api/health`。
 5. 备份正式数据库，将旧容器保留为 `cqai-club-portal-rollback`。
 6. 迁移正式数据库并启动新容器；失败时恢复数据库和旧容器。
 7. 从公网再次检查正式域名。

@@ -14,7 +14,7 @@ const adminPassword = 'ci-password-for-tests-only';
 let applicationProcess;
 
 const checkWebsiteAssets = () => {
-  const websiteRoot = path.join(projectRoot, 'web');
+  const websiteRoot = path.join(projectRoot, 'site');
   const entryFile = path.join(websiteRoot, 'index.html');
   assert.ok(fs.existsSync(entryFile), 'official website entry should exist');
 
@@ -44,7 +44,7 @@ const checkWebsiteAssets = () => {
     const assetPath = path.resolve(websiteRoot, relativePath);
     assert.ok(
       assetPath.startsWith(`${websiteRoot}${path.sep}`),
-      `website asset should remain inside web/: ${reference}`
+      `website asset should remain inside site/: ${reference}`
     );
     assert.ok(fs.existsSync(assetPath), `website asset should exist: ${reference}`);
   }
@@ -135,14 +135,22 @@ const main = async () => {
     ...process.env,
     DATABASE_URL: `file:${databasePath}`,
     PORT: String(port),
+    HOSTNAME: '127.0.0.1',
+    CONFIG_DIR: path.join(projectRoot, 'deploy'),
     ADMIN_USERNAME: adminUsername,
     ADMIN_PASSWORD: adminPassword,
-    LEGACY_ADMIN_LOGIN_ENABLED: 'true'
+    BASE_URL_PROD: 'https://plugins.example.invalid'
   };
 
   await prepareDatabase(env.DATABASE_URL);
 
-  applicationProcess = spawn(process.execPath, ['index.js'], {
+  // The application is a Next.js `output: 'standalone'` build. The CI runner
+  // produces that build in a prior step; the server is the standalone
+  // server.js (reads ./site and ./storage relative to process.cwd()).
+  const serverScript = path.join(projectRoot, '.next', 'standalone', 'server.js');
+  assert.ok(fs.existsSync(serverScript), 'standalone server.js should exist (build it first)');
+
+  applicationProcess = spawn(process.execPath, [serverScript], {
     cwd: projectRoot,
     env,
     stdio: ['ignore', 'pipe', 'pipe']
@@ -154,7 +162,7 @@ const main = async () => {
 
   await waitForServer(baseUrl);
 
-  const health = await request(baseUrl, '/health');
+  const health = await request(baseUrl, '/api/health');
   assert.equal(health.response.status, 200, 'health endpoint should load');
   assert.deepEqual(JSON.parse(health.body), { status: 'ok' });
 
@@ -173,17 +181,19 @@ const main = async () => {
   assert.match(applicationPage.body, /rel=["']icon["'][^>]+href=["']\/images\/logo-nav\.png["']/);
   assert.match(applicationPage.body, /href=["']\/["']>← 返回俱乐部官网/);
 
-  const adminPage = await request(baseUrl, '/admin/');
-  assert.equal(adminPage.response.status, 200, 'admin page should load');
-  assert.match(adminPage.body, /rel=["']icon["'][^>]+href=["']\/images\/logo-nav\.png["']/);
-  assert.match(adminPage.body, /使用 Logto 登录/);
+  const legacyAdminPage = await request(baseUrl, '/admin/', { redirect: 'manual' });
+  assert.equal(legacyAdminPage.response.status, 307, 'legacy admin URL should redirect');
+  assert.equal(
+    new URL(legacyAdminPage.response.headers.get('location'), baseUrl).pathname,
+    '/member/dashboard/admin/members'
+  );
 
-  const authState = await request(baseUrl, '/api/auth/me');
-  assert.equal(authState.response.status, 200, 'auth state endpoint should load');
-  assert.deepEqual(JSON.parse(authState.body), { authenticated: false });
-
-  const legacyAdminPage = await request(baseUrl, '/admin.html');
-  assert.equal(legacyAdminPage.response.status, 200, 'legacy admin URL should remain compatible');
+  const legacyCollectionsPage = await request(baseUrl, '/collection-admin.html', { redirect: 'manual' });
+  assert.equal(legacyCollectionsPage.response.status, 307, 'legacy collections URL should redirect');
+  assert.equal(
+    new URL(legacyCollectionsPage.response.headers.get('location'), baseUrl).pathname,
+    '/member/dashboard/admin/collections'
+  );
 
   const unauthorizedMembers = await request(baseUrl, '/api/admin/members');
   assert.equal(unauthorizedMembers.response.status, 401, 'admin API should reject anonymous access');
@@ -203,6 +213,121 @@ const main = async () => {
   assert.equal(validLogin.response.status, 200, 'valid admin credentials should be accepted');
   const { token } = JSON.parse(validLogin.body);
   assert.ok(token, 'admin login should return a session token');
+
+  const resourceSessionCookie = process.env.CI_LOGTO_SESSION_COOKIE;
+
+  const catalogManifest = await request(baseUrl, '/catalog-source.json');
+  assert.equal(catalogManifest.response.status, 200, 'catalog manifest should be public');
+  const manifestPayload = JSON.parse(catalogManifest.body);
+  assert.equal(manifestPayload.manifestVersion, '1.0.0');
+  assert.equal(manifestPayload.transport.endpoint, 'https://plugins.example.invalid/v1/plugins');
+  assert.deepEqual(manifestPayload.query.supported, ['q', 'category', 'cursor', 'limit']);
+
+  const emptyCatalog = await request(baseUrl, '/v1/plugins');
+  assert.equal(emptyCatalog.response.status, 200, 'empty plugin catalog should be public');
+  assert.deepEqual(JSON.parse(emptyCatalog.body).items, []);
+
+  const authorization = resourceSessionCookie
+    ? { cookie: resourceSessionCookie }
+    : { authorization: `Bearer ${token}` };
+
+  if (!resourceSessionCookie) {
+    const legacyTokenRequest = await request(baseUrl, '/api/admin/plugins', {
+      headers: authorization
+    });
+    assert.equal(
+      legacyTokenRequest.response.status,
+      401,
+      'legacy admin tokens must not bypass Logto resource permissions'
+    );
+    console.log('Skipping authenticated plugin lifecycle: CI_LOGTO_SESSION_COOKIE is not configured.');
+  } else {
+  const pluginPayload = {
+    packageName: 'dsh-plugin-ci-market',
+    displayName: 'CI Market Plugin',
+    summary: 'A plugin used by the catalog smoke test.',
+    description: 'Smoke test detail.',
+    categories: ['testing', 'automation'],
+    keywords: ['ci', 'catalog'],
+    repositoryUrl: 'https://github.com/example/dsh-plugin-ci-market',
+    homepageUrl: 'https://example.invalid/dsh-plugin-ci-market',
+    iconUrl: 'https://images.example.invalid/plugin.png',
+    compatibilityApiVersion: '1.0',
+    compatibilityHosts: ['dsh-desktop']
+  };
+  const invalidPlugin = await request(baseUrl, '/api/admin/plugins', {
+    method: 'POST',
+    headers: { ...authorization, 'content-type': 'application/json' },
+    body: JSON.stringify({ ...pluginPayload, packageName: 'not a package name' })
+  });
+  assert.equal(invalidPlugin.response.status, 400, 'invalid plugin data should be rejected');
+
+  const draftPlugin = await request(baseUrl, '/api/admin/plugins', {
+    method: 'POST',
+    headers: { ...authorization, 'content-type': 'application/json' },
+    body: JSON.stringify(pluginPayload)
+  });
+  assert.equal(draftPlugin.response.status, 201, `draft plugin should be created: ${draftPlugin.body}`);
+  const draftPluginId = JSON.parse(draftPlugin.body).id;
+  assert.ok(draftPluginId, 'draft plugin should return an id');
+
+  const minimalPlugin = await request(baseUrl, '/api/admin/plugins', {
+    method: 'POST',
+    headers: { ...authorization, 'content-type': 'application/json' },
+    body: JSON.stringify({
+      packageName: 'dsh-plugin-ci-minimal',
+      displayName: 'CI Minimal Plugin',
+      summary: 'A plugin with optional URL fields omitted.',
+      description: '',
+      categories: [],
+      keywords: [],
+      repositoryUrl: '',
+      homepageUrl: '',
+      iconUrl: '',
+      compatibilityApiVersion: '',
+      compatibilityHosts: []
+    })
+  });
+  assert.equal(minimalPlugin.response.status, 201, `empty optional URLs should be accepted: ${minimalPlugin.body}`);
+
+  const draftCatalog = await request(baseUrl, '/v1/plugins');
+  assert.deepEqual(JSON.parse(draftCatalog.body).items, [], 'draft plugins must stay private');
+
+  const publishPlugin = await request(baseUrl, `/api/admin/plugins/${draftPluginId}/status`, {
+    method: 'PATCH',
+    headers: { ...authorization, 'content-type': 'application/json' },
+    body: JSON.stringify({ status: 'published' })
+  });
+  assert.equal(publishPlugin.response.status, 200, 'plugin should publish');
+
+  const publishedCatalog = await request(baseUrl, '/v1/plugins?q=CI%20Market&category=testing&limit=1');
+  assert.equal(publishedCatalog.response.status, 200, `published catalog should load: ${publishedCatalog.body}`);
+  const publishedPayload = JSON.parse(publishedCatalog.body);
+  assert.equal(publishedPayload.items.length, 1, 'published plugin should be discoverable');
+  assert.equal(publishedPayload.items[0].package.name, pluginPayload.packageName);
+  assert.match(publishedPayload.items[0].media.icon.url, /\/v1\/plugins\/[^/]+\/icon$/);
+  assert.equal(publishedPayload.items[0].repository.url, pluginPayload.repositoryUrl);
+
+  const pluginList = await request(baseUrl, '/api/admin/plugins?status=published', { headers: authorization });
+  assert.equal(pluginList.response.status, 200, 'published plugin admin list should load');
+  assert.equal(JSON.parse(pluginList.body).total, 1);
+
+  const updatedPlugin = await request(baseUrl, `/api/admin/plugins/${draftPluginId}`, {
+    method: 'PATCH',
+    headers: { ...authorization, 'content-type': 'application/json' },
+    body: JSON.stringify({ ...pluginPayload, displayName: 'Updated CI Market Plugin' })
+  });
+  assert.equal(updatedPlugin.response.status, 200, 'plugin should be editable');
+  assert.equal(JSON.parse(updatedPlugin.body).displayName, 'Updated CI Market Plugin');
+
+  const unpublishPlugin = await request(baseUrl, `/api/admin/plugins/${draftPluginId}/status`, {
+    method: 'PATCH',
+    headers: { ...authorization, 'content-type': 'application/json' },
+    body: JSON.stringify({ status: 'unpublished' })
+  });
+  assert.equal(unpublishPlugin.response.status, 200, 'plugin should be taken offline');
+  assert.equal(JSON.parse((await request(baseUrl, '/v1/plugins')).body).items.length, 0, 'unpublished plugins must stay private');
+  }
 
   const testPhone = ['199', '0000', '0000'].join('');
   const application = {
@@ -251,7 +376,7 @@ const main = async () => {
   });
   assert.equal(duplicateSubmission.response.status, 400, 'duplicate phone should be rejected');
 
-  const authorization = { authorization: `Bearer ${token}` };
+  if (resourceSessionCookie) {
   const members = await request(baseUrl, '/api/admin/members?limit=10', { headers: authorization });
   assert.equal(members.response.status, 200, `member query should succeed: ${members.body}`);
   const membersPayload = JSON.parse(members.body);
@@ -318,8 +443,23 @@ const main = async () => {
   assert.equal(collectionExport.response.status, 200, `collection CSV export should succeed: ${collectionExport.body}`);
   assert.match(collectionExport.response.headers.get('content-type') || '', /text\/csv/);
   assert.match(collectionExport.body, /CI Collection Project/);
+  } else {
+    const legacyMembersRequest = await request(baseUrl, '/api/admin/members?limit=10', {
+      headers: authorization
+    });
+    assert.equal(legacyMembersRequest.response.status, 401, 'legacy tokens must not access member admin APIs');
 
-  console.log('Smoke test passed: portal, application, admin, authentication, member and collection submissions, status updates, and CSV exports.');
+    const legacyCollectionsRequest = await request(baseUrl, '/api/admin/collection-submissions?limit=10', {
+      headers: authorization
+    });
+    assert.equal(legacyCollectionsRequest.response.status, 401, 'legacy tokens must not access collection admin APIs');
+  }
+
+  console.log(
+    resourceSessionCookie
+      ? 'Smoke test passed: portal, application, admin, authentication, member and collection submissions, status updates, and CSV exports.'
+      : 'Smoke test passed: portal, public submissions, catalog visibility, and Logto permission boundary.'
+  );
 
   if (applicationProcess.exitCode !== null && applicationProcess.exitCode !== 0) {
     throw new Error(`Application exited unexpectedly.\n${serverOutput}`);

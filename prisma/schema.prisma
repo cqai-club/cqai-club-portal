@@ -75,3 +75,25 @@ model SubmissionAsset {
 
   @@index([submissionId])
 }
+
+model Plugin {
+  id                        String   @id @default(uuid())
+  status                    String   @default("draft")
+  packageName               String   @unique
+  displayName               String
+  summary                   String
+  description               String?
+  categoriesJson            String   @default("[]")
+  keywordsJson              String   @default("[]")
+  repositoryUrl             String?
+  homepageUrl               String?
+  iconUrl                   String?
+  compatibilityApiVersion  String?
+  compatibilityHostsJson   String   @default("[]")
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+  publishedAt               DateTime?
+
+  @@index([status])
+  @@index([updatedAt])
+}

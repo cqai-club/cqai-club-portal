@@ -13,6 +13,8 @@ web/*.bak
 web/index_TED.html
 .DS_Store
 .gstack
-deploy
+deploy/remote-deploy.sh
+deploy/nginx-club.conf
+deploy/features.yaml.example
 README.md
 DEPLOYMENT_MANUAL.md

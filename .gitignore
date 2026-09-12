@@ -26,3 +26,6 @@ web/index_TED.html
 
 # Local security reports
 .gstack/
+.next/
+scripts/dist/
+*.tsbuildinfo

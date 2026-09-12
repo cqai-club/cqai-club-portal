@@ -1,111 +1,152 @@
-# 重庆 AI 创享俱乐部门户
+# Logto Account Portal
 
-[![CI](https://github.com/cqai-club/cqai-club-portal/actions/workflows/ci.yml/badge.svg)](https://github.com/cqai-club/cqai-club-portal/actions/workflows/ci.yml)
-[![Deploy](https://github.com/cqai-club/cqai-club-portal/actions/workflows/deploy.yml/badge.svg)](https://github.com/cqai-club/cqai-club-portal/actions/workflows/deploy.yml)
+> 简体中文 | [English](README.en.md)
 
-重庆 AI 创享俱乐部的一体化门户，包含俱乐部官网、入会申请和会员管理后台，由同一个 Node.js 服务统一提供。
+Logto Account Portal 是一个对接 [Logto](https://logto.io/) 的账户中心和服务门户，提供用户资料管理、安全设置、社交账号绑定等功能。支持本地开发和 Docker 部署，配置统一且易于管理。
 
-线上地址：[https://cqaiclub.asia](https://cqaiclub.asia)
+项目基于 Next.js 16 (App Router) 构建，前端页面使用 shadcn/ui 组件库。
 
-## 功能入口
+## 一、项目功能
 
-| 模块 | 访问路径 | 主要功能 |
-|---|---|---|
-| 俱乐部官网 | `/` | 俱乐部介绍、活动体系、项目展示和入会入口 |
-| 入会申请 | `/apply/` | 收集申请信息、校验必填项并识别重点会员 |
-| 管理后台 | `/admin/` | Logto 登录、分页查询、条件筛选和 CSV 导出 |
-| 资料征集 | `/collect/` | 会员、企业和 AI 项目资料提交 |
-| 资料征集后台 | `/admin/collections/` | 查看、审核和导出征集资料 |
-| 后端接口 | `/api/*` | 申请提交、管理员认证和会员数据管理 |
-| 健康检查 | `/health` | 返回当前服务运行状态 |
+### 账户中心（Dashboard）
 
-## 技术栈
+- 个人资料管理（头像、姓名、资料字段）
+- 安全设置（密码、MFA、Passkey、登录历史）
+- 社交账号绑定与解绑（Google/GitHub/QQ 等）
+- 登录记录与账户删除
+- 界面语言与明暗切换
 
-- Node.js 20 + Express
-- Prisma + SQLite
-- 原生 HTML、CSS、JavaScript
-- 自建 Logto（OIDC）后台认证
-- Vue 3 + Tailwind CSS（管理后台 CDN 引入）
-- Docker + Nginx
-- GitHub Actions 持续集成与自动部署
+### 服务门户（Portal）
 
-## 项目结构
+- 如不需要可在配置文件中关闭
+- 基于配置文件的服务展示
+- 服务分类导航
+- 关键词搜索
+- 服务可用性探测
 
-```text
-.
-├── web/                    # 俱乐部官网和品牌图片
-├── public/                 # 入会申请与管理后台
-├── prisma/                 # 数据模型和数据库迁移
-├── scripts/                # 自动化测试
-├── deploy/                 # 服务器部署与 Nginx 配置
-├── .github/workflows/      # CI 和生产部署工作流
-├── index.js                # Express 服务入口
-└── Dockerfile              # 生产镜像
-```
 
-## 本地运行
+## 二、UI界面预览
 
-要求 Node.js 20 或更高版本。
+Dashboard (Dark Mode):
+
+![dark mode](docs/assets/overview1.png)
+
+Profile (Light Mode):
+
+![light mode](docs/assets/overview2.png)
+
+Security Page (Dark)
+
+![dark mode](docs/assets/overview4.png)
+
+Social Connections (Dark)
+
+![dark mode](docs/assets/overview5.png)
+
+Portal Page (Light)
+
+![portal page](docs/assets/overview3.png)
+
+
+
+## 三、配置约定
+
+无论本地开发还是 Docker 部署，统一使用以下路径：
+
+- `/.env`
+- `/deploy/features.yaml`
+- `/deploy/services.yaml`
+
+仓库内仅提供示例文件：
+
+- `/.env.example`
+- `/deploy/features.yaml.example`
+- `/deploy/services.yaml.example`
+
+
+
+## 四、本地开发
+
+### 1) 安装依赖
 
 ```bash
-npm ci
+npm install
+```
+
+### 2) 准备配置文件
+
+```bash
 cp .env.example .env
-npx prisma migrate deploy
-npm start
+cp deploy/features.yaml.example deploy/features.yaml
+cp deploy/services.yaml.example deploy/services.yaml
 ```
 
-启动后访问：
+### 3) 依据您的实际情况修改配置
 
-- 官网：`http://localhost:3000/`
-- 入会申请：`http://localhost:3000/apply/`
-- 管理后台：`http://localhost:3000/admin/`
-- 健康检查：`http://localhost:3000/health`
+详见[docs/configuration-guide.md](docs/configuration-guide.md)。
 
-## 环境变量
-
-```dotenv
-DATABASE_URL="file:./dev.db"
-PORT=3000
-LOGTO_ISSUER="http://localhost:3001/oidc"
-LOGTO_CLIENT_ID="..."
-LOGTO_CLIENT_SECRET="..."
-LOGTO_REDIRECT_URI="http://localhost:3000/auth/callback"
-LOGTO_POST_LOGOUT_REDIRECT_URI="http://localhost:3000/admin/"
-LOGTO_ADMIN_ROLE="club-admin"
-SESSION_SECRET="..."
-```
-
-生产环境必须使用 HTTPS 的 Logto issuer、独立客户端密钥和长随机会话密钥，不要把真实配置写入仓库。Logto 应用的回调地址必须与 `LOGTO_REDIRECT_URI` 完全一致。
-
-生产部署从 GitHub `production` Environment secrets 读取 `LOGTO_CLIENT_ID` 和 `LOGTO_CLIENT_SECRET`，并在发布前同步到服务器环境文件。其他生产 OIDC 地址由部署脚本固定为 `https://auth.cqaiclub.asia/oidc` 和 `https://cqaiclub.asia/auth/callback`。资料征集附件持久化在服务器 `/data/cqai-club-portal/storage`，容器更新不会删除附件。
-
-## 自动化测试
+### 4) 启动
 
 ```bash
-npm test
+npm run dev
 ```
 
-测试会创建独立的临时 SQLite 数据库，检查官网资源、favicon、报名页、管理后台、登录认证、申请提交、会员查询和 CSV 导出，不会读取本地或生产会员数据。
+访问：`http://localhost:3000`
 
-## 自动部署
 
-推送到 `main` 后，GitHub Actions 会先运行 CI。测试通过后，生产工作流会：
 
-1. 构建带提交版本的 Docker 镜像。
-2. 使用生产数据库副本验证迁移和页面入口。
-3. 备份正式 SQLite 数据库。
-4. 切换应用容器并保留上一版本用于回滚。
-5. 从公网验证官网、报名页、后台和健康检查。
+## 五、Docker 部署
 
-完整服务器配置和回滚说明见 [DEPLOYMENT_MANUAL.md](./DEPLOYMENT_MANUAL.md)。
+### 1) 准备部署目录
 
-## 数据与隐私
+```bash
+mkdir -p account-center/deploy
+cd account-center
+```
 
-会员数据库包含姓名、手机号、微信、邮箱、单位和合作意向等个人信息。以下内容禁止提交到 Git：
+### 2) 下载配置模板
 
-- `.env` 和其他真实环境配置
-- `prisma/*.db`、SQLite 日志和数据库备份
-- 管理后台导出的会员 CSV
-- 服务器日志、部署私钥和管理员凭据
+```bash
+curl -fsSL -o .env https://raw.githubusercontent.com/CertStone/logto-account-portal/main/.env.example
+curl -fsSL -o deploy/features.yaml https://raw.githubusercontent.com/CertStone/logto-account-portal/main/deploy/features.yaml.example
+curl -fsSL -o deploy/services.yaml https://raw.githubusercontent.com/CertStone/logto-account-portal/main/deploy/services.yaml.example
+curl -fsSL -o docker-compose.yml https://raw.githubusercontent.com/CertStone/logto-account-portal/main/docker-compose.yml
+```
 
-生产站点使用 HTTPS，数据库与环境文件由服务器专用部署账号按最小权限访问。
+编辑 `.env` / `deploy/*.yaml` 后再启动。详见[docs/configuration-guide.md](docs/configuration-guide.md)。
+
+### 3) 启动
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+查看日志：
+
+```bash
+docker compose logs -f app
+```
+
+
+
+## 六、项目特色
+
+- **多语言支持**：内置 i18n 框架，轻松切换中英文界面
+- **统一配置模型**：开发与部署都使用 `.env + deploy/*.yaml`
+- **运行时配置加载**：配置修改后重启容器即可生效
+- **配置校验内建**：容器启动前自动校验 env/yaml，减少线上配置错误
+- **认证边界清晰**：区分用户 Token 与 M2M Token，降低权限误用风险
+- **前后端解耦**：Client 通过 `/api/public-config` 获取公开配置
+
+
+
+## 七、配置说明
+
+详见：`docs/configuration-guide.md`
+
+
+
+## 八、开源协议
+
+[MPL-2.0 License](LICENSE)

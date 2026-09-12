@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  packages: write
 
 concurrency:
   group: production-deploy
@@ -34,8 +35,7 @@ jobs:
       DEPLOY_BASE: /data/cqai-club-portal
       SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
       KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
-      LOGTO_CLIENT_ID: ${{ secrets.LOGTO_CLIENT_ID }}
-      LOGTO_CLIENT_SECRET: ${{ secrets.LOGTO_CLIENT_SECRET }}
+      REGISTRY: ghcr.io
 
     steps:
       - name: Validate deployment configuration
@@ -45,13 +45,35 @@ jobs:
           test -n "$DEPLOY_PORT"
           test -n "$SSH_KEY"
           test -n "$KNOWN_HOSTS"
-          test -n "$LOGTO_CLIENT_ID"
-          test -n "$LOGTO_CLIENT_SECRET"
 
       - name: Checkout tested revision
         uses: actions/checkout@v5
         with:
           ref: ${{ env.DEPLOY_SHA }}
+
+      - name: Resolve image reference
+        run: |
+          repository="${GITHUB_REPOSITORY,,}"
+          echo "IMAGE_REF=$REGISTRY/$repository:$DEPLOY_SHA" >> "$GITHUB_ENV"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish tested image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ env.IMAGE_REF }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Configure SSH
         run: |
@@ -60,74 +82,51 @@ jobs:
           printf '%s\n' "$KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/id_ed25519" "$HOME/.ssh/known_hosts"
 
-      - name: Package release
-        run: |
-          tar \
-            --exclude=.git \
-            --exclude=node_modules \
-            --exclude=.env \
-            --exclude='prisma/*.db' \
-            --exclude='prisma/*.db-journal' \
-            -czf "$RUNNER_TEMP/release.tgz" .
-
-      - name: Prepare production auth configuration
-        run: |
-          umask 077
-          python3 - <<'PY'
-          import json
-          import os
-
-          with open(os.path.join(os.environ['RUNNER_TEMP'], 'auth-config.json'), 'w', encoding='utf-8') as destination:
-              json.dump({
-                  'LOGTO_CLIENT_ID': os.environ['LOGTO_CLIENT_ID'],
-                  'LOGTO_CLIENT_SECRET': os.environ['LOGTO_CLIENT_SECRET'],
-              }, destination)
-          PY
-
-      - name: Upload release
+      - name: Upload deployment scripts
         run: |
           scp -i "$HOME/.ssh/id_ed25519" -o BatchMode=yes -o StrictHostKeyChecking=yes \
-            -P "$DEPLOY_PORT" "$RUNNER_TEMP/release.tgz" \
-            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_BASE/incoming/$DEPLOY_SHA.tgz"
-          scp -i "$HOME/.ssh/id_ed25519" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -o ServerAliveInterval=30 -o ServerAliveCountMax=20 \
             -P "$DEPLOY_PORT" deploy/remote-deploy.sh \
             "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_BASE/incoming/remote-deploy-$DEPLOY_SHA.sh"
           scp -i "$HOME/.ssh/id_ed25519" -o BatchMode=yes -o StrictHostKeyChecking=yes \
-            -P "$DEPLOY_PORT" deploy/sync-production-env.sh \
-            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_BASE/incoming/sync-production-env-$DEPLOY_SHA.sh"
-          scp -i "$HOME/.ssh/id_ed25519" -o BatchMode=yes -o StrictHostKeyChecking=yes \
-            -P "$DEPLOY_PORT" "$RUNNER_TEMP/auth-config.json" \
-            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_BASE/incoming/auth-config-$DEPLOY_SHA.json"
-
-      - name: Synchronize production environment
-        run: |
-          ssh -i "$HOME/.ssh/id_ed25519" -o BatchMode=yes -o StrictHostKeyChecking=yes \
-            -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
-            "bash '$DEPLOY_BASE/incoming/sync-production-env-$DEPLOY_SHA.sh' \
-            '/data/informationCollection/.env' \
-            '$DEPLOY_BASE/incoming/auth-config-$DEPLOY_SHA.json'"
+            -o ServerAliveInterval=30 -o ServerAliveCountMax=20 \
+            -P "$DEPLOY_PORT" deploy/check-resource-gates.sh \
+            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_BASE/incoming/check-resource-gates-$DEPLOY_SHA.sh"
 
       - name: Deploy with rollback protection
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ssh -i "$HOME/.ssh/id_ed25519" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+          printf '%s\n' "$REGISTRY_TOKEN" | ssh -i "$HOME/.ssh/id_ed25519" \
+            -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -o ServerAliveInterval=30 -o ServerAliveCountMax=20 \
             -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
-            "bash '$DEPLOY_BASE/incoming/remote-deploy-$DEPLOY_SHA.sh' '$DEPLOY_SHA'"
+            "bash '$DEPLOY_BASE/incoming/remote-deploy-$DEPLOY_SHA.sh' '$DEPLOY_SHA' '$IMAGE_REF' '${{ github.actor }}' '$DEPLOY_BASE/incoming/check-resource-gates-$DEPLOY_SHA.sh'"
 
       - name: Verify production
         run: |
           curl --fail --silent --show-error --retry 12 --retry-delay 5 \
-            https://cqaiclub.asia/health
+            https://cqaiclub.asia/api/health
           curl --fail --silent --show-error --retry 5 --retry-delay 3 \
             --output "$RUNNER_TEMP/portal.html" https://cqaiclub.asia/
           grep -q '重庆AI创享俱乐部' "$RUNNER_TEMP/portal.html"
           curl --fail --silent --show-error --retry 5 --retry-delay 3 \
             --output "$RUNNER_TEMP/apply.html" https://cqaiclub.asia/apply/
           grep -q '入会申请' "$RUNNER_TEMP/apply.html"
-          curl --fail --silent --show-error --retry 5 --retry-delay 3 \
-            --output "$RUNNER_TEMP/admin.html" https://cqaiclub.asia/admin/
-          grep -q '管理后台登录' "$RUNNER_TEMP/admin.html"
+          legacy_admin_location="$(curl --silent --show-error --dump-header - --output /dev/null \
+            https://cqaiclub.asia/admin/ | awk 'tolower($1) == "location:" {print $2}' | tr -d '\r')"
+          case "$legacy_admin_location" in
+            */member/dashboard/admin/members) ;;
+            *) echo "Unexpected legacy admin redirect: $legacy_admin_location"; exit 1 ;;
+          esac
+          legacy_collections_location="$(curl --silent --show-error --dump-header - --output /dev/null \
+            https://cqaiclub.asia/collection-admin.html | awk 'tolower($1) == "location:" {print $2}' | tr -d '\r')"
+          case "$legacy_collections_location" in
+            */member/dashboard/admin/collections) ;;
+            *) echo "Unexpected legacy collections redirect: $legacy_collections_location"; exit 1 ;;
+          esac
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
             https://cqaiclub.asia/api/admin/members)" = '401'
-          curl --fail --silent --show-error --location --max-redirs 5 \
-            --output "$RUNNER_TEMP/logto-sign-in.html" \
-            https://cqaiclub.asia/auth/login
+          member_login_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            https://cqaiclub.asia/member/login)"
+          test "$member_login_status" = '307' || test "$member_login_status" = '302'

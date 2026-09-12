@@ -1,0 +1,117 @@
+features:
+  emailChange:
+    enabled: true
+
+  phoneChange:
+    enabled: false
+
+  usernameChange:
+    enabled: false
+
+  mfa:
+    totp:
+      enabled: true
+    backupCodes:
+      enabled: true
+    webAuthn:
+      enabled: true
+
+  passkey:
+    enabled: true
+
+  socialIdentities:
+    enabled: true
+    config:
+      # 说明：connectors 支持按配置扩展，不限制为示例里的平台。只要在 Logto 中创建了对应 social connector，并把 connectorId 填在这里即可。
+      # 补充：受限于个人精力，实际只对GitHub和QQ连接器进行了测试，如果其他平台有问题欢迎提 issue.
+      # target 建议与 Logto connector 的 target 保持一致（如 google/github/qq/wechat/discord/...）。
+      connectors:
+        - target: google
+          connectorId: logto_google_connector_id
+          enabled: false
+          displayName: Google
+          icon: google
+          description: 绑定 Google 账号
+        - target: github
+          connectorId: logto_github_connector_id
+          enabled: true
+          displayName: GitHub
+          icon: github
+          description: 绑定 GitHub 账号
+        - target: qq
+          connectorId: logto_qq_connector_id
+          enabled: true
+          displayName: QQ
+          icon: qq
+          description: 绑定 QQ 账号
+
+        # 下面是更多平台示例（按需启用）
+        # - target: apple
+        #   connectorId: logto_apple_connector_id
+        #   enabled: false
+        #   displayName: Apple
+        #   icon: apple
+        #   description: 绑定 Apple 账号
+        #
+        # - target: discord
+        #   connectorId: logto_discord_connector_id
+        #   enabled: false
+        #   displayName: Discord
+        #   icon: discord
+        #   description: 绑定 Discord 账号
+        #
+        # - target: wechat
+        #   connectorId: logto_wechat_connector_id
+        #   enabled: false
+        #   displayName: 微信
+        #   icon: wechat
+        #   description: 绑定微信账号
+
+  sessions:
+    enabled: true
+
+  accountDeletion:
+    enabled: true
+
+profileFields:
+  avatar:
+    enabled: true
+    label: 头像
+    description: 您的个人头像
+    placeholder: https://example.com/avatar.jpg
+    inputType: url
+
+  name:
+    enabled: true
+    label: 显示名称
+    description: 您的公开显示名称
+    placeholder: 输入您的姓名
+    inputType: text
+    required: true
+
+  birthdate:
+    enabled: false
+    label: 出生日期
+    description: 您的生日信息
+    inputType: date
+
+  zoneinfo:
+    enabled: false
+    label: 时区
+    description: 您所在的时区
+    placeholder: Asia/Shanghai
+    inputType: text
+
+  locale:
+    enabled: false
+    label: 语言
+    description: 界面语言偏好
+    placeholder: zh-CN
+    inputType: text
+
+  website:
+    enabled: false
+    label: 个人网站
+    description: 您的个人主页链接
+    placeholder: https://example.com
+    inputType: url
