@@ -36,6 +36,11 @@ assert.equal(
   2,
   'preflight and post-deploy probes must cover the full 5 MiB application limit'
 );
+assert.equal(
+  (workflow.match(/--request PUT/g) || []).length,
+  2,
+  'project-cover proxy probes must use the implemented PUT method'
+);
 assert.match(workflow, /cover_proxy_status[^]*'401'/, 'the proxy probe must reach the protected application route');
 assert.ok(
   workflow.indexOf('Preflight public proxy upload capacity') < workflow.indexOf('Deploy with rollback protection'),

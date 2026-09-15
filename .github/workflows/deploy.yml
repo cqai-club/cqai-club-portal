@@ -96,7 +96,7 @@ jobs:
       - name: Preflight public proxy upload capacity
         run: |
           dd if=/dev/zero of="$RUNNER_TEMP/preflight-project-cover-proxy-probe.bin" bs=1048576 count=5 status=none
-          proxy_status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+          proxy_status="$(curl --silent --show-error --request PUT --output /dev/null --write-out '%{http_code}' \
             --form "cover=@$RUNNER_TEMP/preflight-project-cover-proxy-probe.bin;type=image/png" \
             https://cqaiclub.asia/api/admin/projects/proxy-size-probe/cover)"
           case "$proxy_status" in
@@ -148,7 +148,7 @@ jobs:
             grep -q '"data":\[\]' "$RUNNER_TEMP/projects.json"
           fi
           dd if=/dev/zero of="$RUNNER_TEMP/project-cover-proxy-probe.bin" bs=1048576 count=5 status=none
-          cover_proxy_status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+          cover_proxy_status="$(curl --silent --show-error --request PUT --output /dev/null --write-out '%{http_code}' \
             --form "cover=@$RUNNER_TEMP/project-cover-proxy-probe.bin;type=image/png" \
             https://cqaiclub.asia/api/admin/projects/proxy-size-probe/cover)"
           test "$cover_proxy_status" = '401'
