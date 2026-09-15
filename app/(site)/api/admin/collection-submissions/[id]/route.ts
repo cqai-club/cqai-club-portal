@@ -24,7 +24,12 @@ export async function GET(
     const { id } = await context.params;
     const submission = await prisma.collectionSubmission.findUnique({
       where: { id },
-      include: { assets: true },
+      include: {
+        assets: true,
+        importedProject: {
+          select: { id: true, slug: true, status: true, name: true, updatedAt: true },
+        },
+      },
     });
     if (!submission) {
       return NextResponse.json({ error: "未找到这条征集资料。" }, { status: 404 });

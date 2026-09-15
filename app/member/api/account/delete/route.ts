@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { deleteUserAccount, getLogtoContext } from "@/lib/logto";
+import {
+  deleteUserAccount,
+  getLogtoContext,
+  ManagementApiUnavailableError,
+} from "@/lib/logto";
 import { isFeatureEnabled } from "@/config/features";
 import { MfaVerificationHeaderSchema } from "@/lib/schemas";
 import { logger } from "@/lib/logger";
@@ -37,6 +41,14 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof ManagementApiUnavailableError) {
+      logger.warn("Account deletion unavailable", { reason: error.reason });
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.statusCode }
+      );
+    }
+
     logger.error("Account deletion error", error);
 
     const errorMessage = error instanceof Error ? error.message : "Unknown error";

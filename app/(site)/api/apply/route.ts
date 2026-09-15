@@ -10,6 +10,7 @@ import { prisma } from "@/lib/site/prisma";
 import {
   rateLimit,
   sanitizeData,
+  trustedClientIp,
 } from "@/lib/site/api-helpers";
 
 export const runtime = "nodejs";
@@ -31,16 +32,8 @@ const requiredStringFields = [
   "privacy",
 ];
 
-function clientIp(request: Request): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
-    "unknown"
-  );
-}
-
 export async function POST(request: Request): Promise<NextResponse> {
-  const ip = clientIp(request);
+  const ip = trustedClientIp(request);
   if (!rateLimit("apply", ip, APPLY_MAX, APPLY_WINDOW_MS)) {
     return NextResponse.json(
       { error: "请求过于频繁，请稍后再试。" },

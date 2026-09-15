@@ -22,11 +22,15 @@ export default async function DashboardLayout({
   try {
     accountInfo = await getAccountInfo();
   } catch (error) {
-    if (error instanceof LogtoApiError && (error.statusCode === 401 || error.statusCode === 403)) {
+    if (error instanceof LogtoApiError && error.statusCode === 401) {
       redirect("/member/sign-in");
     }
 
-    logger.error("Failed to get account info", error);
+    if (error instanceof LogtoApiError && error.statusCode === 403) {
+      logger.warn("Account API access forbidden; keeping the current member session");
+    } else {
+      logger.error("Failed to get account info", error);
+    }
   }
 
   const user = {

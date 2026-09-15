@@ -21,9 +21,9 @@
 - `LOGTO_COOKIE_SECRET`
   - 会话 cookie 加密密钥，建议 32 位以上随机字符串
 - `BASE_URL_DEV`
-  - 开发环境访问地址，例如：`http://localhost:3000`
+  - 开发环境会员中心地址，例如：`http://localhost:3000/member`
 - `BASE_URL_PROD`
-  - 生产环境对外访问地址，例如：`https://account.example.com`
+  - 生产环境会员中心地址，例如：`https://example.com/member`
 - `LOGTO_M2M_CLIENT_ID`
   - Logto 中 Machine-to-Machine 应用的 Client ID
 - `LOGTO_M2M_CLIENT_SECRET`
@@ -31,6 +31,8 @@
 
 ### 2) 常用可选项
 
+- `HOME_URL`
+  - 退出登录后返回的官网根地址，例如：`http://localhost:3000`；不要包含 `/member`。
 - `SOCIAL_BINDING_CALLBACK_BASE_URL`
   - 社交绑定回调域名强制覆盖项。
   - 适用于反向代理/多域名场景，设置后社交绑定回调会固定到该域名。
@@ -107,9 +109,9 @@
 4. 重启应用使配置生效：`docker compose restart app`。
 
 > 注意：前端图标是按 `icon` 字段做映射。未内置的图标会降级为通用图标（不影响功能）。
-> 若你希望某个平台有品牌图标样式，可在 `app/dashboard/connections/page.tsx` 的 `resolveConnectorVisual` 中补一条映射。
+> 若你希望某个平台有品牌图标样式，可在 `app/member/dashboard/connections/page.tsx` 的 `resolveConnectorVisual` 中补一条映射。
 
-**需要注意(下文也有提到)：在第三方平台回调地址白名单中，除了 Logto 的回调地址外，还应加上本项目回调地址 `/dashboard/connections/social/callback?target=...`。**
+**需要注意(下文也有提到)：在第三方平台回调地址白名单中，除了 Logto 的回调地址外，还应加上本项目回调地址 `/member/dashboard/connections/social/callback?target=...`。**
 
 ### 3. 资料字段配置
 
@@ -131,9 +133,9 @@
    - **开启账户中心 (Account Center)**：确保此开关已打开，否则某些账户 API 可能无法正常工作。
    - **配置身份标识 (Identifiers)**：在“账户体验”或“账户中心”设置中，给予你希望允许用户修改的身份标识（如 Email, Phone, Username）**可编辑 (Editable)** 的权限。
 4. 配置回调地址（Sign-in callback）
-   - 至少包含：`{你的域名}/callback`
+   - 至少包含：`{你的域名}/member/callback`
 5. 配置退出后重定向 URIs（Sign-out callback）
-   - `{你的域名}/`
+   - `{你的域名}`，必须与 `HOME_URL` 完全一致且不包含 `/member`
 6. 如果启用社交连接：在 Logto 配置对应 social connector
    - 获取 connectorId，填到 `features.yaml` 的 `socialIdentities.config.connectors[].connectorId`
 
@@ -141,7 +143,7 @@
 ### B. 第三方身份提供商（Google / GitHub / QQ 等）
 
 1. 在对应平台创建 OAuth 应用
-2. 把 Logto 提供的回调地址（redirect URI）**和本项目的回调地址（`/dashboard/connections/social/callback?target=...`）**加入白名单
+2. 把 Logto 提供的回调地址（redirect URI）**和本项目的回调地址（`/member/dashboard/connections/social/callback?target=...`）**加入白名单
 3. 平台拿到的 clientId/clientSecret 填回 Logto connector 配置页
 4. 在本项目的 `features.yaml` 里启用对应 connector（`enabled: true`）并填对 `connectorId`
 
@@ -149,7 +151,7 @@
 
 社交绑定流程会使用：
 
-`{应用域名}/dashboard/connections/social/callback?target=...`
+`{应用域名}/member/dashboard/connections/social/callback?target=...`
 
 若你的网关/代理导致域名识别不稳定，建议显式设置：
 
@@ -234,7 +236,7 @@ docker compose restart app
   - 配置来源在：`deploy/services.yaml` 的 `services[].icon`
 - `services[].icon` 是服务图标唯一来源；加载失败时自动回退到默认图标。
   
-- **社交连接页面（`/dashboard/connections`）**
+- **社交连接页面（`/member/dashboard/connections`）**
   - 配置来源在：`deploy/features.yaml` 的 `features.socialIdentities.config.connectors[].icon`
   - 对 `google/github/apple/discord/slack/linkedin/wechat/qq` 内置品牌图标优先展示；
     其他值走通用图标解析器。

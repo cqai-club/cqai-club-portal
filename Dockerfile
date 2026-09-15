@@ -58,9 +58,9 @@ COPY --from=builder /app/scripts/dist/runtime-validator/index.mjs ./scripts/vali
 
 RUN chmod +x /app/scripts/docker-entrypoint.sh
 
-# Uploads (submission avatars/company logos) land under ./storage at runtime.
+# Uploads (submission assets and project covers) land under ./storage at runtime.
 # Keep it writable by the app user used by the standalone server.
-RUN mkdir -p /app/storage/uploads/collection
+RUN mkdir -p /app/storage/uploads/collection /app/storage/uploads/projects
 
 EXPOSE 3000
 

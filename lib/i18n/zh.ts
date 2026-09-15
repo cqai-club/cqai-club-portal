@@ -47,6 +47,7 @@ export const zh = {
     settings: "偏好设置",
     adminMembers: "会员申请",
     adminCollections: "资料征集",
+    adminProjects: "项目广场",
     adminPlugins: "插件市场",
     signOut: "退出登录",
   },

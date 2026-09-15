@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { revokeUserSession, getLogtoContext } from "@/lib/logto";
+import {
+  revokeUserSession,
+  getLogtoContext,
+  ManagementApiUnavailableError,
+} from "@/lib/logto";
 import { isFeatureEnabled } from "@/config/features";
 import { logger } from "@/lib/logger";
 
@@ -37,6 +41,14 @@ export async function DELETE(
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
+    if (error instanceof ManagementApiUnavailableError) {
+      logger.warn("Revoke session unavailable", { reason: error.reason });
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.statusCode }
+      );
+    }
+
     logger.error("Revoke session error:", error);
 
     const errorMessage = error instanceof Error ? error.message : "Unknown error";

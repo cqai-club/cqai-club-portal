@@ -21,10 +21,50 @@ import type {
   SessionInfo,
 } from "./types";
 
+export const MANAGEMENT_API_UNAVAILABLE_CODE = "LOGTO_MANAGEMENT_API_UNAVAILABLE";
+
+type ManagementApiUnavailableReason =
+  | "missing_configuration"
+  | "token_exchange_failed"
+  | "management_request_failed";
+
+/**
+ * Raised when the server-side Logto Management API client cannot be used.
+ * Keep this distinct from user-session failures so routes can return a clear
+ * 503 without exposing client credentials or the upstream token response.
+ */
+export class ManagementApiUnavailableError extends Error {
+  readonly code = MANAGEMENT_API_UNAVAILABLE_CODE;
+  readonly statusCode = 503;
+
+  constructor(readonly reason: ManagementApiUnavailableReason) {
+    super(
+      reason === "missing_configuration"
+        ? "Logto Management API 尚未配置，请设置 LOGTO_M2M_CLIENT_ID 和 LOGTO_M2M_CLIENT_SECRET。"
+        : reason === "token_exchange_failed"
+          ? "Logto Management API 认证失败，请检查 M2M 应用凭据及其 Management API 权限。"
+          : "Logto Management API 暂时不可用，请检查 M2M 应用的 Management API 权限。"
+    );
+    this.name = "ManagementApiUnavailableError";
+  }
+}
+
+export function isManagementApiConfigured(): boolean {
+  return Boolean(
+    managementAPIConfig.clientId?.trim() &&
+    managementAPIConfig.clientSecret?.trim() &&
+    managementAPIConfig.logtoEndpoint?.trim()
+  );
+}
+
 /**
  * 获取 Management API 上下文
  */
 async function getManagementContext() {
+  if (!isManagementApiConfigured()) {
+    throw new ManagementApiUnavailableError("missing_configuration");
+  }
+
   const { apiClient, clientCredentials } = createManagementApi("default", {
     clientId: managementAPIConfig.clientId,
     clientSecret: managementAPIConfig.clientSecret,
@@ -32,7 +72,13 @@ async function getManagementContext() {
     apiIndicator: "https://default.logto.app/api",
   });
 
-  const accessToken = (await clientCredentials.getAccessToken()).value;
+  let accessToken: string;
+  try {
+    accessToken = (await clientCredentials.getAccessToken()).value;
+  } catch {
+    throw new ManagementApiUnavailableError("token_exchange_failed");
+  }
+
   const { claims } = await getLogtoContext();
   const userId = claims?.sub;
 
@@ -93,11 +139,23 @@ export async function verifyPasswordManagement(password: string): Promise<{ succ
 export async function getAllIdentities(): Promise<AllIdentitiesResponse> {
   const { apiClient, userId } = await getManagementContext();
 
-  const res = await apiClient.GET("/api/users/{userId}/all-identities", {
-    params: { path: { userId } },
-  });
+  try {
+    const res = await apiClient.GET("/api/users/{userId}/all-identities", {
+      params: { path: { userId } },
+    });
 
-  return (res.data as AllIdentitiesResponse) ?? { socialIdentities: [], ssoIdentities: [] };
+    if (!res.response.ok || res.error) {
+      throw new ManagementApiUnavailableError("management_request_failed");
+    }
+
+    return (res.data as AllIdentitiesResponse) ?? { socialIdentities: [], ssoIdentities: [] };
+  } catch (error) {
+    if (error instanceof ManagementApiUnavailableError) {
+      throw error;
+    }
+
+    throw new ManagementApiUnavailableError("management_request_failed");
+  }
 }
 
 // ============ Social Connectors ============
@@ -144,6 +202,13 @@ export async function getSocialIdentities(): Promise<AllIdentitiesResponse> {
     logger.devLog("Fetched social identities", { count: identities.socialIdentities?.length });
     return identities;
   } catch (error) {
+    if (error instanceof ManagementApiUnavailableError) {
+      logger.warn("Logto Management API unavailable for social identities", {
+        reason: error.reason,
+      });
+      return { socialIdentities: [], ssoIdentities: [] };
+    }
+
     logger.error("Failed to get social identities", error);
     return { socialIdentities: [], ssoIdentities: [] };
   }

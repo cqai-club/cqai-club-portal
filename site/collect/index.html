@@ -135,6 +135,7 @@
     select option { color: var(--ink); }
     .upload { display: flex; align-items: center; gap: 12px; min-height: 72px; padding: 12px 14px; color: var(--muted); border: 1px dashed #b8c7ea; border-radius: 12px; background: #fbfcff; }
     .upload input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    .upload:focus-within { border-color: #4778ee; outline: 3px solid rgba(71,120,238,.24); outline-offset: 2px; box-shadow: 0 0 0 5px rgba(71,120,238,.08); }
     .upload-icon { display: grid; place-items: center; width: 35px; height: 35px; color: var(--blue); border-radius: 10px; background: #eaf0ff; font-size: 23px; }
     .upload-copy strong { display: block; color: #536184; font-size: 12px; }
     .upload-copy span { display: block; margin-top: 3px; font-size: 11px; }
@@ -169,6 +170,31 @@
     .dialog-actions button { min-height: 43px; padding: 0 18px; border-radius: 10px; font-weight: 700; }
     .dialog-close { color: var(--navy); background: #f2f5fc; border: 1px solid var(--line); }
     .dialog-done { color: #fff; background: var(--navy); border: 0; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    .crop-dialog { width: min(94vw, 760px); max-height: 92vh; overflow: auto; }
+    .crop-dialog-body { padding: 26px; text-align: left; }
+    .crop-dialog-head { padding-right: 34px; }
+    .crop-dialog-head h2 { margin: 0; font-size: 24px; }
+    .crop-dialog-head p { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.65; }
+    .crop-stage { position: relative; margin-top: 20px; overflow: hidden; border: 1px solid #cbd5ec; border-radius: 14px; background: #edf1f9; box-shadow: inset 0 0 0 1px rgba(255,255,255,.72); }
+    .crop-stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, transparent 33.2%, rgba(255,255,255,.42) 33.3%, rgba(255,255,255,.42) 33.6%, transparent 33.7%, transparent 66.2%, rgba(255,255,255,.42) 66.3%, rgba(255,255,255,.42) 66.6%, transparent 66.7%), linear-gradient(transparent 33.2%, rgba(255,255,255,.42) 33.3%, rgba(255,255,255,.42) 33.6%, transparent 33.7%, transparent 66.2%, rgba(255,255,255,.42) 66.3%, rgba(255,255,255,.42) 66.6%, transparent 66.7%); }
+    .crop-canvas { display: block; width: 100%; aspect-ratio: 16 / 10; touch-action: none; cursor: grab; }
+    .crop-canvas.dragging { cursor: grabbing; }
+    .crop-canvas:focus-visible { outline: 3px solid rgba(71,120,238,.48); outline-offset: -4px; }
+    .crop-help { margin: 9px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+    .crop-controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 18px 0 0; padding: 0; border: 0; }
+    .crop-control { min-width: 0; }
+    .crop-control-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 7px; color: #3d4b6e; font-size: 12px; font-weight: 700; }
+    .crop-control output { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+    .crop-control input[type="range"] { display: block; width: 100%; height: 24px; margin: 0; padding: 0; accent-color: var(--navy); box-shadow: none; }
+    .crop-control input[type="range"]:focus-visible { outline: 3px solid rgba(71,120,238,.28); outline-offset: 2px; }
+    .crop-control input[type="range"]:disabled { cursor: not-allowed; opacity: .45; }
+    .crop-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 18px; }
+    .crop-reset { min-height: 40px; padding: 0 14px; color: var(--navy); border: 1px solid var(--line); border-radius: 10px; background: #f7f9fd; font-size: 12px; font-weight: 700; }
+    .crop-reset:hover { background: #eef2fb; }
+    .crop-status { min-height: 18px; margin: 0; color: var(--muted); text-align: right; font-size: 11px; line-height: 1.55; }
+    .crop-actions { justify-content: flex-end; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
+    .crop-actions button:disabled, .crop-reset:disabled { cursor: not-allowed; opacity: .55; }
     .toast { position: fixed; left: 50%; bottom: 24px; z-index: 10; max-width: calc(100vw - 36px); padding: 11px 16px; color: #fff; background: var(--ink); border-radius: 10px; box-shadow: 0 12px 26px rgba(17,26,67,.22); font-size: 12px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; transition: .25s; }
     .toast.show { transform: translate(-50%, 0); opacity: 1; }
 
@@ -202,6 +228,14 @@
       .info-band { grid-template-columns: 1fr; gap: 16px; padding: 21px; }
       .footer { display: block; }
       .qr-wrap { margin-top: 18px; }
+      .crop-dialog { width: min(94vw, 760px); max-height: 94vh; }
+      .crop-dialog-body { padding: 19px; }
+      .crop-dialog-head h2 { font-size: 21px; }
+      .crop-controls { grid-template-columns: 1fr; gap: 11px; }
+      .crop-toolbar { display: block; }
+      .crop-status { margin-top: 10px; text-align: left; }
+      .crop-actions { display: grid; grid-template-columns: 1fr 1fr; }
+      .crop-actions button { width: 100%; padding: 0 10px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -245,13 +279,13 @@
         <h2 id="form-title">提交您的资料</h2>
         <p>选择一个方向开始填写。带 <span style="color:var(--coral)">*</span> 的信息为必填项。</p>
         <div class="tabs" role="tablist" aria-label="资料类型">
-          <button class="tab" type="button" role="tab" aria-selected="true" data-type="member">
+          <button class="tab" id="collection-tab-member" type="button" role="tab" aria-selected="true" aria-controls="collection-type-panel" tabindex="0" data-type="member">
             <span class="tab-number">01</span><span class="tab-copy"><strong>会员资料</strong><span>认识每一位共建者</span></span>
           </button>
-          <button class="tab" type="button" role="tab" aria-selected="false" data-type="enterprise">
+          <button class="tab" id="collection-tab-enterprise" type="button" role="tab" aria-selected="false" aria-controls="collection-type-panel" tabindex="-1" data-type="enterprise">
             <span class="tab-number">02</span><span class="tab-copy"><strong>企业资料</strong><span>展示你的业务与产品</span></span>
           </button>
-          <button class="tab" type="button" role="tab" aria-selected="false" data-type="project">
+          <button class="tab" id="collection-tab-project" type="button" role="tab" aria-selected="false" aria-controls="collection-type-panel" tabindex="-1" data-type="project">
             <span class="tab-number">03</span><span class="tab-copy"><strong>AI 项目</strong><span>让项目找到伙伴</span></span>
           </button>
         </div>
@@ -260,7 +294,7 @@
         <div class="progress-meta"><span>填写进度</span><strong id="progress-label">0%</strong></div>
         <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
       </div>
-      <form class="form-body" id="intake-form" novalidate>
+      <form class="form-body" id="intake-form" role="tabpanel" aria-labelledby="collection-tab-member" novalidate>
         <div class="form-intro">
           <div><h3 id="form-subtitle">会员资料</h3><p id="form-description">让俱乐部认识你的专业与代表作。</p></div>
           <span class="required-note"><b>*</b> 必填信息</span>
@@ -290,6 +324,41 @@
       <h2 id="success-title">资料已提交</h2>
       <p id="success-copy">这是页面演示，信息尚未发送到后台。正式上线时可接入飞书表格或官网后台，继续完成官网展示确认。</p>
       <div class="dialog-actions"><button class="dialog-close" type="button" data-dialog-close>返回修改</button><button class="dialog-done" type="button" data-dialog-done>完成</button></div>
+    </div>
+  </dialog>
+  <dialog class="crop-dialog" id="cover-crop-dialog" aria-labelledby="cover-crop-title" aria-describedby="cover-crop-description crop-help">
+    <div class="crop-dialog-body">
+      <div class="crop-dialog-head">
+        <h2 id="cover-crop-title" tabindex="-1">裁剪项目封面</h2>
+        <p id="cover-crop-description">封面会固定为 16:10，并在本地压缩后上传。原始图片不会直接发送。</p>
+      </div>
+      <div class="crop-stage">
+        <canvas class="crop-canvas" id="cover-crop-canvas" width="960" height="600" tabindex="0" role="img" aria-label="项目封面裁剪预览，可拖动图片或使用方向键调整位置" aria-describedby="crop-help">您的浏览器不支持图片裁剪预览。</canvas>
+      </div>
+      <p class="crop-help" id="crop-help">拖动图片调整位置；也可聚焦预览后使用方向键微调，按住 Shift 可加速。下方滑块均支持键盘操作。</p>
+      <fieldset class="crop-controls" id="cover-crop-controls" disabled>
+        <legend class="sr-only">项目封面裁剪参数</legend>
+        <div class="crop-control">
+          <div class="crop-control-head"><label for="cover-crop-zoom">缩放</label><output id="cover-crop-zoom-value" for="cover-crop-zoom">1.00×</output></div>
+          <input id="cover-crop-zoom" type="range" min="1" max="3" step="0.01" value="1" aria-valuetext="1.00 倍">
+        </div>
+        <div class="crop-control">
+          <div class="crop-control-head"><label for="cover-crop-x">水平位置</label><output id="cover-crop-x-value" for="cover-crop-x">居中</output></div>
+          <input id="cover-crop-x" type="range" min="-100" max="100" step="1" value="0" aria-valuetext="居中">
+        </div>
+        <div class="crop-control">
+          <div class="crop-control-head"><label for="cover-crop-y">垂直位置</label><output id="cover-crop-y-value" for="cover-crop-y">居中</output></div>
+          <input id="cover-crop-y" type="range" min="-100" max="100" step="1" value="0" aria-valuetext="居中">
+        </div>
+      </fieldset>
+      <div class="crop-toolbar">
+        <button class="crop-reset" id="cover-crop-reset" type="button" disabled>居中复位</button>
+        <p class="crop-status" id="cover-crop-status" role="status" aria-live="polite">请选择项目封面。</p>
+      </div>
+      <div class="dialog-actions crop-actions">
+        <button class="dialog-close" id="cover-crop-cancel" type="button">取消</button>
+        <button class="dialog-done" id="cover-crop-apply" type="button" disabled>应用裁剪</button>
+      </div>
     </div>
   </dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -326,15 +395,16 @@
       project: {
         label: "AI 项目", description: "让项目找到资源、伙伴与第一批用户。", submitNote: "AI 项目",
         fields: [
-          { name: "projectName", label: "项目名称", type: "text", placeholder: "请输入项目名称", required: true },
-          { name: "owner", label: "项目负责人", type: "text", placeholder: "姓名 / 团队名称", required: true },
-          { name: "oneLine", label: "一句话项目简介", type: "text", placeholder: "用一句话说清项目为谁创造什么价值", required: true, full: true },
+          { name: "projectName", label: "项目名称", type: "text", placeholder: "请输入项目名称", required: true, maxLength: 160 },
+          { name: "owner", label: "项目负责人", type: "text", placeholder: "姓名 / 团队名称", required: true, maxLength: 160 },
+          { name: "oneLine", label: "一句话项目简介", type: "text", placeholder: "用一句话说清项目为谁创造什么价值", required: true, full: true, maxLength: 1000 },
           { name: "stage", label: "项目阶段", type: "select", required: true, options: [["", "请选择当前阶段"], ["idea", "构想验证"], ["build", "开发中"], ["pilot", "试点运行"], ["live", "已上线"]] },
-          { name: "projectFocus", label: "AI 技术 / 应用方向", type: "text", placeholder: "例如：智能体、视觉识别、AI+文旅", required: true },
-          { name: "projectBio", label: "项目介绍", type: "textarea", placeholder: "项目背景、目标用户、当前进展与已取得的成果", required: true, full: true },
-          { name: "needs", label: "期望对接 / 合作方向", type: "textarea", placeholder: "例如：场景试点、技术伙伴、融资、渠道资源", full: true },
-          { name: "demoUrl", label: "官网 / 演示链接", type: "url", placeholder: "https://" },
-          { name: "projectContact", label: "联系方式", type: "tel", placeholder: "手机或微信号", required: true }
+          { name: "projectFocus", label: "AI 技术 / 应用方向", type: "text", placeholder: "例如：智能体、视觉识别、AI+文旅", required: true, maxLength: 300 },
+          { name: "projectBio", label: "项目介绍", type: "textarea", placeholder: "项目背景、目标用户、当前进展与已取得的成果", required: true, full: true, maxLength: 20000 },
+          { name: "needs", label: "期望对接 / 合作方向", type: "textarea", placeholder: "例如：场景试点、技术伙伴、融资、渠道资源", full: true, maxLength: 5000 },
+          { name: "demoUrl", label: "官网 / 演示链接", type: "url", placeholder: "https://", maxLength: 2048 },
+          { name: "projectContact", label: "联系方式", type: "tel", placeholder: "手机或微信号", required: true, maxLength: 500 },
+          { name: "projectCover", label: "项目封面", type: "file", hint: "JPG / PNG，选择后按 16:10 裁剪并压缩，不超过 5MB" }
         ]
       }
     };
@@ -347,24 +417,364 @@
     const progressLabel = document.getElementById("progress-label");
     const successDialog = document.getElementById("success-dialog");
     const toast = document.getElementById("toast");
-    let currentType = "member";
+    const coverCropDialog = document.getElementById("cover-crop-dialog");
+    const coverCropTitle = document.getElementById("cover-crop-title");
+    const coverCropCanvas = document.getElementById("cover-crop-canvas");
+    const coverCropContext = coverCropCanvas.getContext("2d");
+    const coverCropControls = document.getElementById("cover-crop-controls");
+    const coverCropZoom = document.getElementById("cover-crop-zoom");
+    const coverCropX = document.getElementById("cover-crop-x");
+    const coverCropY = document.getElementById("cover-crop-y");
+    const coverCropZoomValue = document.getElementById("cover-crop-zoom-value");
+    const coverCropXValue = document.getElementById("cover-crop-x-value");
+    const coverCropYValue = document.getElementById("cover-crop-y-value");
+    const coverCropReset = document.getElementById("cover-crop-reset");
+    const coverCropStatus = document.getElementById("cover-crop-status");
+    const coverCropCancel = document.getElementById("cover-crop-cancel");
+    const coverCropApply = document.getElementById("cover-crop-apply");
+    const requestedType = new URLSearchParams(window.location.search).get("type");
+    let currentType = Object.prototype.hasOwnProperty.call(typeConfig, requestedType) ? requestedType : "member";
+    let submitting = false;
     const drafts = { member: {}, enterprise: {}, project: {} };
+    const draftFiles = { member: null, enterprise: null, project: null };
+    const draftFileNotes = { member: "", enterprise: "", project: "" };
+    const tabButtons = Array.from(document.querySelectorAll(".tab"));
+    const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+    const TARGET_COVER_BYTES = 1024 * 1024;
+    const COVER_ASPECT_RATIO = 16 / 10;
+    const COVER_OUTPUT_MAX_WIDTH = 1600;
+    const COVER_OUTPUT_MAX_HEIGHT = 1000;
+    let cropCandidateFile = null;
+    let cropImage = null;
+    let cropObjectUrl = "";
+    let cropTriggerInput = null;
+    let cropTriggerLabel = null;
+    let cropProcessing = false;
+    let cropPointer = null;
+    const cropState = { zoom: 1, x: 0, y: 0 };
 
     function fieldMarkup(field) {
       const required = field.required ? " required" : "";
+      const maxLength = field.maxLength ? ` maxlength="${field.maxLength}"` : "";
       const star = field.required ? " <em>*</em>" : "";
       const classes = ["field", field.full ? "full" : ""].filter(Boolean).join(" ");
       let control = "";
       if (field.type === "textarea") {
-        control = `<textarea id="${field.name}" name="${field.name}" placeholder="${field.placeholder || ""}"${required}></textarea>`;
+        control = `<textarea id="${field.name}" name="${field.name}" placeholder="${field.placeholder || ""}"${required}${maxLength}></textarea>`;
       } else if (field.type === "select") {
         control = `<select id="${field.name}" name="${field.name}"${required}>${field.options.map(([value, text]) => `<option value="${value}">${text}</option>`).join("")}</select>`;
       } else if (field.type === "file") {
         control = `<label class="upload" for="${field.name}"><span class="upload-icon">＋</span><span class="upload-copy"><strong>点击上传文件</strong><span id="${field.name}-name">${field.hint || "支持 JPG / PNG"}</span></span><input id="${field.name}" name="${field.name}" type="file" accept="image/png,image/jpeg"></label>`;
       } else {
-        control = `<input id="${field.name}" name="${field.name}" type="${field.type}" placeholder="${field.placeholder || ""}"${required}>`;
+        control = `<input id="${field.name}" name="${field.name}" type="${field.type}" placeholder="${field.placeholder || ""}"${required}${maxLength}>`;
       }
       return `<div class="${classes}"><label for="${field.name}">${field.label}${star}</label>${control}</div>`;
+    }
+
+    function formatFileSize(size) {
+      if (!Number.isFinite(size) || size <= 0) return "0 KB";
+      if (size >= 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`;
+      return `${Math.max(1, Math.ceil(size / 1024))} KB`;
+    }
+
+    function fileFieldHint(type) {
+      const field = typeConfig[type].fields.find(item => item.type === "file");
+      return field?.hint || "支持 JPG / PNG";
+    }
+
+    function restoreFileInput(input, label, type = currentType) {
+      const savedFile = draftFiles[type];
+      input.value = "";
+      if (savedFile) {
+        try {
+          const transfer = new DataTransfer();
+          transfer.items.add(savedFile);
+          input.files = transfer.files;
+        } catch {
+          // Some browsers do not allow programmatic FileList assignment. The
+          // submit path explicitly attaches draftFiles instead.
+        }
+      }
+      if (label) {
+        label.textContent = draftFileNotes[type] || savedFile?.name || fileFieldHint(type);
+      }
+    }
+
+    function cropGeometry() {
+      if (!cropImage?.naturalWidth || !cropImage?.naturalHeight) return null;
+      const canvasWidth = coverCropCanvas.width;
+      const canvasHeight = coverCropCanvas.height;
+      const scale = Math.max(
+        canvasWidth / cropImage.naturalWidth,
+        canvasHeight / cropImage.naturalHeight
+      ) * cropState.zoom;
+      const imageWidth = cropImage.naturalWidth * scale;
+      const imageHeight = cropImage.naturalHeight * scale;
+      const maxOffsetX = Math.max(0, (imageWidth - canvasWidth) / 2);
+      const maxOffsetY = Math.max(0, (imageHeight - canvasHeight) / 2);
+      const offsetX = maxOffsetX * cropState.x / 100;
+      const offsetY = maxOffsetY * cropState.y / 100;
+      return {
+        canvasWidth,
+        canvasHeight,
+        scale,
+        imageWidth,
+        imageHeight,
+        maxOffsetX,
+        maxOffsetY,
+        offsetX,
+        offsetY,
+        drawX: (canvasWidth - imageWidth) / 2 + offsetX,
+        drawY: (canvasHeight - imageHeight) / 2 + offsetY
+      };
+    }
+
+    function renderCropPreview() {
+      coverCropContext.save();
+      coverCropContext.fillStyle = "#ffffff";
+      coverCropContext.fillRect(0, 0, coverCropCanvas.width, coverCropCanvas.height);
+      const geometry = cropGeometry();
+      if (geometry) {
+        coverCropContext.imageSmoothingEnabled = true;
+        coverCropContext.imageSmoothingQuality = "high";
+        coverCropContext.drawImage(
+          cropImage,
+          geometry.drawX,
+          geometry.drawY,
+          geometry.imageWidth,
+          geometry.imageHeight
+        );
+      }
+      coverCropContext.restore();
+    }
+
+    function cropPositionText(value, negativeLabel, positiveLabel) {
+      const rounded = Math.round(value);
+      if (!rounded) return "居中";
+      return `${Math.abs(rounded)}% ${rounded < 0 ? negativeLabel : positiveLabel}`;
+    }
+
+    function updateCropControls(announce = true) {
+      let geometry = cropGeometry();
+      if (!geometry) return;
+      if (geometry.maxOffsetX < 0.5) cropState.x = 0;
+      if (geometry.maxOffsetY < 0.5) cropState.y = 0;
+      geometry = cropGeometry();
+
+      coverCropZoom.value = String(cropState.zoom);
+      coverCropX.value = String(Math.round(cropState.x));
+      coverCropY.value = String(Math.round(cropState.y));
+      coverCropX.disabled = geometry.maxOffsetX < 0.5;
+      coverCropY.disabled = geometry.maxOffsetY < 0.5;
+
+      const zoomText = `${cropState.zoom.toFixed(2)}×`;
+      const xText = cropPositionText(cropState.x, "向左", "向右");
+      const yText = cropPositionText(cropState.y, "向上", "向下");
+      coverCropZoomValue.textContent = zoomText;
+      coverCropXValue.textContent = xText;
+      coverCropYValue.textContent = yText;
+      coverCropZoom.setAttribute("aria-valuetext", `${cropState.zoom.toFixed(2)} 倍`);
+      coverCropX.setAttribute("aria-valuetext", xText);
+      coverCropY.setAttribute("aria-valuetext", yText);
+      renderCropPreview();
+
+      if (announce && cropCandidateFile) {
+        coverCropStatus.textContent = `原图 ${cropImage.naturalWidth} × ${cropImage.naturalHeight} · 缩放 ${zoomText}`;
+      }
+    }
+
+    function setCropReady(ready) {
+      coverCropControls.disabled = !ready;
+      coverCropReset.disabled = !ready;
+      coverCropApply.disabled = !ready;
+    }
+
+    function cleanupCropCandidate() {
+      if (cropObjectUrl) {
+        URL.revokeObjectURL(cropObjectUrl);
+        cropObjectUrl = "";
+      }
+      if (cropImage) {
+        cropImage.onload = null;
+        cropImage.onerror = null;
+        cropImage.src = "";
+      }
+      cropImage = null;
+      cropCandidateFile = null;
+      cropPointer = null;
+      coverCropCanvas.classList.remove("dragging");
+    }
+
+    function closeCropDialog({ restore = true } = {}) {
+      if (cropProcessing) return;
+      const trigger = cropTriggerInput;
+      const triggerLabel = cropTriggerLabel;
+      if (restore && trigger) restoreFileInput(trigger, triggerLabel, "project");
+      cleanupCropCandidate();
+      cropTriggerInput = null;
+      cropTriggerLabel = null;
+      setCropReady(false);
+      if (coverCropDialog.open) coverCropDialog.close();
+      window.requestAnimationFrame(() => trigger?.focus());
+    }
+
+    function openProjectCoverCrop(file, input, label) {
+      if (!coverCropContext) {
+        restoreFileInput(input, label, "project");
+        showToast("当前浏览器不支持图片裁剪，请更换浏览器后重试。");
+        return;
+      }
+
+      cleanupCropCandidate();
+      cropCandidateFile = file;
+      cropTriggerInput = input;
+      cropTriggerLabel = label;
+      cropState.zoom = 1;
+      cropState.x = 0;
+      cropState.y = 0;
+      cropProcessing = false;
+      setCropReady(false);
+      coverCropStatus.textContent = `正在读取 ${file.name}...`;
+      renderCropPreview();
+      if (!coverCropDialog.open) coverCropDialog.showModal();
+      window.requestAnimationFrame(() => coverCropTitle.focus());
+
+      const image = new Image();
+      cropImage = image;
+      cropObjectUrl = URL.createObjectURL(file);
+      image.onload = () => {
+        if (cropImage !== image || cropCandidateFile !== file) return;
+        setCropReady(true);
+        updateCropControls();
+      };
+      image.onerror = () => {
+        if (cropImage !== image) return;
+        showToast("图片读取失败，请重新选择 JPG 或 PNG 图片。");
+        closeCropDialog();
+      };
+      image.src = cropObjectUrl;
+    }
+
+    function canvasToJpegBlob(canvas, quality) {
+      return new Promise((resolve, reject) => {
+        canvas.toBlob(blob => {
+          if (blob) resolve(blob);
+          else reject(new Error("浏览器无法生成压缩图片。"));
+        }, "image/jpeg", quality);
+      });
+    }
+
+    async function applyProjectCoverCrop() {
+      if (cropProcessing || !cropCandidateFile || !cropImage) return;
+      const geometry = cropGeometry();
+      if (!geometry) return;
+
+      cropProcessing = true;
+      setCropReady(false);
+      coverCropCancel.disabled = true;
+      coverCropApply.disabled = true;
+      coverCropApply.textContent = "正在压缩...";
+      coverCropStatus.textContent = "正在裁剪并压缩，仅在当前浏览器中处理...";
+
+      try {
+        const sourceWidth = geometry.canvasWidth / geometry.scale;
+        const sourceHeight = geometry.canvasHeight / geometry.scale;
+        const sourceX = Math.max(0, Math.min(
+          cropImage.naturalWidth - sourceWidth,
+          -geometry.drawX / geometry.scale
+        ));
+        const sourceY = Math.max(0, Math.min(
+          cropImage.naturalHeight - sourceHeight,
+          -geometry.drawY / geometry.scale
+        ));
+        const maximumOutputWidth = Math.min(
+          COVER_OUTPUT_MAX_WIDTH,
+          sourceWidth,
+          sourceHeight * COVER_ASPECT_RATIO
+        );
+        const outputWidth = maximumOutputWidth >= 16
+          ? Math.max(16, Math.floor(maximumOutputWidth / 16) * 16)
+          : 16;
+        const outputHeight = Math.min(
+          COVER_OUTPUT_MAX_HEIGHT,
+          Math.max(10, Math.round(outputWidth / COVER_ASPECT_RATIO))
+        );
+        const outputCanvas = document.createElement("canvas");
+        outputCanvas.width = outputWidth;
+        outputCanvas.height = outputHeight;
+        const outputContext = outputCanvas.getContext("2d");
+        if (!outputContext) throw new Error("当前浏览器无法处理图片。");
+
+        outputContext.fillStyle = "#ffffff";
+        outputContext.fillRect(0, 0, outputWidth, outputHeight);
+        outputContext.imageSmoothingEnabled = true;
+        outputContext.imageSmoothingQuality = "high";
+        outputContext.drawImage(
+          cropImage,
+          sourceX,
+          sourceY,
+          sourceWidth,
+          sourceHeight,
+          0,
+          0,
+          outputWidth,
+          outputHeight
+        );
+
+        let quality = 0.82;
+        let blob = await canvasToJpegBlob(outputCanvas, quality);
+        while (blob.size > TARGET_COVER_BYTES && quality > 0.52) {
+          quality = Math.max(0.52, Number((quality - 0.07).toFixed(2)));
+          blob = await canvasToJpegBlob(outputCanvas, quality);
+        }
+        if (blob.size > MAX_IMAGE_BYTES) {
+          throw new Error("压缩后的图片仍超过 5MB，请选择分辨率更低的图片。");
+        }
+
+        const originalFile = cropCandidateFile;
+        const baseName = originalFile.name
+          .replace(/\.[^.]+$/, "")
+          .replace(/[\\/:*?"<>|]+/g, "-")
+          .slice(0, 80) || "project-cover";
+        const compressedFile = new File(
+          [blob],
+          `${baseName}-cover.jpg`,
+          { type: "image/jpeg", lastModified: Date.now() }
+        );
+        const note = `${originalFile.name} · ${formatFileSize(originalFile.size)} → ${formatFileSize(compressedFile.size)}（16:10）`;
+        draftFiles.project = compressedFile;
+        draftFileNotes.project = note;
+
+        if (cropTriggerInput) {
+          try {
+            const transfer = new DataTransfer();
+            transfer.items.add(compressedFile);
+            cropTriggerInput.files = transfer.files;
+          } catch {
+            cropTriggerInput.value = "";
+          }
+        }
+        if (cropTriggerLabel) cropTriggerLabel.textContent = note;
+
+        const trigger = cropTriggerInput;
+        cropProcessing = false;
+        coverCropCancel.disabled = false;
+        coverCropApply.textContent = "应用裁剪";
+        cleanupCropCandidate();
+        cropTriggerInput = null;
+        cropTriggerLabel = null;
+        setCropReady(false);
+        coverCropDialog.close();
+        updateProgress();
+        showToast(`封面已裁剪压缩：${formatFileSize(originalFile.size)} → ${formatFileSize(compressedFile.size)}`);
+        window.requestAnimationFrame(() => trigger?.focus());
+      } catch (error) {
+        cropProcessing = false;
+        coverCropCancel.disabled = false;
+        coverCropApply.textContent = "应用裁剪";
+        setCropReady(true);
+        coverCropStatus.textContent = error instanceof Error ? error.message : "图片裁剪失败，请重试。";
+      }
     }
 
     function renderForm() {
@@ -379,17 +789,64 @@
         if (element.type === "checkbox") element.checked = value === true || value === "on";
         else element.value = value;
       });
-      fields.querySelectorAll('input[type="file"]').forEach(input => input.addEventListener("change", () => {
+      fields.querySelectorAll('input[type="file"]').forEach(input => {
         const label = document.getElementById(`${input.id}-name`);
-        if (input.files[0] && label) label.textContent = input.files[0].name;
-      }));
+        const savedFile = draftFiles[currentType];
+        if (savedFile) restoreFileInput(input, label);
+        input.addEventListener("change", () => {
+          const file = input.files[0];
+          if (!file) {
+            draftFiles[currentType] = null;
+            draftFileNotes[currentType] = "";
+            if (label) label.textContent = fileFieldHint(currentType);
+            return;
+          }
+          if (!["image/jpeg", "image/png"].includes(file.type)) {
+            if (input.id === "projectCover") restoreFileInput(input, label, "project");
+            else {
+              input.value = "";
+              draftFiles[currentType] = null;
+              draftFileNotes[currentType] = "";
+              if (label) label.textContent = "仅支持 JPG 或 PNG 图片";
+            }
+            showToast("仅支持 JPG 或 PNG 图片");
+            return;
+          }
+          if (file.size > MAX_IMAGE_BYTES) {
+            if (input.id === "projectCover") restoreFileInput(input, label, "project");
+            else {
+              input.value = "";
+              draftFiles[currentType] = null;
+              draftFileNotes[currentType] = "";
+              if (label) label.textContent = "图片大小不能超过 5MB";
+            }
+            showToast("图片大小不能超过 5MB");
+            return;
+          }
+          if (input.id === "projectCover") {
+            openProjectCoverCrop(file, input, label);
+            return;
+          }
+          draftFiles[currentType] = file;
+          draftFileNotes[currentType] = file.name;
+          if (label) label.textContent = file.name;
+        });
+      });
       updateProgress();
     }
 
     function saveDraft() {
       const draft = {};
       Array.from(form.elements).forEach(element => {
-        if (!element.name || element.type === "file") return;
+        if (!element.name) return;
+        if (element.type === "file") {
+          const selectedFile = element.files?.[0];
+          if (selectedFile) {
+            draftFiles[currentType] = selectedFile;
+            if (!draftFileNotes[currentType]) draftFileNotes[currentType] = selectedFile.name;
+          }
+          return;
+        }
         draft[element.name] = element.type === "checkbox" ? element.checked : element.value;
       });
       drafts[currentType] = draft;
@@ -410,24 +867,148 @@
       showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 2600);
     }
 
-    document.querySelectorAll(".tab").forEach(tab => tab.addEventListener("click", () => {
-      if (tab.dataset.type === currentType) return;
-      saveDraft();
-      currentType = tab.dataset.type;
-      document.querySelectorAll(".tab").forEach(item => item.setAttribute("aria-selected", String(item === tab)));
-      renderForm();
-    }));
+    function activateTab(tab, moveFocus = false) {
+      if (submitting) return;
+      if (tab.dataset.type !== currentType) {
+        saveDraft();
+        currentType = tab.dataset.type;
+        renderForm();
+      }
+      tabButtons.forEach(item => {
+        const selected = item === tab;
+        item.setAttribute("aria-selected", String(selected));
+        item.tabIndex = selected ? 0 : -1;
+      });
+      form.setAttribute("aria-labelledby", tab.id);
+      if (moveFocus) tab.focus();
+    }
+
+    tabButtons.forEach(tab => {
+      tab.addEventListener("click", () => activateTab(tab));
+      tab.addEventListener("keydown", event => {
+        const currentIndex = tabButtons.indexOf(tab);
+        let nextIndex = currentIndex;
+        if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % tabButtons.length;
+        else if (event.key === "ArrowLeft") nextIndex = (currentIndex - 1 + tabButtons.length) % tabButtons.length;
+        else if (event.key === "Home") nextIndex = 0;
+        else if (event.key === "End") nextIndex = tabButtons.length - 1;
+        else return;
+        event.preventDefault();
+        activateTab(tabButtons[nextIndex], true);
+      });
+    });
+
+    coverCropZoom.addEventListener("input", () => {
+      cropState.zoom = Number(coverCropZoom.value);
+      updateCropControls(false);
+    });
+    coverCropZoom.addEventListener("change", () => updateCropControls());
+    coverCropX.addEventListener("input", () => {
+      cropState.x = Number(coverCropX.value);
+      updateCropControls(false);
+    });
+    coverCropX.addEventListener("change", () => updateCropControls());
+    coverCropY.addEventListener("input", () => {
+      cropState.y = Number(coverCropY.value);
+      updateCropControls(false);
+    });
+    coverCropY.addEventListener("change", () => updateCropControls());
+    coverCropReset.addEventListener("click", () => {
+      cropState.zoom = 1;
+      cropState.x = 0;
+      cropState.y = 0;
+      updateCropControls();
+      coverCropCanvas.focus();
+    });
+    coverCropCancel.addEventListener("click", () => closeCropDialog());
+    coverCropApply.addEventListener("click", () => void applyProjectCoverCrop());
+    coverCropDialog.addEventListener("cancel", event => {
+      event.preventDefault();
+      closeCropDialog();
+    });
+    coverCropDialog.addEventListener("click", event => {
+      if (event.target === coverCropDialog) closeCropDialog();
+    });
+
+    coverCropCanvas.addEventListener("pointerdown", event => {
+      if (cropProcessing || !cropImage) return;
+      const geometry = cropGeometry();
+      if (!geometry) return;
+      cropPointer = {
+        id: event.pointerId,
+        clientX: event.clientX,
+        clientY: event.clientY,
+        offsetX: geometry.offsetX,
+        offsetY: geometry.offsetY
+      };
+      coverCropCanvas.setPointerCapture(event.pointerId);
+      coverCropCanvas.classList.add("dragging");
+      event.preventDefault();
+    });
+    coverCropCanvas.addEventListener("pointermove", event => {
+      if (!cropPointer || cropPointer.id !== event.pointerId) return;
+      const geometry = cropGeometry();
+      const bounds = coverCropCanvas.getBoundingClientRect();
+      if (!geometry || !bounds.width || !bounds.height) return;
+      const offsetX = cropPointer.offsetX + (event.clientX - cropPointer.clientX) * geometry.canvasWidth / bounds.width;
+      const offsetY = cropPointer.offsetY + (event.clientY - cropPointer.clientY) * geometry.canvasHeight / bounds.height;
+      cropState.x = geometry.maxOffsetX
+        ? Math.max(-100, Math.min(100, offsetX / geometry.maxOffsetX * 100))
+        : 0;
+      cropState.y = geometry.maxOffsetY
+        ? Math.max(-100, Math.min(100, offsetY / geometry.maxOffsetY * 100))
+        : 0;
+      updateCropControls(false);
+      event.preventDefault();
+    });
+
+    function finishCropPointer(event) {
+      if (!cropPointer || cropPointer.id !== event.pointerId) return;
+      if (coverCropCanvas.hasPointerCapture(event.pointerId)) {
+        coverCropCanvas.releasePointerCapture(event.pointerId);
+      }
+      cropPointer = null;
+      coverCropCanvas.classList.remove("dragging");
+      updateCropControls();
+    }
+
+    coverCropCanvas.addEventListener("pointerup", finishCropPointer);
+    coverCropCanvas.addEventListener("pointercancel", finishCropPointer);
+    coverCropCanvas.addEventListener("keydown", event => {
+      if (cropProcessing || !cropImage || !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
+      const geometry = cropGeometry();
+      if (!geometry) return;
+      const step = event.shiftKey ? 36 : 12;
+      let offsetX = geometry.offsetX;
+      let offsetY = geometry.offsetY;
+      if (event.key === "ArrowLeft") offsetX -= step;
+      if (event.key === "ArrowRight") offsetX += step;
+      if (event.key === "ArrowUp") offsetY -= step;
+      if (event.key === "ArrowDown") offsetY += step;
+      cropState.x = geometry.maxOffsetX
+        ? Math.max(-100, Math.min(100, offsetX / geometry.maxOffsetX * 100))
+        : 0;
+      cropState.y = geometry.maxOffsetY
+        ? Math.max(-100, Math.min(100, offsetY / geometry.maxOffsetY * 100))
+        : 0;
+      updateCropControls();
+      event.preventDefault();
+    });
 
     form.addEventListener("input", updateProgress);
     form.addEventListener("change", updateProgress);
     form.addEventListener("submit", async event => {
       event.preventDefault();
+      if (submitting) return;
       if (!form.checkValidity()) {
         form.reportValidity();
         showToast("请先补充带 * 的必填信息");
         return;
       }
+      submitting = true;
+      const submittedType = currentType;
       saveDraft();
+      tabButtons.forEach(tab => { tab.disabled = true; });
       const submitButton = form.querySelector(".submit-btn");
       const originalButtonText = submitButton.innerHTML;
       submitButton.disabled = true;
@@ -435,7 +1016,13 @@
 
       try {
         const formData = new FormData(form);
-        formData.append("type", currentType);
+        formData.append("type", submittedType);
+        if (submittedType === "project") {
+          formData.delete("projectCover");
+          if (draftFiles.project) {
+            formData.set("projectCover", draftFiles.project, draftFiles.project.name);
+          }
+        }
         const response = await fetch("/api/collection-submissions", {
           method: "POST",
           body: formData
@@ -446,16 +1033,20 @@
           return;
         }
 
-        document.getElementById("success-title").textContent = `${typeConfig[currentType].label}已提交`;
+        document.getElementById("success-title").textContent = `${typeConfig[submittedType].label}已提交`;
         document.getElementById("success-copy").textContent = `资料已进入俱乐部后台审核。提交编号：${result.id}`;
         successDialog.showModal();
         form.reset();
-        drafts[currentType] = {};
-        updateProgress();
+        drafts[submittedType] = {};
+        draftFiles[submittedType] = null;
+        draftFileNotes[submittedType] = "";
+        renderForm();
       } catch (error) {
         console.error("Collection submission failed:", error);
         showToast("网络连接失败，请稍后重试。");
       } finally {
+        submitting = false;
+        tabButtons.forEach(tab => { tab.disabled = false; });
         submitButton.disabled = false;
         submitButton.innerHTML = originalButtonText;
       }
@@ -466,6 +1057,7 @@
     successDialog.addEventListener("click", event => { if (event.target === successDialog) successDialog.close(); });
     document.querySelector("[data-contact]").addEventListener("click", () => document.querySelector(".qr-wrap").scrollIntoView({ behavior: "smooth", block: "center" }));
     renderForm();
+    activateTab(tabButtons.find(tab => tab.dataset.type === currentType) || tabButtons[0]);
   </script>
 </body>
 </html>

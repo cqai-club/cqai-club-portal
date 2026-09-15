@@ -45,6 +45,9 @@ export {
 
 // Management API
 export {
+  MANAGEMENT_API_UNAVAILABLE_CODE,
+  ManagementApiUnavailableError,
+  isManagementApiConfigured,
   // Password (Management)
   setPassword,
   verifyPasswordManagement,

@@ -93,6 +93,18 @@ jobs:
             -P "$DEPLOY_PORT" deploy/check-resource-gates.sh \
             "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_BASE/incoming/check-resource-gates-$DEPLOY_SHA.sh"
 
+      - name: Preflight public proxy upload capacity
+        run: |
+          dd if=/dev/zero of="$RUNNER_TEMP/preflight-project-cover-proxy-probe.bin" bs=1048576 count=5 status=none
+          proxy_status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+            --form "cover=@$RUNNER_TEMP/preflight-project-cover-proxy-probe.bin;type=image/png" \
+            https://cqaiclub.asia/api/admin/projects/proxy-size-probe/cover)"
+          case "$proxy_status" in
+            401|404|405) ;;
+            413) echo "Nginx rejected a valid-size multipart request; install the 6m body limit before deployment."; exit 1 ;;
+            *) echo "Unexpected proxy preflight status: $proxy_status"; exit 1 ;;
+          esac
+
       - name: Deploy with rollback protection
         env:
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -113,6 +125,33 @@ jobs:
           curl --fail --silent --show-error --retry 5 --retry-delay 3 \
             --output "$RUNNER_TEMP/apply.html" https://cqaiclub.asia/apply/
           grep -q '入会申请' "$RUNNER_TEMP/apply.html"
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 \
+            --output "$RUNNER_TEMP/projects.html" https://cqaiclub.asia/projects/
+          grep -q '项目广场' "$RUNNER_TEMP/projects.html"
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 \
+            --output "$RUNNER_TEMP/featured-projects.json" \
+            'https://cqaiclub.asia/api/projects?featured=true&limit=6'
+          grep -q '"data":\[' "$RUNNER_TEMP/featured-projects.json"
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 \
+            --output "$RUNNER_TEMP/projects.json" \
+            'https://cqaiclub.asia/api/projects?limit=1'
+          grep -q '"data":\[' "$RUNNER_TEMP/projects.json"
+          project_slug="$(sed -n 's/.*"data":\[{"slug":"\([a-z0-9-][a-z0-9-]*\)".*/\1/p' "$RUNNER_TEMP/projects.json")"
+          if [ -n "$project_slug" ]; then
+            curl --fail --silent --show-error --retry 5 --retry-delay 3 \
+              --output "$RUNNER_TEMP/project-detail.json" "https://cqaiclub.asia/api/projects/$project_slug"
+            curl --fail --silent --show-error --retry 5 --retry-delay 3 \
+              --output "$RUNNER_TEMP/project-detail.html" "https://cqaiclub.asia/projects/$project_slug"
+            curl --fail --silent --show-error --retry 5 --retry-delay 3 \
+              --output "$RUNNER_TEMP/project-cover" "https://cqaiclub.asia/api/projects/$project_slug/cover"
+          else
+            grep -q '"data":\[\]' "$RUNNER_TEMP/projects.json"
+          fi
+          dd if=/dev/zero of="$RUNNER_TEMP/project-cover-proxy-probe.bin" bs=1048576 count=5 status=none
+          cover_proxy_status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+            --form "cover=@$RUNNER_TEMP/project-cover-proxy-probe.bin;type=image/png" \
+            https://cqaiclub.asia/api/admin/projects/proxy-size-probe/cover)"
+          test "$cover_proxy_status" = '401'
           legacy_admin_location="$(curl --silent --show-error --dump-header - --output /dev/null \
             https://cqaiclub.asia/admin/ | awk 'tolower($1) == "location:" {print $2}' | tr -d '\r')"
           case "$legacy_admin_location" in

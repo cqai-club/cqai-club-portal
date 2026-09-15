@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import {
   removeSocialIdentityWithVerification,
+  getAllIdentities,
   getLogtoContext,
   getSocialConnectors,
-  getSocialIdentities,
   LogtoApiError,
+  ManagementApiUnavailableError,
 } from "@/lib/logto";
 import { SocialUnlinkSchema } from "@/lib/schemas";
 import { isFeatureEnabled } from "@/config/features";
@@ -32,7 +33,7 @@ export async function GET() {
     }
 
     const [identities, availableConnectors] = await Promise.all([
-      getSocialIdentities(),
+      getAllIdentities(),
       Promise.resolve(getSocialConnectors()),
     ]);
 
@@ -41,6 +42,14 @@ export async function GET() {
       availableConnectors,
     });
   } catch (error) {
+    if (error instanceof ManagementApiUnavailableError) {
+      logger.warn("Get social identities unavailable", { reason: error.reason });
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.statusCode }
+      );
+    }
+
     logger.error("Get social identities error:", error);
 
     return NextResponse.json(

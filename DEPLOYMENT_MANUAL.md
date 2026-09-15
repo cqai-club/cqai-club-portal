@@ -6,12 +6,13 @@
 
 | 模块 | 线上路径 | 源码位置 |
 |---|---|---|
-| 俱乐部官网 | `/` | `web/index.html`、`web/images/` |
-| 入会申请 | `/apply/` | `public/index.html` |
+| 俱乐部官网 | `/` | `site/index.html`、`site/images/` |
+| 入会申请 / 资料征集 | `/apply/`、`/collect/` | `site/apply/`、`site/collect/` |
+| 项目广场 | `/projects/` | `app/projects/` |
 | 会员中心 | `/member/` | `app/member/` |
-| 会员管理 | `/member/dashboard/admin/members`、`/member/dashboard/admin/collections` | `app/member/dashboard/admin/` |
-| 后端接口 | `/api/*` | `index.js` |
-| 健康检查 | `/health` | `index.js` |
+| 后台管理 | `/member/dashboard/admin/*` | `app/member/dashboard/admin/` |
+| 后端接口 | `/api/*` | `app/(site)/api/` |
+| 健康检查 | `/api/health` | `app/(site)/api/health/route.ts` |
 | 数据库 | - | Prisma + SQLite |
 
 官网中的“入会申请”按钮使用站内 `/apply/` 地址，因此本地、测试和正式环境不需要分别修改域名。
@@ -30,16 +31,17 @@ npm ci
 cp .env.example .env
 npx prisma generate
 npx prisma migrate deploy
-npm start
+npm run dev
 ```
 
 启动后访问：
 
 - 官网：`http://localhost:3000/`
 - 入会申请：`http://localhost:3000/apply/`
-- 会员中心：`http://localhost:3000/member/login`
+- 会员中心：`http://localhost:3000/member`
 - 会员管理：`http://localhost:3000/member/dashboard/admin/members`（登录且具备管理员角色后可见）
-- 健康检查：`http://localhost:3000/health`
+- 项目广场：`http://localhost:3000/projects/`
+- 健康检查：`http://localhost:3000/api/health`
 
 旧的 `/admin/`、`/admin.html` 和 `/collection-admin.html` 地址会跳转到会员中心对应的管理页面；旧静态管理页不再提供。
 
@@ -86,13 +88,13 @@ LEGACY_ADMIN_LOGIN_ENABLED="false"
 
 部署工作流为 `.github/workflows/deploy.yml`。它只发布通过 `CI` 的 `main` 提交，并按以下顺序执行：
 
-1. 打包已测试的提交，排除 `.env`、SQLite 和本地文件。
-2. 上传到服务器 `/data/cqai-club-portal/incoming/`。
-3. 构建带提交 SHA 标签的 Docker 镜像。
-4. 复制生产数据库，用副本运行迁移并检查 `/`、`/apply/`、会员中心登录和 `/api/health`。
+1. 检出已经通过 CI 的精确提交 SHA，用 Buildx 构建镜像并以该 SHA 的不可变标签推送到 GHCR。
+2. 只上传部署脚本与资源门禁脚本，不上传源码发布包。
+3. 在切换前用 5MB 无副作用请求验证公网代理上限，并在服务器执行两次资源门禁。
+4. 拉取镜像，复制生产数据库，用新镜像迁移候选副本后检查 `/`、`/apply/`、`/projects/`、动态项目详情和 `/api/health`。
 5. 备份正式数据库，将旧容器保留为 `cqai-club-portal-rollback`。
-6. 迁移正式数据库并启动新容器；失败时恢复数据库和旧容器。
-7. 从公网再次检查正式域名。
+6. 迁移正式数据库并启动新容器；远端检查失败时恢复数据库和旧容器。
+7. 从公网再次检查正式域名、项目接口与 5MB 代理请求。
 
 仓库需要创建 `production` Environment，并配置：
 
@@ -118,28 +120,13 @@ LEGACY_ADMIN_LOGIN_ENABLED="false"
 /data/informationCollection/prisma/dev.db
 ```
 
-部署工作流会把 GitHub `production` Environment 中的两个 Logto Secret 安全同步到现有 `/data/informationCollection/.env`，并补充生产 issuer、回调地址、`club-admin` 角色和稳定的 `SESSION_SECRET`。Secret 不会进入发布包或 Git 历史。资料征集附件挂载到 `/data/cqai-club-portal/storage`，需要由 `cqai-deploy` 持有写权限。
+部署工作流会把 GitHub `production` Environment 中的两个 Logto Secret 安全同步到现有 `/data/informationCollection/.env`，并补充生产 issuer、回调地址、`club-admin` 角色和稳定的 `SESSION_SECRET`。Secret 不会进入发布包或 Git 历史。资料征集附件和项目广场封面挂载到 `/data/cqai-club-portal/storage`（分别位于 `uploads/collection` 和 `uploads/projects`），需要由 `cqai-deploy` 持有写权限。
 
 首次上线时，先保持 `DEPLOY_ENABLED=false`，手动执行工作流并完成 Nginx 切换。确认官网、报名表、后台和健康检查均正常后，再开启自动部署。旧 Nginx 的 `/apply/` 规则会去掉路径前缀，因此不能在统一应用上线后继续保留。
 
-## 7. 手动部署（备用）
+## 7. 手动发布入口
 
-正常情况下应在 GitHub 仓库的 Actions 页面手动运行 `Deploy production`。如果 GitHub 暂时不可用，可在可信机器上打包当前提交并上传，然后在服务器执行同一部署脚本：
-
-```bash
-server_ip="<服务器公网地址>"
-git archive --format=tar.gz --output=release.tgz HEAD
-scp release.tgz "cqai-deploy@$server_ip:/data/cqai-club-portal/incoming/<完整提交SHA>.tgz"
-scp deploy/remote-deploy.sh "cqai-deploy@$server_ip:/data/cqai-club-portal/incoming/remote-deploy-<完整提交SHA>.sh"
-```
-
-然后登录服务器执行：
-
-```bash
-bash /data/cqai-club-portal/incoming/remote-deploy-<完整提交SHA>.sh <完整提交SHA>
-```
-
-脚本仍会执行候选验证、数据库在线备份、迁移和失败回滚。不要绕过脚本直接替换生产数据库或容器。
+手动发布也必须在 GitHub 仓库的 Actions 页面运行 `Deploy production`，由工作流生成不可变镜像、短期 GHCR 凭据和完整的远端脚本参数。当前不支持上传源码包或直接在服务器执行简化命令；这样做会绕过镜像来源、资源门禁或回滚参数校验。GitHub 暂时不可用时应暂停发布，不要直接替换生产数据库或容器。
 
 ## 8. Nginx 反向代理
 
@@ -158,7 +145,9 @@ server {
 }
 ```
 
-仓库中的 `deploy/nginx-club.conf` 是正式配置模板。替换配置前必须备份旧文件，运行 `nginx -t` 成功后才能 reload；验证失败时恢复备份。正式环境应配置 HTTPS，不要直接把 Node.js 端口暴露到公网。
+仓库中的 `deploy/nginx-club.conf` 是正式配置模板。模板将请求体上限设为 6MB，为 multipart 包装预留空间；应用仍会对项目封面执行 JPG/PNG、最大 5MB 的精确校验。首次发布项目前必须由有 sudo 权限的运维人员把该上限同步到线上 Nginx；自动部署不会擅自覆盖系统 Nginx 配置。替换配置前必须备份旧文件，运行 `nginx -t` 成功后才能 reload；验证失败时恢复备份。部署前后都会发送 5MB 的未授权 multipart 探针：切换前仅接受应用的 401/404/405，切换后必须返回 401；若代理返回 413，工作流会失败且不会开始切换。正式环境应配置 HTTPS，不要直接把 Node.js 端口暴露到公网。
+
+项目封面替换后，旧文件会在数据库备份保留期内继续保存，确保自动回滚后的旧数据库仍能读取原封面。清理无引用封面时必须晚于对应数据库备份的保留期，并先按当前数据库和备份做可达性核对。
 
 ## 9. API
 

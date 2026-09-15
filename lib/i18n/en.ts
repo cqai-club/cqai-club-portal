@@ -45,6 +45,7 @@ export const en = {
     settings: "Preferences",
     adminMembers: "Member Applications",
     adminCollections: "Submissions",
+    adminProjects: "Project Showcase",
     adminPlugins: "Plugin Market",
     signOut: "Sign out",
   },

@@ -42,20 +42,21 @@ model MemberApplication {
 }
 
 model CollectionSubmission {
-  id          String   @id @default(uuid())
-  type        String
-  status      String   @default("new")
-  displayName String
-  contact     String
-  phone       String?
-  email       String?
-  payloadJson String
-  consent     Boolean  @default(false)
-  consentAt   DateTime?
-  ipAddress   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  assets      SubmissionAsset[]
+  id              String   @id @default(uuid())
+  type            String
+  status          String   @default("new")
+  displayName     String
+  contact         String
+  phone           String?
+  email           String?
+  payloadJson     String
+  consent         Boolean  @default(false)
+  consentAt       DateTime?
+  ipAddress       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  assets          SubmissionAsset[]
+  importedProject Project?
 
   @@index([type])
   @@index([status])
@@ -96,4 +97,36 @@ model Plugin {
 
   @@index([status])
   @@index([updatedAt])
+}
+
+model Project {
+  id                 String                @id @default(uuid())
+  sourceSubmissionId String?               @unique
+  slug               String                @unique
+  status             String                @default("draft")
+  name               String
+  ownerName          String?
+  summary            String
+  description        String
+  stage              String?
+  focus              String?
+  collaborationNeeds String?
+  demoUrl            String?
+  internalContact    String?
+  publicContactType  String                @default("club")
+  publicContactValue String?
+  coverStorageKey    String?
+  coverOriginalName  String?
+  coverMimeType      String?
+  coverSize          Int?
+  featured           Boolean               @default(false)
+  featuredOrder      Int?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  publishedAt        DateTime?
+  sourceSubmission   CollectionSubmission? @relation(fields: [sourceSubmissionId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([featured, featuredOrder])
+  @@index([publishedAt])
 }

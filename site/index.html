@@ -876,6 +876,11 @@
             box-shadow: 0 18px 50px rgba(61, 55, 82, 0.11);
         }
 
+        .project-card:focus-visible {
+            outline: 3px solid rgba(123, 108, 194, 0.34);
+            outline-offset: 4px;
+        }
+
         .project-img {
             height: 205px;
             overflow: hidden;
@@ -916,6 +921,92 @@
             font-weight: 300;
             line-height: 1.8;
             flex: 1;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .project-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            margin: 0 0 12px;
+        }
+
+        .project-meta span {
+            padding: 4px 8px;
+            color: var(--primary-deep);
+            background: var(--bg-soft);
+            font-size: 11px;
+            line-height: 1.35;
+        }
+
+        .project-card-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            margin-top: 18px;
+            color: var(--primary-deep);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .project-card:hover .project-card-cta {
+            color: var(--primary);
+        }
+
+        .project-section-actions {
+            flex: 0 0 auto;
+            margin-left: 32px;
+        }
+
+        .project-state {
+            grid-column: 1 / -1;
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            padding: 36px;
+            color: var(--ink-light);
+            text-align: center;
+            background: rgba(255, 255, 255, 0.72);
+            border: 1px solid var(--line);
+        }
+
+        .project-state strong {
+            color: var(--primary-deep);
+            font-size: 17px;
+        }
+
+        .project-state p {
+            max-width: 500px;
+            font-size: 13px;
+        }
+
+        .project-state-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .project-state button {
+            font-family: inherit;
+        }
+
+        .project-img-fallback {
+            height: 100%;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            color: var(--primary-deep);
+            text-align: center;
+            background: linear-gradient(135deg, #ede7f8, #faf8fd);
+            font-size: 16px;
+            font-weight: 600;
         }
 
         .project-actions {
@@ -1438,6 +1529,54 @@
         }
 
         /* ============ 响应式 ============ */
+        @media (min-width: 769px) and (max-width: 1100px) {
+            nav ul {
+                position: fixed;
+                top: 0;
+                right: 0;
+                width: 320px;
+                height: 100vh;
+                padding: 88px 24px 40px;
+                background: var(--white);
+                box-shadow: -12px 0 40px rgba(61, 55, 82, 0.12);
+                flex-direction: column;
+                justify-content: flex-start;
+                gap: 10px;
+                transform: translateX(100%);
+                transition: transform 0.35s ease;
+            }
+
+            nav ul.open {
+                transform: translateX(0);
+            }
+
+            nav ul li a,
+            header.scrolled nav ul li a {
+                display: block;
+                padding: 12px 16px;
+                color: var(--primary-deep);
+                font-size: 15px;
+                border-bottom: none;
+            }
+
+            nav ul li a:hover,
+            nav ul li a.active,
+            header.scrolled nav ul li a:hover,
+            header.scrolled nav ul li a.active {
+                color: var(--primary-deep);
+                background: rgba(123, 108, 194, 0.13);
+            }
+
+            .nav-toggle {
+                display: block;
+                z-index: 1001;
+            }
+
+            .nav-cta {
+                display: none;
+            }
+        }
+
         @media (max-width: 1024px) {
             .about-grid {
                 grid-template-columns: 1fr;
@@ -1533,6 +1672,10 @@
 
             .section-header h3 {
                 font-size: 1.65rem;
+            }
+
+            .project-section-actions {
+                margin-left: 0;
             }
 
             .eco-tabs {
@@ -2224,8 +2367,9 @@
                 <li><a href="#ecosystem">生态模型</a></li>
                 <li><a href="#activities">活动交流</a></li>
                 <li><a href="#timeline">近期动态</a></li>
+                <li><a href="/projects/">项目广场</a></li>
                 <li><a href="#join">加入我们</a></li>
-                <li><a href="/member/login">会员中心</a></li>
+                <li><a href="/member">会员中心</a></li>
             </ul>
         </nav>
         <a href="/apply/" class="btn nav-cta">入会申请</a>
@@ -2514,74 +2658,16 @@
                     <h3>创研项目</h3>
                     <p class="desc">以真实需求为起点，围绕具身智能与AI应用两大方向持续孵化。</p>
                 </div>
+                <div class="project-section-actions">
+                    <a class="btn btn-outline" href="/projects/">查看全部项目
+                        <svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L338.8 288 32 288c-17.7 0-32-14.3-32-32z"/></svg>
+                    </a>
+                </div>
             </div>
-            <div class="project-grid">
-
-                <div class="project-card reveal">
-                    <div class="project-img"><img src="images/project-1.jpg" loading="lazy" alt="理园LogicGarden——私家园林智慧平台"></div>
-                    <div class="project-info">
-                        <h4><span class="t-full">理园LogicGarden——私家园林智慧平台</span><span class="t-short">理园LogicGarden</span></h4>
-                        <p>中国首个软硬一体化的园林全生命周期平台，覆盖设计、营造、养护全流程，用AI让私家园林管理更简单。</p>
-                        <div class="project-actions">
-                            <button class="btn-action btn-join" data-project="理园LogicGarden——私家园林智慧平台">参与体验</button>
-                            <button class="btn-action btn-invest" data-project="理园LogicGarden——私家园林智慧平台">了解更多</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="project-card reveal">
-                    <div class="project-img"><img src="images/project-2.jpg" loading="lazy" alt="YIFAN数据帮"></div>
-                    <div class="project-info">
-                        <h4>YIFAN数据帮</h4>
-                        <p>连接数据需求方与供给方，提供数据资源共享与众包服务，降低AI开发的数据获取门槛。</p>
-                        <div class="project-actions">
-                            <button class="btn-action btn-join" data-project="YIFAN数据帮">参与体验</button>
-                            <button class="btn-action btn-invest" data-project="YIFAN数据帮">了解更多</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="project-card reveal">
-                    <div class="project-img"><img src="images/project-3.jpg" loading="lazy" alt="国际工程和国际贸易智能合同审查平台"></div>
-                    <div class="project-info">
-                        <h4><span class="t-full">国际工程和国际贸易智能合同审查平台</span><span class="t-short">智能合同审查系统</span></h4>
-                        <p>基于大模型+法律知识库，自动识别国际工程与贸易合同中的风险条款、缺失要素，生成专业审查报告。</p>
-                        <div class="project-actions">
-                            <button class="btn-action btn-join" data-project="国际工程和国际贸易智能合同审查平台">参与体验</button>
-                            <button class="btn-action btn-invest" data-project="国际工程和国际贸易智能合同审查平台">了解更多</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="project-card reveal">
-                    <div class="project-img"><img src="images/project-4.jpg" loading="lazy" alt="MegaSelf——个人深度IP定制网站"></div>
-                    <div class="project-info">
-                        <h4><span class="t-full">MegaSelf——个人深度IP定制网站</span><span class="t-short">MegaSelf</span></h4>
-                        <p>为个人提供深度IP定制建站服务，帮助用户在AI时代打造独特的个人品牌形象与数字资产。</p>
-                        <div class="project-actions">
-                            <button class="btn-action btn-join" data-project="MegaSelf——个人深度IP定制网站">参与体验</button>
-                            <button class="btn-action btn-invest" data-project="MegaSelf——个人深度IP定制网站">了解更多</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="project-card reveal">
-                    <div class="project-img"><img src="images/project-5.jpg" loading="lazy" alt="AI智能发型设计系统"></div>
-                    <div class="project-info">
-                        <h4>AI智能发型设计系统</h4>
-                        <p>基于发质、脸型、长度等维度，AI推荐最适合的发型风格与修剪方案，重新定义美发体验。</p>
-                        <div class="project-actions">
-                            <button class="btn-action btn-join" data-project="AI智能发型设计系统">参与体验</button>
-                            <button class="btn-action btn-invest" data-project="AI智能发型设计系统">了解更多</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="project-card reveal">
-                    <div class="project-img"><img src="images/project-6.jpg" loading="lazy" alt="家庭式水下清淤机器人"></div>
-                    <div class="project-info">
-                        <h4><span class="t-full">家庭式水下清淤机器人</span><span class="t-short">水下清淤机器人</span></h4>
-                        <p>小型具身智能设备，自动探测管道堵塞位置并实施清淤作业，让每个家庭拥有自己的管道医生。</p>
-                        <div class="project-actions">
-                            <button class="btn-action btn-join" data-project="家庭式水下清淤机器人">参与体验</button>
-                            <button class="btn-action btn-invest" data-project="家庭式水下清淤机器人">了解更多</button>
-                        </div>
-                    </div>
+            <div class="project-grid" id="featuredProjectGrid" aria-live="polite" aria-busy="true">
+                <div class="project-state">
+                    <strong>正在加载推荐项目</strong>
+                    <p>请稍候，项目内容马上呈现。</p>
                 </div>
             </div>
         </div>
@@ -2756,7 +2842,7 @@
                         <li><a href="#about">关于我们</a></li>
                         <li><a href="#ecosystem">生态模型</a></li>
                         <li><a href="#activities">活动交流</a></li>
-                        <li><a href="#projects">创研项目</a></li>
+                        <li><a href="/projects/">项目广场</a></li>
                     </ul>
                 </div>
                 <div class="footer-col reveal">
@@ -2862,6 +2948,148 @@
                 a.classList.toggle('active', a.getAttribute('href') === '#' + current);
             });
         });
+
+        // ========== 首页推荐项目 ==========
+        const featuredProjectGrid = document.getElementById('featuredProjectGrid');
+        const projectStageLabels = {
+            idea: '构想验证',
+            build: '开发中',
+            pilot: '试点运行',
+            live: '已上线'
+        };
+
+        function appendProjectState(title, description, actions) {
+            featuredProjectGrid.replaceChildren();
+            const state = document.createElement('div');
+            state.className = 'project-state';
+            const heading = document.createElement('strong');
+            heading.textContent = title;
+            const copy = document.createElement('p');
+            copy.textContent = description;
+            state.append(heading, copy);
+
+            if (actions && actions.length) {
+                const actionWrap = document.createElement('div');
+                actionWrap.className = 'project-state-actions';
+                actions.forEach(action => actionWrap.appendChild(action));
+                state.appendChild(actionWrap);
+            }
+            featuredProjectGrid.appendChild(state);
+        }
+
+        function createProjectAction(label, href) {
+            const action = document.createElement('a');
+            action.className = 'btn btn-outline';
+            action.href = href;
+            action.textContent = label;
+            return action;
+        }
+
+        function appendCoverFallback(container, name) {
+            container.replaceChildren();
+            const fallback = document.createElement('div');
+            fallback.className = 'project-img-fallback';
+            fallback.textContent = name || '重庆 AI 创享项目';
+            container.appendChild(fallback);
+        }
+
+        function safeCoverPath(value) {
+            if (!value) return '';
+            try {
+                const parsed = new URL(String(value), window.location.origin);
+                return ['http:', 'https:'].includes(parsed.protocol) ? parsed.href : '';
+            } catch {
+                return '';
+            }
+        }
+
+        function createFeaturedProjectCard(project) {
+            const name = String(project.name || '未命名项目');
+            const slug = String(project.slug || '');
+            const card = document.createElement('a');
+            card.className = 'project-card';
+            card.href = `/projects/${encodeURIComponent(slug)}/`;
+
+            const imageWrap = document.createElement('div');
+            imageWrap.className = 'project-img';
+            const coverUrl = safeCoverPath(project.coverUrl);
+            if (coverUrl) {
+                const image = document.createElement('img');
+                image.src = coverUrl;
+                image.alt = `${name}项目封面`;
+                image.loading = 'lazy';
+                image.decoding = 'async';
+                image.addEventListener('error', () => appendCoverFallback(imageWrap, name), { once: true });
+                imageWrap.appendChild(image);
+            } else {
+                appendCoverFallback(imageWrap, name);
+            }
+
+            const info = document.createElement('div');
+            info.className = 'project-info';
+            const title = document.createElement('h4');
+            title.textContent = name;
+
+            const meta = document.createElement('div');
+            meta.className = 'project-meta';
+            const stage = projectStageLabels[project.stage] || project.stage;
+            [stage, project.focus].filter(Boolean).forEach(value => {
+                const item = document.createElement('span');
+                item.textContent = String(value);
+                meta.appendChild(item);
+            });
+
+            const summary = document.createElement('p');
+            summary.textContent = String(project.summary || '期待与你一起探索这个项目的更多可能。');
+            const detail = document.createElement('span');
+            detail.className = 'project-card-cta';
+            detail.textContent = '查看项目详情 →';
+
+            info.appendChild(title);
+            if (meta.childElementCount) info.appendChild(meta);
+            info.append(summary, detail);
+            card.append(imageWrap, info);
+            return card;
+        }
+
+        async function loadFeaturedProjects() {
+            featuredProjectGrid.setAttribute('aria-busy', 'true');
+            appendProjectState('正在加载推荐项目', '请稍候，项目内容马上呈现。');
+            try {
+                const response = await fetch('/api/projects?featured=true&limit=6', {
+                    headers: { Accept: 'application/json' },
+                    cache: 'no-store'
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const result = await response.json();
+                const projects = Array.isArray(result.data) ? result.data.slice(0, 6) : [];
+                if (!projects.length) {
+                    appendProjectState(
+                        '项目正在集结中',
+                        '首批项目正在整理发布，也欢迎你提交自己的 AI 项目。',
+                        [createProjectAction('提交项目', '/collect/?type=project')]
+                    );
+                    return;
+                }
+                featuredProjectGrid.replaceChildren(...projects.map(createFeaturedProjectCard));
+                window.ScrollTrigger?.refresh();
+            } catch (error) {
+                console.error('Featured projects failed to load:', error);
+                const retry = document.createElement('button');
+                retry.className = 'btn btn-outline';
+                retry.type = 'button';
+                retry.textContent = '重新加载';
+                retry.addEventListener('click', loadFeaturedProjects, { once: true });
+                appendProjectState('推荐项目暂时无法加载', '你仍可前往项目广场浏览全部项目。', [
+                    createProjectAction('查看项目广场', '/projects/'),
+                    retry
+                ]);
+            } finally {
+                featuredProjectGrid.setAttribute('aria-busy', 'false');
+            }
+        }
+
+        loadFeaturedProjects();
 
         // ========== 联系弹窗 ==========
         const modal = document.getElementById('contactModal');

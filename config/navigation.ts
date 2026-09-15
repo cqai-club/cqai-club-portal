@@ -8,6 +8,7 @@ import {
   Users,
   Files,
   Store,
+  BriefcaseBusiness,
 } from "lucide-react";
 import { t, type Language } from "@/lib/i18n";
 
@@ -63,6 +64,12 @@ export const adminNavItems: NavItem[] = [
     title: "资料征集",
     titleKey: "nav.adminCollections",
     icon: Files,
+  },
+  {
+    href: "/member/dashboard/admin/projects",
+    title: "项目广场",
+    titleKey: "nav.adminProjects",
+    icon: BriefcaseBusiness,
   },
   {
     href: "/member/dashboard/admin/plugins",

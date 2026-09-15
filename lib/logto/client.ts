@@ -44,7 +44,7 @@ export async function getLogtoContext(resource?: string): Promise<LogtoContext> 
               data: "data" in error ? error.data : undefined,
             }
           : { message: String(error) };
-        logger.error("Logto resource access token acquisition failed", {
+        logger.warn("Logto resource access token acquisition failed", {
           resource,
           isAuthenticated: context.isAuthenticated,
           error: details,
@@ -86,9 +86,15 @@ export const signIn = (redirectUri?: string) =>
   });
 
 /**
- * 登出
+ * 登出后返回官网根地址，而不是会员中心的 `/member` 挂载路径。
+ * `HOME_URL` 可显式覆盖；未配置时从 Logto baseUrl 提取同源站点根地址。
  */
-export const signOut = () => _signOut(logtoConfig, process.env.HOME_URL );
+export const signOut = () => {
+  const configuredHomeUrl = process.env.HOME_URL?.trim();
+  const postLogoutRedirectUri = configuredHomeUrl || new URL(logtoConfig.baseUrl).origin;
+
+  return _signOut(logtoConfig, postLogoutRedirectUri);
+};
 
 /**
  * 处理登录回调。

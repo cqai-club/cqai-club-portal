@@ -108,7 +108,7 @@ function resolveConfigDir(): string {
     return dir;
   }
 
-  return resolve(process.cwd(), dir);
+  return resolve(/* turbopackIgnore: true */ process.cwd(), dir);
 }
 
 function parseYamlFile(filePath: string): unknown {
