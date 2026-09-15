@@ -1,12 +1,13 @@
 /**
  * POST /api/collection-submissions
  * Accepts the club's member / enterprise / AI-project showcase submissions
- * (multipart form with optional avatar / companyLogo uploads). Mirrors the
+ * (multipart form with optional avatar / companyLogo / projectCover uploads). Mirrors the
  * original Express handler: type + required-field + consent validation, image
  * type/size checks, Prisma insert with nested asset creation.
  */
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/site/prisma";
+import { parseProjectSubmissionInput } from "@/lib/project-market";
 import {
   collectionPayloadFromFormData,
   collectionRequiredFields,
@@ -15,6 +16,7 @@ import {
   rateLimit,
   removeUploadedAssets,
   saveUploadedAssets,
+  trustedClientIp,
 } from "@/lib/site/api-helpers";
 
 export const runtime = "nodejs";
@@ -23,16 +25,8 @@ export const dynamic = "force-dynamic";
 const COLLECTION_WINDOW_MS = 15 * 60 * 1000;
 const COLLECTION_MAX = 20;
 
-function clientIp(request: Request): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
-    "unknown"
-  );
-}
-
 export async function POST(request: Request): Promise<NextResponse> {
-  const ip = clientIp(request);
+  const ip = trustedClientIp(request);
   if (!rateLimit("collection", ip, COLLECTION_MAX, COLLECTION_WINDOW_MS)) {
     return NextResponse.json(
       { error: "提交过于频繁，请稍后再试。" },
@@ -45,7 +39,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   // Two transports are accepted, mirroring the original Express handler that
   // used multer for both file uploads and plain JSON/urlencoded submissions:
-  //   - multipart/form-data (avatar / companyLogo uploads): parse text fields
+  //   - multipart/form-data (avatar / companyLogo / projectCover uploads): parse text fields
   //     from FormData and optionally save uploaded files.
   //   - application/json: pure text payload, no files.
   let formData: FormData;
@@ -97,10 +91,20 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
+    if (type === "project") {
+      const projectInput = parseProjectSubmissionInput(payload, displayName, contact);
+      if (!projectInput.success) {
+        return NextResponse.json(
+          { error: projectInput.error.issues[0]?.message ?? "项目资料字段无效。" },
+          { status: 400 }
+        );
+      }
+    }
+
     const phone = fields.phone(payload);
     const email = fields.email(payload);
 
-    // Persist any uploaded avatar / companyLogo image(s) to disk first, so we
+    // Persist any uploaded avatar / companyLogo / projectCover image(s) to disk first, so we
     // can reference the storage keys in the nested asset create.
     let savedAssets: Awaited<ReturnType<typeof saveUploadedAssets>>;
     try {

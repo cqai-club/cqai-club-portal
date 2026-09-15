@@ -9,15 +9,24 @@
  */
 
 import { randomBytes, timingSafeEqual } from "node:crypto";
-import { mkdir, writeFile, unlink } from "node:fs/promises";
-import { extname, join } from "node:path";
+import { mkdir, readFile, writeFile, unlink } from "node:fs/promises";
+import { join, resolve } from "node:path";
 
 import { requireMemberAdminPermission } from "@/lib/member/permissions";
 import { NextResponse } from "next/server";
+import sharp from "sharp";
 import xss from "xss";
 
-export const STORAGE_ROOT = join(process.cwd(), "storage");
+export const STORAGE_ROOT = process.env.CQAI_STORAGE_ROOT?.trim()
+  ? resolve(/* turbopackIgnore: true */ process.cwd(), process.env.CQAI_STORAGE_ROOT.trim())
+  : join(process.cwd(), "storage");
 export const COLLECTION_UPLOAD_DIR = join(STORAGE_ROOT, "uploads", "collection");
+export const PROJECT_UPLOAD_DIR = join(STORAGE_ROOT, "uploads", "projects");
+const BUNDLED_PROJECT_COVER_DIR = join(process.cwd(), "site", "images");
+export const MAX_PROJECT_COVER_BYTES = 5 * 1024 * 1024;
+export const PROJECT_COVER_WIDTH = 1600;
+export const PROJECT_COVER_HEIGHT = 1000;
+export const MAX_PROJECT_COVER_INPUT_PIXELS = 40_000_000;
 
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
@@ -62,15 +71,41 @@ export const isAdminTokenValid = (authorization: string): boolean => {
 export const requireAdminToken = (authorization: string): boolean =>
   isAdminTokenValid(authorization);
 
+/** Resolve the address written by the trusted loopback reverse proxy. */
+export const trustedClientIp = (request: Request): string =>
+  request.headers.get("x-real-ip")?.trim() ||
+  request.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim() ||
+  "unknown";
+
 /**
  * Protect an admin API with a permission scope granted on the CQAI API
  * resource. The legacy standalone admin token is not an authorization
  * bypass for these APIs.
  */
 export const requireAdminAccess = async (
-  _authorization: string,
+  authorization: string,
   requiredPermission?: string
 ): Promise<NextResponse | null> => {
+  // The smoke suite exercises the complete admin lifecycle without depending
+  // on a long-lived real Logto browser session. This seam is inert unless the
+  // child server is explicitly started as CI with fresh per-run tokens.
+  if (
+    process.env.CI === "true" &&
+    process.env.CQAI_CI_AUTH_BYPASS === "enabled-for-smoke-tests"
+  ) {
+    const adminToken = process.env.CQAI_CI_ADMIN_TOKEN;
+    const authenticatedToken = process.env.CQAI_CI_AUTHENTICATED_TOKEN;
+    if (adminToken && safeEqual(authorization, `Bearer ${adminToken}`)) {
+      return null;
+    }
+    if (authenticatedToken && safeEqual(authorization, `Bearer ${authenticatedToken}`)) {
+      return NextResponse.json(
+        { error: `您没有 ${requiredPermission ?? "member:admin"} 权限。` },
+        { status: 403 }
+      );
+    }
+  }
+
   return requireMemberAdminPermission(requiredPermission);
 };
 
@@ -156,11 +191,10 @@ export const collectionPayloadFromFormData = (
 };
 
 /**
- * Manually persist the uploaded image files (avatar / companyLogo) into
- * storage/uploads/collection and return the asset rows to create. Matches the
- * multer filename scheme: `<timestamp>-<random hex><lowercased extension>`.
- * Fails closed: any invalid upload aborts (after cleaning up earlier writes)
- * with the human-facing message.
+ * Persist uploaded avatar / companyLogo / projectCover images into collection
+ * storage and return the asset rows to create. Project covers are normalized;
+ * avatars and logos retain their validated original bytes. Fails closed: any
+ * invalid upload aborts after cleaning up earlier writes.
  */
 export const saveUploadedAssets = async (
   formData: FormData
@@ -180,30 +214,53 @@ export const saveUploadedAssets = async (
   for (const [fieldName, kind] of [
     ["avatar", "avatar"],
     ["companyLogo", "companyLogo"],
+    ["projectCover", "projectCover"],
   ] as const) {
     const file = formData.get(fieldName);
     if (!file || typeof file === "string") continue;
 
     const originalName = (file as File).name;
-    const mimeType = (file as File).type;
+    const mimeType = (file as File).type.toLowerCase();
     if (!["image/jpeg", "image/png"].includes(mimeType)) {
       await cleanupWritten();
       throw new Error("仅支持 JPG 或 PNG 图片。");
     }
-
-    const buffer = Buffer.from(await (file as File).arrayBuffer());
-    if (buffer.length > 5 * 1024 * 1024) {
+    if ((file as File).size > MAX_PROJECT_COVER_BYTES) {
       await cleanupWritten();
       throw new Error("图片大小不能超过 5MB。");
     }
 
-    const storageKey = await writeUploadedFile(buffer, originalName);
+    const buffer: Buffer = Buffer.from(await (file as File).arrayBuffer());
+    if (buffer.length > MAX_PROJECT_COVER_BYTES) {
+      await cleanupWritten();
+      throw new Error("图片大小不能超过 5MB。");
+    }
+    const detectedMime = detectImageMimeType(buffer);
+    if (!buffer.length || detectedMime !== mimeType) {
+      await cleanupWritten();
+      throw new Error("图片内容与 JPG/PNG 格式不符。");
+    }
+
+    let storedBuffer = buffer;
+    let storedMime = detectedMime;
+    if (kind === "projectCover") {
+      try {
+        const normalized = await normalizeProjectCover(buffer, detectedMime);
+        storedBuffer = normalized.buffer;
+        storedMime = normalized.mimeType;
+      } catch (error) {
+        await cleanupWritten();
+        throw error;
+      }
+    }
+
+    const storageKey = await writeUploadedFile(storedBuffer, storedMime);
     assets.push({
       kind,
       storageKey,
       originalName,
-      mimeType,
-      size: buffer.length,
+      mimeType: storedMime,
+      size: storedBuffer.length,
     });
   }
 
@@ -317,6 +374,13 @@ export const serializeCollectionSubmission = (submission: {
     size: number;
     createdAt: Date;
   }[];
+  importedProject?: {
+    id: string;
+    slug: string;
+    status: string;
+    name: string;
+    updatedAt: Date;
+  } | null;
 }) => {
   let payload: Record<string, unknown> = {};
   try {
@@ -347,6 +411,15 @@ export const serializeCollectionSubmission = (submission: {
       createdAt: asset.createdAt,
       downloadUrl: `/api/admin/collection-submissions/${submission.id}/assets/${asset.id}`,
     })),
+    importedProject: submission.importedProject
+      ? {
+          id: submission.importedProject.id,
+          slug: submission.importedProject.slug,
+          status: submission.importedProject.status,
+          name: submission.importedProject.name,
+          updatedAt: submission.importedProject.updatedAt.toISOString(),
+        }
+      : null,
   };
 };
 
@@ -357,13 +430,206 @@ export const serializeCollectionSubmission = (submission: {
  */
 export const writeUploadedFile = async (
   buffer: Buffer,
-  originalName: string
+  mimeType: "image/jpeg" | "image/png"
 ): Promise<string> => {
   await mkdir(COLLECTION_UPLOAD_DIR, { recursive: true });
-  const extension = extname(originalName || "").toLowerCase() || ".jpg";
+  const extension = mimeType === "image/png" ? ".png" : ".jpg";
   const storageKey = `${Date.now()}-${randomBytes(8).toString("hex")}${extension}`;
   await writeFile(join(COLLECTION_UPLOAD_DIR, storageKey), buffer);
   return storageKey;
+};
+
+export interface StoredProjectCover {
+  storageKey: string;
+  originalName: string;
+  mimeType: "image/jpeg" | "image/png";
+  size: number;
+}
+
+interface NormalizedProjectCover {
+  buffer: Buffer;
+  mimeType: "image/jpeg";
+  size: number;
+}
+
+/** Detect the image type from its signature instead of trusting browser MIME. */
+export const detectImageMimeType = (
+  buffer: Uint8Array
+): StoredProjectCover["mimeType"] | null => {
+  if (
+    buffer.length >= 8 &&
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47 &&
+    buffer[4] === 0x0d &&
+    buffer[5] === 0x0a &&
+    buffer[6] === 0x1a &&
+    buffer[7] === 0x0a
+  ) {
+    return "image/png";
+  }
+  if (
+    buffer.length >= 3 &&
+    buffer[0] === 0xff &&
+    buffer[1] === 0xd8 &&
+    buffer[2] === 0xff
+  ) {
+    return "image/jpeg";
+  }
+  return null;
+};
+
+/**
+ * Fully decode and normalize an untrusted project cover before it reaches
+ * project storage. Re-encoding also removes EXIF/GPS and ancillary metadata.
+ */
+export const normalizeProjectCover = async (
+  buffer: Buffer,
+  declaredMime?: string
+): Promise<NormalizedProjectCover> => {
+  if (!buffer.length) throw new Error("封面图片内容为空。");
+  if (buffer.length > MAX_PROJECT_COVER_BYTES) {
+    throw new Error("图片大小不能超过 5MB。");
+  }
+
+  const detectedMime = detectImageMimeType(buffer);
+  if (
+    !detectedMime ||
+    (declaredMime && declaredMime.toLowerCase() !== detectedMime)
+  ) {
+    throw new Error("仅支持内容有效的 JPG 或 PNG 图片。");
+  }
+
+  let output: Buffer;
+  try {
+    const image = sharp(buffer, {
+      failOn: "warning",
+      limitInputPixels: MAX_PROJECT_COVER_INPUT_PIXELS,
+      sequentialRead: true,
+    });
+    const metadata = await image.metadata();
+    const decodedMime = metadata.format === "jpeg"
+      ? "image/jpeg"
+      : metadata.format === "png"
+        ? "image/png"
+        : null;
+    if (
+      decodedMime !== detectedMime ||
+      !metadata.width ||
+      !metadata.height ||
+      (metadata.pages ?? 1) !== 1
+    ) {
+      throw new Error("invalid project cover metadata");
+    }
+
+    output = await image
+      .autoOrient()
+      .resize(PROJECT_COVER_WIDTH, PROJECT_COVER_HEIGHT, {
+        fit: "cover",
+        position: "centre",
+      })
+      .flatten({ background: { r: 255, g: 255, b: 255 } })
+      .jpeg({
+        quality: 82,
+        progressive: true,
+        mozjpeg: true,
+      })
+      .toBuffer();
+  } catch {
+    throw new Error("封面图片无法完整解码，请重新导出 JPG 或 PNG 后上传。");
+  }
+
+  if (!output.length || output.length > MAX_PROJECT_COVER_BYTES) {
+    throw new Error("压缩后的封面图片不能超过 5MB。");
+  }
+
+  // Fail closed if a future Sharp/configuration change stops honoring the
+  // canonical output contract.
+  try {
+    const metadata = await sharp(output, {
+      failOn: "warning",
+      limitInputPixels: MAX_PROJECT_COVER_INPUT_PIXELS,
+    }).metadata();
+    if (
+      metadata.format !== "jpeg" ||
+      metadata.width !== PROJECT_COVER_WIDTH ||
+      metadata.height !== PROJECT_COVER_HEIGHT
+    ) {
+      throw new Error("invalid normalized project cover");
+    }
+  } catch {
+    throw new Error("封面图片处理失败，请稍后重试。");
+  }
+
+  return {
+    buffer: output,
+    mimeType: "image/jpeg",
+    size: output.length,
+  };
+};
+
+/** Validate and persist an admin/imported project cover. */
+export const saveProjectCover = async (file: File): Promise<StoredProjectCover> => {
+  if (file.size > MAX_PROJECT_COVER_BYTES) {
+    throw new Error("图片大小不能超过 5MB。");
+  }
+  const buffer = Buffer.from(await file.arrayBuffer());
+  if (!buffer.length) throw new Error("请选择有效的封面图片。");
+  if (buffer.length > MAX_PROJECT_COVER_BYTES) {
+    throw new Error("图片大小不能超过 5MB。");
+  }
+
+  const detectedMime = detectImageMimeType(buffer);
+  const declaredMime = file.type.toLowerCase();
+  if (!detectedMime || detectedMime !== declaredMime) {
+    throw new Error("仅支持内容有效的 JPG 或 PNG 图片。");
+  }
+
+  return persistProjectCover(buffer, file.name || `cover.${detectedMime === "image/png" ? "png" : "jpg"}`, detectedMime);
+};
+
+/** Persist validated bytes into the dedicated project-cover directory. */
+export const persistProjectCover = async (
+  buffer: Buffer,
+  originalName: string,
+  declaredMime?: string
+): Promise<StoredProjectCover> => {
+  const normalized = await normalizeProjectCover(buffer, declaredMime);
+
+  await mkdir(PROJECT_UPLOAD_DIR, { recursive: true });
+  const storageKey = `${Date.now()}-${randomBytes(8).toString("hex")}.jpg`;
+  await writeFile(join(PROJECT_UPLOAD_DIR, storageKey), normalized.buffer);
+  return {
+    storageKey,
+    originalName,
+    mimeType: normalized.mimeType,
+    size: normalized.size,
+  };
+};
+
+/** Read a project cover from persistent uploads or from the six bundled seeds. */
+export const readProjectCover = async (storageKey: string): Promise<Buffer> => {
+  if (storageKey.startsWith("bundled:")) {
+    const filename = storageKey.slice("bundled:".length);
+    if (!/^project-[1-6]\.jpg$/.test(filename)) throw new Error("封面存储键无效。");
+    return readFile(join(BUNDLED_PROJECT_COVER_DIR, filename));
+  }
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(storageKey)) {
+    throw new Error("封面存储键无效。");
+  }
+  return readFile(join(PROJECT_UPLOAD_DIR, storageKey));
+};
+
+/** Remove an uploaded project cover, while preserving bundled seed images. */
+export const removeProjectCover = async (storageKey: string | null | undefined): Promise<void> => {
+  if (!storageKey || storageKey.startsWith("bundled:")) return;
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(storageKey)) return;
+  try {
+    await unlink(join(PROJECT_UPLOAD_DIR, storageKey));
+  } catch {
+    // Replacements are already committed at this point; stale-file cleanup is best effort.
+  }
 };
 
 // ---------------------------------------------------------------------------
@@ -430,20 +696,25 @@ export const rateLimit = (
   max: number,
   windowMs: number
 ): boolean => {
-  if (rateBuckets.size >= RATE_MAX_BUCKETS) {
-    const now = Date.now();
-    for (const [key, bucket] of rateBuckets) {
-      if (bucket.resetAt <= now) rateBuckets.delete(key);
-    }
-  }
-
   const key = `${scope}:${ip}`;
   const now = Date.now();
-  const bucket = rateBuckets.get(key);
-  if (!bucket || bucket.resetAt <= now) {
-    rateBuckets.set(key, { count: 1, resetAt: now + windowMs });
-    return true;
+  const existing = rateBuckets.get(key);
+  if (existing && existing.resetAt > now) {
+    existing.count += 1;
+    return existing.count <= max;
   }
-  bucket.count += 1;
-  return bucket.count <= max;
+  if (existing) rateBuckets.delete(key);
+
+  if (rateBuckets.size >= RATE_MAX_BUCKETS) {
+    for (const [bucketKey, bucket] of rateBuckets) {
+      if (bucket.resetAt <= now) rateBuckets.delete(bucketKey);
+    }
+  }
+  if (rateBuckets.size >= RATE_MAX_BUCKETS) {
+    const oldestKey = rateBuckets.keys().next().value;
+    if (typeof oldestKey === "string") rateBuckets.delete(oldestKey);
+  }
+
+  rateBuckets.set(key, { count: 1, resetAt: now + windowMs });
+  return true;
 };

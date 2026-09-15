@@ -4,6 +4,9 @@
 .env.*
 !.env.example
 node_modules
+.next
+storage
+*.tsbuildinfo
 npm-debug.log*
 prisma/*.db
 prisma/*.db-journal

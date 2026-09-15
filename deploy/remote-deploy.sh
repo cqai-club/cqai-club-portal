@@ -35,7 +35,8 @@ mkdir -p \
   "$deploy_base/incoming" \
   "$backup_directory" \
   "$temporary_directory" \
-  "$storage_directory/uploads/collection"
+  "$storage_directory/uploads/collection" \
+  "$storage_directory/uploads/projects"
 
 exec 9>"$deploy_base/deploy.lock"
 if ! flock -n 9; then
@@ -88,6 +89,7 @@ cleanup_candidate() {
     "${candidate_database}-wal" \
     "${candidate_database}-shm"
   rmdir \
+    "$candidate_directory/storage/uploads/projects" \
     "$candidate_directory/storage/uploads/collection" \
     "$candidate_directory/storage/uploads" \
     "$candidate_directory/storage" >/dev/null 2>&1 || true
@@ -118,19 +120,48 @@ url_redirects_to() {
   grep -Fqi "location:" <<< "$response_headers" && grep -Fq "$expected_path" <<< "$response_headers"
 }
 
+project_endpoints_are_healthy() {
+  local base_url="$1"
+  local list_body featured_body first_slug
+  list_body="$(curl -fsS "$base_url/api/projects?limit=1")" || return 1
+  featured_body="$(curl -fsS "$base_url/api/projects?featured=true&limit=6")" || return 1
+  [[ "$list_body" == *'"data":['* && "$featured_body" == *'"data":['* ]] || return 1
+
+  first_slug="$(sed -n 's/.*"data":\[{"slug":"\([a-z0-9-][a-z0-9-]*\)".*/\1/p' <<< "$list_body")"
+  if [[ -z "$first_slug" ]]; then
+    [[ "$list_body" == *'"data":[]'* ]]
+    return
+  fi
+
+  curl -fsS "$base_url/api/projects/$first_slug" >/dev/null \
+    && curl -fsS "$base_url/projects/$first_slug" >/dev/null \
+    && curl -fsS "$base_url/api/projects/$first_slug/cover" >/dev/null
+}
+
 cleanup_candidate
 mkdir -p "$candidate_directory"
-mkdir -p "$candidate_directory/storage/uploads/collection"
 backup_database "$candidate_database"
+
+if ! docker run --rm \
+  --env-file "$environment_file" \
+  --env DATABASE_URL=file:/data/dev.db \
+  --volume "$candidate_directory:/data" \
+  --entrypoint node \
+  "$image_name" \
+  node_modules/prisma/build/index.js migrate deploy --schema prisma/schema.prisma; then
+  echo "Candidate database migration failed."
+  exit 5
+fi
 
 docker run -d \
   --name "$candidate_container" \
   --env-file "$environment_file" \
   --env DATABASE_URL=file:/data/dev.db \
   --env CONFIG_DIR=/app/deploy \
+  --env CQAI_STORAGE_ROOT=/app/storage \
   --publish 127.0.0.1::3000 \
   --volume "$candidate_directory:/data" \
-  --volume "$candidate_directory/storage:/app/storage" \
+  --volume "$storage_directory:/app/storage:ro" \
   "$image_name" >/dev/null
 
 candidate_port="$(docker port "$candidate_container" 3000/tcp 2>/dev/null | sed -n 's/.*:\([0-9][0-9]*\)$/\1/p' | head -1 || true)"
@@ -138,7 +169,7 @@ if [[ -z "$candidate_port" ]]; then
   echo "Could not determine candidate port."
   docker inspect "$candidate_container" --format 'status={{.State.Status}} exit={{.State.ExitCode}} error={{.State.Error}}' || true
   docker logs "$candidate_container" --tail 100 || true
-  exit 5
+  exit 6
 fi
 
 candidate_ready=false
@@ -146,6 +177,8 @@ for _ in $(seq 1 60); do
   if curl -fsS "http://127.0.0.1:$candidate_port/api/health" >/dev/null \
     && url_contains "http://127.0.0.1:$candidate_port/" '重庆AI创享俱乐部' \
     && url_contains "http://127.0.0.1:$candidate_port/apply/" '入会申请' \
+    && url_contains "http://127.0.0.1:$candidate_port/projects/" '项目广场' \
+    && project_endpoints_are_healthy "http://127.0.0.1:$candidate_port" \
     && url_redirects_to "http://127.0.0.1:$candidate_port/admin/" '/member/dashboard/admin/members' \
     && url_redirects_to "http://127.0.0.1:$candidate_port/collection-admin.html" '/member/dashboard/admin/collections'; then
     candidate_ready=true
@@ -157,7 +190,7 @@ done
 if [[ "$candidate_ready" != "true" ]]; then
   echo "Candidate verification failed."
   docker logs "$candidate_container" --tail 100 || true
-  exit 6
+  exit 7
 fi
 
 cleanup_candidate
@@ -227,7 +260,7 @@ if ! docker run --rm \
   --entrypoint node \
   "$image_name" \
   node_modules/prisma/build/index.js migrate deploy --schema prisma/schema.prisma; then
-  exit 7
+  exit 8
 fi
 
 if ! docker run -d \
@@ -236,11 +269,12 @@ if ! docker run -d \
   --env-file "$environment_file" \
   --env DATABASE_URL=file:/data/dev.db \
   --env CONFIG_DIR=/app/deploy \
+  --env CQAI_STORAGE_ROOT=/app/storage \
   --publish 127.0.0.1:3000:3000 \
   --volume "$(dirname "$database_file"):/data" \
   --volume "$storage_directory:/app/storage" \
   "$image_name" >/dev/null; then
-  exit 8
+  exit 9
 fi
 
 production_ready=false
@@ -248,6 +282,8 @@ for _ in $(seq 1 60); do
   if curl -fsS http://127.0.0.1:3000/api/health >/dev/null \
     && url_contains http://127.0.0.1:3000/ '重庆AI创享俱乐部' \
     && url_contains http://127.0.0.1:3000/apply/ '入会申请' \
+    && url_contains http://127.0.0.1:3000/projects/ '项目广场' \
+    && project_endpoints_are_healthy http://127.0.0.1:3000 \
     && url_redirects_to http://127.0.0.1:3000/admin/ '/member/dashboard/admin/members' \
     && url_redirects_to http://127.0.0.1:3000/collection-admin.html '/member/dashboard/admin/collections'; then
     production_ready=true

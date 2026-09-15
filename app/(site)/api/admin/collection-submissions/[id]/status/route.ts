@@ -39,7 +39,12 @@ export async function PATCH(
     const submission = await prisma.collectionSubmission.update({
       where: { id },
       data: { status },
-      include: { assets: true },
+      include: {
+        assets: true,
+        importedProject: {
+          select: { id: true, slug: true, status: true, name: true, updatedAt: true },
+        },
+      },
     });
     return NextResponse.json(serializeCollectionSubmission(submission));
   } catch (error) {

@@ -58,9 +58,7 @@ export function readStoredLanguage(): Language {
     ? window.navigator.languages.find(Boolean)
     : window.navigator.language;
 
-  const detected = normalizeLocale(preferred);
-  saveLanguage(detected);
-  return detected;
+  return normalizeLocale(preferred);
 }
 
 export function saveLanguage(language: Language): void {

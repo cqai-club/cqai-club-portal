@@ -21,9 +21,9 @@ This guide explains three kinds of configuration files:
 - `LOGTO_COOKIE_SECRET`
   - Session cookie encryption secret; use a random string with at least 32 chars
 - `BASE_URL_DEV`
-  - Development URL, for example: `http://localhost:3000`
+  - Member-center URL in development, for example: `http://localhost:3000/member`
 - `BASE_URL_PROD`
-  - Public production URL, for example: `https://account.example.com`
+  - Member-center URL in production, for example: `https://example.com/member`
 - `LOGTO_M2M_CLIENT_ID`
   - Client ID of a Machine-to-Machine app in Logto
 - `LOGTO_M2M_CLIENT_SECRET`
@@ -31,6 +31,8 @@ This guide explains three kinds of configuration files:
 
 ### 2) Common optional field
 
+- `HOME_URL`
+  - Public site root after logout, for example: `http://localhost:3000`; do not include `/member`.
 - `SOCIAL_BINDING_CALLBACK_BASE_URL`
   - Forced override for social binding callback base URL.
   - Useful for reverse proxy / multi-domain scenarios. When set, social binding callback always uses this domain.
@@ -107,9 +109,9 @@ Recommended process for adding a new provider:
 4. Restart app to apply config: `docker compose restart app`.
 
 > Note: frontend icon display is based on the `icon` field. Unknown icons fall back to a generic icon (functionality is unaffected).
-> If you want brand-style icons for a provider, add mapping in `app/dashboard/connections/page.tsx` inside `resolveConnectorVisual`.
+> If you want brand-style icons for a provider, add mapping in `app/member/dashboard/connections/page.tsx` inside `resolveConnectorVisual`.
 
-**Important (also mentioned below): in third-party callback allowlists, include not only Logto callback URLs but also this project callback URL `/dashboard/connections/social/callback?target=...`.**
+**Important (also mentioned below): in third-party callback allowlists, include not only Logto callback URLs but also this project callback URL `/member/dashboard/connections/social/callback?target=...`.**
 
 ### 3) Profile field config
 
@@ -131,16 +133,16 @@ Configurable keys: `enabled`, `label`, `description`, `placeholder`, `inputType`
    - **Enable Account Center**: this must be enabled, otherwise some account APIs may not work correctly.
    - **Configure Identifiers**: in account experience/account center settings, grant editable permission for identifiers you want users to change (Email, Phone, Username, etc.).
 4. Configure sign-in callback URLs
-   - Must include at least: `{your-domain}/callback`
+   - Must include at least: `{your-domain}/member/callback`
 5. Configure sign-out callback URLs
-   - `{your-domain}/`
+   - `{your-domain}`, exactly matching `HOME_URL` and without `/member`
 6. If social login is enabled: configure social connectors in Logto
    - Copy connectorId into `features.yaml` path `socialIdentities.config.connectors[].connectorId`
 
 ### B. Third-party providers (Google / GitHub / QQ, etc.)
 
 1. Create an OAuth app in the provider console
-2. Add both Logto callback URLs and this project callback URL (`/dashboard/connections/social/callback?target=...`) to redirect allowlists
+2. Add both Logto callback URLs and this project callback URL (`/member/dashboard/connections/social/callback?target=...`) to redirect allowlists
 3. Put provider clientId/clientSecret back into Logto connector settings
 4. Enable connector in this project’s `features.yaml` (`enabled: true`) and use correct `connectorId`
 
@@ -148,7 +150,7 @@ Configurable keys: `enabled`, `label`, `description`, `placeholder`, `inputType`
 
 Social binding uses:
 
-`{app-domain}/dashboard/connections/social/callback?target=...`
+`{app-domain}/member/dashboard/connections/social/callback?target=...`
 
 If gateway/proxy causes unstable domain detection, set explicitly:
 
@@ -233,7 +235,7 @@ Check `services.yaml`:
   - Source: `services[].icon` in `deploy/services.yaml`
 - `services[].icon` is the single icon source; if loading fails, UI falls back to default icon.
 
-- **Social Connections (`/dashboard/connections`)**
+- **Social Connections (`/member/dashboard/connections`)**
   - Source: `features.socialIdentities.config.connectors[].icon` in `deploy/features.yaml`
   - Built-in brand icons are preferred for `google/github/apple/discord/slack/linkedin/wechat/qq`; others go through generic icon resolver.
 

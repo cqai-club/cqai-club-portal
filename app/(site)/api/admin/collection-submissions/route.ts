@@ -39,7 +39,12 @@ export async function GET(request: Request): Promise<NextResponse> {
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
-        include: { assets: true },
+        include: {
+          assets: true,
+          importedProject: {
+            select: { id: true, slug: true, status: true, name: true, updatedAt: true },
+          },
+        },
       }),
       prisma.collectionSubmission.count({ where }),
     ]);

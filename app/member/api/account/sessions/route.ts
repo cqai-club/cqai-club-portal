@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { getUserLoginHistory, getUserActiveSessions, getLogtoContext } from "@/lib/logto";
+import {
+  getUserLoginHistory,
+  getUserActiveSessions,
+  getLogtoContext,
+  ManagementApiUnavailableError,
+} from "@/lib/logto";
 import { isFeatureEnabled } from "@/config/features";
 import { logger } from "@/lib/logger";
 
@@ -34,6 +39,14 @@ export async function GET(request: Request) {
     const sessions = await getUserLoginHistory();
     return NextResponse.json(sessions);
   } catch (error) {
+    if (error instanceof ManagementApiUnavailableError) {
+      logger.warn("Get sessions unavailable", { reason: error.reason });
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.statusCode }
+      );
+    }
+
     logger.error("Get sessions error:", error);
 
     const errorMessage = error instanceof Error ? error.message : "Unknown error";

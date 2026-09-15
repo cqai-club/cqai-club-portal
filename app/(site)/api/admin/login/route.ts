@@ -10,6 +10,7 @@ import {
   createAdminSession,
   isAdminConfigured,
   rateLimit,
+  trustedClientIp,
 } from "@/lib/site/api-helpers";
 
 export const runtime = "nodejs";
@@ -18,16 +19,8 @@ export const dynamic = "force-dynamic";
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_MAX = 10;
 
-function clientIp(request: Request): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
-    "unknown"
-  );
-}
-
 export async function POST(request: Request): Promise<NextResponse> {
-  const ip = clientIp(request);
+  const ip = trustedClientIp(request);
   if (!rateLimit("adminLogin", ip, LOGIN_MAX, LOGIN_WINDOW_MS)) {
     return NextResponse.json(
       { error: "登录尝试过于频繁，请稍后再试。" },

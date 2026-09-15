@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 import {
-  normalizeLocale,
+  defaultLang,
+  LANGUAGE_STORAGE_KEY,
   readStoredLanguage,
   saveLanguage,
   t,
@@ -11,28 +12,40 @@ import {
 
 const LANGUAGE_CHANGED_EVENT = "account-center-language-changed";
 
-export function useTranslations() {
-  const [language, setLanguageState] = useState<Language>(() => readStoredLanguage());
+function subscribeToLanguage(onStoreChange: () => void): () => void {
+  if (typeof window === "undefined") {
+    return () => undefined;
+  }
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
+  const onLanguageChanged = () => onStoreChange();
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === LANGUAGE_STORAGE_KEY) {
+      onStoreChange();
     }
+  };
 
-    const onLanguageChanged = (event: Event) => {
-      const detail = (event as CustomEvent<string>).detail;
-      setLanguageState(normalizeLocale(detail));
-    };
+  window.addEventListener(LANGUAGE_CHANGED_EVENT, onLanguageChanged);
+  window.addEventListener("storage", onStorage);
 
-    window.addEventListener(LANGUAGE_CHANGED_EVENT, onLanguageChanged as EventListener);
+  return () => {
+    window.removeEventListener(LANGUAGE_CHANGED_EVENT, onLanguageChanged);
+    window.removeEventListener("storage", onStorage);
+  };
+}
 
-    return () => {
-      window.removeEventListener(LANGUAGE_CHANGED_EVENT, onLanguageChanged as EventListener);
-    };
-  }, []);
+const getLanguageSnapshot = (): Language => readStoredLanguage();
+const getServerLanguageSnapshot = (): Language => defaultLang;
+
+export function useTranslations() {
+  // React uses the server snapshot for SSR and the hydration pass, then reads
+  // localStorage through the client snapshot once hydration has completed.
+  const language = useSyncExternalStore(
+    subscribeToLanguage,
+    getLanguageSnapshot,
+    getServerLanguageSnapshot
+  );
 
   const setLanguage = useCallback((nextLanguage: Language) => {
-    setLanguageState(nextLanguage);
     saveLanguage(nextLanguage);
 
     if (typeof window !== "undefined") {
