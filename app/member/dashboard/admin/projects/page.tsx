@@ -36,6 +36,7 @@ import {
   projectStageLabels,
   projectStatusLabels,
 } from "./types";
+import { useProjectPublishPermission } from "./project-permissions";
 
 type Filters = {
   status: string;
@@ -47,6 +48,7 @@ const emptyFilters: Filters = { status: "", featured: "", search: "" };
 
 const statusVariants: Record<ProjectStatus, BadgeProps["variant"]> = {
   draft: "secondary",
+  pending_review: "outline",
   published: "default",
   unpublished: "outline",
 };
@@ -57,6 +59,7 @@ function formatDate(value: string) {
 
 export default function ProjectAdminPage() {
   const router = useRouter();
+  const canPublish = useProjectPublishPermission();
   const [draftFilters, setDraftFilters] = useState<Filters>(emptyFilters);
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [items, setItems] = useState<AdminProject[]>([]);
@@ -222,6 +225,7 @@ export default function ProjectAdminPage() {
               >
                 <option value="">全部状态</option>
                 <option value="draft">草稿</option>
+                <option value="pending_review">待终审</option>
                 <option value="published">已发布</option>
                 <option value="unpublished">已下架</option>
               </select>
@@ -346,12 +350,20 @@ export default function ProjectAdminPage() {
                               setUnpublishTarget(project);
                             }}
                           >下架</Button>
+                        ) : canPublish ? (
+                          <Button asChild size="sm">
+                            <Link href={`/member/dashboard/admin/projects/${encodeURIComponent(project.id)}`}>
+                              查看并终审
+                            </Link>
+                          </Button>
+                        ) : project.status === "pending_review" ? (
+                          <span className="self-center text-xs text-muted-foreground">等待超级管理员终审</span>
                         ) : (
                           <Button
                             size="sm"
                             disabled={Boolean(busyId)}
-                            onClick={() => void updateStatus(project, "published")}
-                          >{busyId === project.id ? "发布中..." : "发布"}</Button>
+                            onClick={() => void updateStatus(project, "pending_review")}
+                          >{busyId === project.id ? "提交中..." : "提交终审"}</Button>
                         )}
                       </div>
                     </td>

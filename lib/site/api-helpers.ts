@@ -12,7 +12,7 @@ import { randomBytes, timingSafeEqual } from "node:crypto";
 import { mkdir, readFile, writeFile, unlink } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
-import { requireMemberAdminPermission } from "@/lib/member/permissions";
+import { MEMBER_ADMIN_PERMISSION, requireMemberAdminPermission } from "@/lib/member/permissions";
 import { NextResponse } from "next/server";
 import sharp from "sharp";
 import xss from "xss";
@@ -94,9 +94,15 @@ export const requireAdminAccess = async (
     process.env.CQAI_CI_AUTH_BYPASS === "enabled-for-smoke-tests"
   ) {
     const adminToken = process.env.CQAI_CI_ADMIN_TOKEN;
+    const editorToken = process.env.CQAI_CI_EDITOR_TOKEN;
     const authenticatedToken = process.env.CQAI_CI_AUTHENTICATED_TOKEN;
     if (adminToken && safeEqual(authorization, `Bearer ${adminToken}`)) {
       return null;
+    }
+    if (editorToken && safeEqual(authorization, `Bearer ${editorToken}`)) {
+      return !requiredPermission || requiredPermission === MEMBER_ADMIN_PERMISSION
+        ? null
+        : NextResponse.json({ error: `您没有 ${requiredPermission} 权限。` }, { status: 403 });
     }
     if (authenticatedToken && safeEqual(authorization, `Bearer ${authenticatedToken}`)) {
       return NextResponse.json(

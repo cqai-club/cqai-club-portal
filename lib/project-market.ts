@@ -5,8 +5,10 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/site/prisma";
 
-export const PROJECT_STATUSES = ["draft", "published", "unpublished"] as const;
+export const PROJECT_STATUSES = ["draft", "pending_review", "published", "unpublished"] as const;
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
+
+export const PUBLIC_PROJECT_STAGES = ["build", "pilot", "live"] as const;
 
 export const PUBLIC_CONTACT_TYPES = ["club", "email", "url", "none"] as const;
 export type PublicContactType = (typeof PUBLIC_CONTACT_TYPES)[number];
@@ -237,6 +239,8 @@ export function serializeAdminProject(project: Project) {
     createdAt: project.createdAt.toISOString(),
     updatedAt: project.updatedAt.toISOString(),
     publishedAt: project.publishedAt?.toISOString() ?? null,
+    reviewedAt: project.reviewedAt?.toISOString() ?? null,
+    reviewedBy: project.reviewedBy,
   };
 }
 
@@ -256,8 +260,8 @@ export function serializePublicProject(project: Project) {
     coverUrl: projectCoverUrl(project),
     featured: project.featured,
     publicContact: {
-      type: project.publicContactType as PublicContactType,
-      value: project.publicContactValue,
+      type: project.sourceSubmissionId ? "club" : project.publicContactType as PublicContactType,
+      value: project.sourceSubmissionId ? null : project.publicContactValue,
     },
     publishedAt: project.publishedAt?.toISOString() ?? null,
     updatedAt: project.updatedAt.toISOString(),
@@ -275,6 +279,7 @@ export async function listPublicProjects(options: PublicProjectListOptions = {})
   const limit = Math.min(50, Math.max(1, Math.trunc(options.limit ?? 12)));
   const where = {
     status: "published",
+    reviewedAt: { not: null },
     ...(options.featured === undefined ? {} : { featured: options.featured }),
   };
   const [projects, total] = await Promise.all([
@@ -298,17 +303,20 @@ export async function listPublicProjects(options: PublicProjectListOptions = {})
 
 export async function getPublicProjectBySlug(slugValue: string): Promise<PublicProject | null> {
   const project = await prisma.project.findFirst({
-    where: { slug: slugValue, status: "published" },
+    where: { slug: slugValue, status: "published", reviewedAt: { not: null } },
   });
   return project ? serializePublicProject(project) : null;
 }
 
-export function getPublishValidationError(project: Pick<Project, "name" | "summary" | "description" | "coverStorageKey">): string | null {
+export function getPublishValidationError(project: Pick<Project, "name" | "summary" | "description" | "coverStorageKey" | "stage">): string | null {
   const missing: string[] = [];
   if (!project.name.trim()) missing.push("项目名称");
   if (!project.summary.trim()) missing.push("项目简介");
   if (!project.description.trim()) missing.push("项目正文");
   if (!project.coverStorageKey) missing.push("项目封面");
+  if (!PUBLIC_PROJECT_STAGES.includes(project.stage as (typeof PUBLIC_PROJECT_STAGES)[number])) {
+    missing.push("对外状态（开发中、试运行或正式上线）");
+  }
   return missing.length ? `发布前请补充：${missing.join("、")}。` : null;
 }
 

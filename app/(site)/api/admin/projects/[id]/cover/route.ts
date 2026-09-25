@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { serializeAdminProject } from "@/lib/project-market";
+import { getProjectReviewActor, PROJECT_PUBLISH_PERMISSION } from "@/lib/member/permissions";
 import {
   readProjectCover,
   removeProjectCover,
@@ -46,12 +47,20 @@ export async function GET(request: Request, context: RouteContext): Promise<Next
 }
 
 export async function PUT(request: Request, context: RouteContext): Promise<NextResponse> {
-  const denied = await requireAdminAccess(request.headers.get("authorization") ?? "");
+  const authorization = request.headers.get("authorization") ?? "";
+  const denied = await requireAdminAccess(authorization);
   if (denied) return denied;
   const { id } = await context.params;
 
   const current = await prisma.project.findUnique({ where: { id } });
   if (!current) return NextResponse.json({ error: "项目不存在。" }, { status: 404 });
+  let reviewer: string | null = null;
+  if (current.status === "published") {
+    const publishDenied = await requireAdminAccess(authorization, PROJECT_PUBLISH_PERMISSION);
+    if (publishDenied) return publishDenied;
+    reviewer = await getProjectReviewActor(authorization);
+    if (!reviewer) return NextResponse.json({ error: "无法确认审核人身份。" }, { status: 403 });
+  }
   const requestedVersion = request.headers.get("if-match");
   if (requestedVersion && requestedVersion !== current.updatedAt.toISOString()) {
     return NextResponse.json(
@@ -89,6 +98,7 @@ export async function PUT(request: Request, context: RouteContext): Promise<Next
         coverOriginalName: saved.originalName,
         coverMimeType: saved.mimeType,
         coverSize: saved.size,
+        ...(reviewer ? { reviewedAt: new Date(), reviewedBy: reviewer } : {}),
       },
     });
     if (update.count !== 1) {

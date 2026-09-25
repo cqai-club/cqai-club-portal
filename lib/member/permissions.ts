@@ -5,6 +5,7 @@ import { logger } from "@/lib/logger";
 
 export const PLUGIN_ADMIN_PERMISSION = "plugin:admin";
 export const MEMBER_ADMIN_PERMISSION = "member:admin";
+export const PROJECT_PUBLISH_PERMISSION = "project:publish";
 
 type PermissionContext = {
   isAuthenticated: boolean;
@@ -47,6 +48,31 @@ export function hasMemberAdminPermission(): Promise<boolean> {
 /** Check the resource-scoped plugin permission used by the plugin market. */
 export function hasPluginAdminPermission(): Promise<boolean> {
   return hasResourcePermission(PLUGIN_ADMIN_PERMISSION);
+}
+
+/** Only the super-admin role should receive this resource permission. */
+export function hasProjectPublishPermission(): Promise<boolean> {
+  return hasResourcePermission(PROJECT_PUBLISH_PERMISSION);
+}
+
+/** The actor is read only after project:publish has been checked. */
+export async function getProjectReviewActor(authorization: string): Promise<string | null> {
+  if (
+    process.env.CI === "true" &&
+    process.env.CQAI_CI_AUTH_BYPASS === "enabled-for-smoke-tests" &&
+    process.env.CQAI_CI_ADMIN_TOKEN &&
+    authorization === `Bearer ${process.env.CQAI_CI_ADMIN_TOKEN}`
+  ) {
+    return "ci-super-admin";
+  }
+  try {
+    const context = await getLogtoContext(CQAI_API_RESOURCE);
+    return context.isAuthenticated && typeof context.claims?.sub === "string"
+      ? context.claims.sub
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 /**

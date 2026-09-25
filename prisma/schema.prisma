@@ -124,6 +124,8 @@ model Project {
   createdAt          DateTime              @default(now())
   updatedAt          DateTime              @updatedAt
   publishedAt        DateTime?
+  reviewedAt         DateTime?
+  reviewedBy         String?
   sourceSubmission   CollectionSubmission? @relation(fields: [sourceSubmissionId], references: [id], onDelete: SetNull)
 
   @@index([status])

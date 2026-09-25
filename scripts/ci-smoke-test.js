@@ -14,6 +14,7 @@ const databasePath = path.join(tempDirectory, 'smoke-test.db');
 const adminUsername = 'ci-admin';
 const adminPassword = 'ci-password-for-tests-only';
 const ciAdminToken = randomBytes(32).toString('hex');
+const ciEditorToken = randomBytes(32).toString('hex');
 const ciAuthenticatedToken = randomBytes(32).toString('hex');
 let applicationProcess;
 
@@ -98,6 +99,13 @@ const prepareDatabase = async databaseUrl => {
       [{ createdType: 'integer', updatedType: 'integer', publishedType: 'integer' }],
       'seed timestamps must use Prisma-compatible SQLite integer storage'
     );
+    const legacyProjects = await inspectionClient.project.findMany({
+      where: { id: { startsWith: 'seed-project-' } },
+      select: { status: true, reviewedAt: true }
+    });
+    assert.equal(legacyProjects.length, 6);
+    assert.ok(legacyProjects.every(project => project.status === 'pending_review' && project.reviewedAt === null),
+      'legacy published projects must await a real super-admin review');
   } finally {
     await inspectionClient.$disconnect();
   }
@@ -190,6 +198,7 @@ const main = async () => {
     CI: 'true',
     CQAI_CI_AUTH_BYPASS: 'enabled-for-smoke-tests',
     CQAI_CI_ADMIN_TOKEN: ciAdminToken,
+    CQAI_CI_EDITOR_TOKEN: ciEditorToken,
     CQAI_CI_AUTHENTICATED_TOKEN: ciAuthenticatedToken,
     ADMIN_USERNAME: adminUsername,
     ADMIN_PASSWORD: adminPassword,
@@ -223,6 +232,48 @@ const main = async () => {
   assert.equal(health.response.status, 200, 'health endpoint should load');
   assert.deepEqual(JSON.parse(health.body), { status: 'ok' });
 
+  const superAuthorization = { authorization: `Bearer ${ciAdminToken}` };
+  const editorAuthorization = { authorization: `Bearer ${ciEditorToken}` };
+  const hiddenLegacy = await request(baseUrl, '/api/projects?featured=true&limit=6');
+  assert.equal(JSON.parse(hiddenLegacy.body).total, 0, 'legacy projects must be private before review');
+  assert.equal((await request(baseUrl, '/api/projects/logic-garden')).response.status, 404);
+  assert.equal((await request(baseUrl, '/api/projects/logic-garden/cover')).response.status, 404);
+
+  const seedStages = ['build', 'pilot', 'live', 'build', 'pilot', 'live'];
+  const seedIds = [
+    'seed-project-logic-garden', 'seed-project-yifan-data-help',
+    'seed-project-contract-review', 'seed-project-megaself',
+    'seed-project-hairstyle', 'seed-project-dredging-robot'
+  ];
+  const missingStagePublish = await request(baseUrl, `/api/admin/projects/${seedIds[0]}/status`, {
+    method: 'PATCH',
+    headers: { ...superAuthorization, 'content-type': 'application/json' },
+    body: JSON.stringify({ status: 'published' })
+  });
+  assert.equal(missingStagePublish.response.status, 400, 'a public stage is required before review');
+  for (const [index, id] of seedIds.entries()) {
+    const stageUpdate = await request(baseUrl, `/api/admin/projects/${id}`, {
+      method: 'PATCH',
+      headers: { ...editorAuthorization, 'content-type': 'application/json' },
+      body: JSON.stringify({ stage: seedStages[index] })
+    });
+    assert.equal(stageUpdate.response.status, 200, `editor should prepare legacy stage: ${stageUpdate.body}`);
+    const editorPublish = await request(baseUrl, `/api/admin/projects/${id}/status`, {
+      method: 'PATCH',
+      headers: { ...editorAuthorization, 'content-type': 'application/json' },
+      body: JSON.stringify({ status: 'published' })
+    });
+    assert.equal(editorPublish.response.status, 403, 'member:admin alone must not publish');
+    const reviewed = await request(baseUrl, `/api/admin/projects/${id}/status`, {
+      method: 'PATCH',
+      headers: { ...superAuthorization, 'content-type': 'application/json' },
+      body: JSON.stringify({ status: 'published' })
+    });
+    assert.equal(reviewed.response.status, 200, `super-admin should review legacy project: ${reviewed.body}`);
+    assert.equal(JSON.parse(reviewed.body).reviewedBy, 'ci-super-admin');
+    assert.ok(JSON.parse(reviewed.body).reviewedAt);
+  }
+
   const portalPage = await request(baseUrl, '/');
   assert.equal(portalPage.response.status, 200, 'official portal should load');
   assert.match(portalPage.body, /重庆AI创享俱乐部 \| 在重庆，做AI/);
@@ -254,6 +305,7 @@ const main = async () => {
   assert.equal(publicProjectsPayload.data.length, 6, 'the six migrated homepage projects should be featured');
   assert.equal(publicProjectsPayload.data[0].slug, 'logic-garden');
   assert.equal(publicProjectsPayload.data[0].name, '理园LogicGarden——私家园林智慧平台');
+  assert.deepEqual(new Set(publicProjectsPayload.data.map(project => project.stage)), new Set(['build', 'pilot', 'live']));
   const initialSeedUpdatedAt = publicProjectsPayload.data[0].updatedAt;
   assert.equal('internalContact' in publicProjectsPayload.data[0], false, 'public summaries must omit internal contact data');
   assert.equal('sourceSubmissionId' in publicProjectsPayload.data[0], false, 'public summaries must omit submission linkage');
@@ -357,6 +409,17 @@ const main = async () => {
     200,
     `migrated projects must remain editable: ${editableSeedProject.body}`
   );
+  const editorPublishedEdit = await request(baseUrl, '/api/admin/projects/seed-project-logic-garden', {
+    method: 'PATCH',
+    headers: { ...editorAuthorization, 'content-type': 'application/json' },
+    body: JSON.stringify({ summary: 'Unreviewed public edit' })
+  });
+  assert.equal(editorPublishedEdit.response.status, 403, 'editor must not change reviewed public content');
+  const editorPublishedCover = await request(baseUrl, '/api/admin/projects/seed-project-logic-garden/cover', {
+    method: 'PUT',
+    headers: editorAuthorization
+  });
+  assert.equal(editorPublishedCover.response.status, 403, 'editor must not replace a reviewed public cover');
   const staleSeedUpdate = await request(baseUrl, '/api/admin/projects/seed-project-logic-garden', {
     method: 'PATCH',
     headers: { ...authorization, 'content-type': 'application/json', 'if-match': initialSeedUpdatedAt },
@@ -536,6 +599,7 @@ const main = async () => {
     projectFocus: 'Automation',
     projectBio: 'Collection submission for automated testing\nSecond paragraph',
     needs: 'Pilot customer\nTechnical partner',
+    demoUrl: 'https://example.invalid/demo',
     projectContact: '19900000001',
     consent: 'true'
   };
@@ -678,6 +742,12 @@ const main = async () => {
     body: JSON.stringify({ publicContactType: 'email', publicContactValue: 'not-an-email' })
   });
   assert.equal(invalidContact.response.status, 400, 'invalid public contact data should be rejected');
+  const directMemberContact = await request(baseUrl, `/api/admin/projects/${importedProjectId}`, {
+    method: 'PATCH',
+    headers: { ...authorization, 'content-type': 'application/json' },
+    body: JSON.stringify({ publicContactType: 'email', publicContactValue: 'project@example.invalid' })
+  });
+  assert.equal(directMemberContact.response.status, 400, 'member submissions must route public inquiries through the club');
 
   const featureDraft = await request(baseUrl, `/api/admin/projects/${importedProjectId}`, {
     method: 'PATCH',
@@ -697,12 +767,25 @@ const main = async () => {
     headers: { ...authorization, 'content-type': 'application/json' },
     body: JSON.stringify({
       featured: false,
-      featuredOrder: null,
-      publicContactType: 'email',
-      publicContactValue: 'project@example.invalid'
+      featuredOrder: null
     })
   });
   assert.equal(preparePublish.response.status, 200, `project should be ready to publish: ${preparePublish.body}`);
+
+  const submittedForReview = await request(baseUrl, `/api/admin/projects/${importedProjectId}/status`, {
+    method: 'PATCH',
+    headers: { ...editorAuthorization, 'content-type': 'application/json' },
+    body: JSON.stringify({ status: 'pending_review' })
+  });
+  assert.equal(submittedForReview.response.status, 200, 'editor should submit a complete project for review');
+  assert.equal(JSON.parse(submittedForReview.body).status, 'pending_review');
+  assert.equal((await request(baseUrl, `/api/projects/${importedProjectSlug}`)).response.status, 404);
+  const editorPublishImported = await request(baseUrl, `/api/admin/projects/${importedProjectId}/status`, {
+    method: 'PATCH',
+    headers: { ...editorAuthorization, 'content-type': 'application/json' },
+    body: JSON.stringify({ status: 'published' })
+  });
+  assert.equal(editorPublishImported.response.status, 403, 'editor cannot complete final review');
 
   const publishProject = await request(baseUrl, `/api/admin/projects/${importedProjectId}/status`, {
     method: 'PATCH',
@@ -710,14 +793,18 @@ const main = async () => {
     body: JSON.stringify({ status: 'published' })
   });
   assert.equal(publishProject.response.status, 200, `complete project should publish: ${publishProject.body}`);
+  assert.equal(JSON.parse(publishProject.body).reviewedBy, 'ci-super-admin');
 
   const visibleProject = await request(baseUrl, `/api/projects/${importedProjectSlug}`);
   assert.equal(visibleProject.response.status, 200, 'published project should become public');
   const visiblePayload = JSON.parse(visibleProject.body);
-  assert.equal(visiblePayload.publicContact.type, 'email');
-  assert.equal(visiblePayload.publicContact.value, 'project@example.invalid');
+  assert.equal(visiblePayload.publicContact.type, 'club');
+  assert.equal(visiblePayload.publicContact.value, null);
   assert.equal('internalContact' in visiblePayload, false, 'published project must not leak internal contact');
   assert.equal('sourceSubmissionId' in visiblePayload, false, 'published project must not leak its submission id');
+  const importedPublicPage = await request(baseUrl, `/projects/${importedProjectSlug}`);
+  assert.match(importedPublicPage.body, /立即体验/);
+  assert.match(importedPublicPage.body, /联系俱乐部/);
   const visibleProjectCover = await requestBuffer(
     baseUrl,
     `/api/projects/${importedProjectSlug}/cover`
@@ -843,6 +930,7 @@ const main = async () => {
     body: JSON.stringify({ status: 'unpublished' })
   });
   assert.equal(unpublishProject.response.status, 200, 'published project should be removable from public view');
+  assert.equal(JSON.parse(unpublishProject.body).reviewedAt, null, 'unpublished content must require another final review');
   assert.equal((await request(baseUrl, `/api/projects/${importedProjectSlug}`)).response.status, 404, 'unpublished detail must be hidden');
   assert.equal((await request(baseUrl, `/api/projects/${importedProjectSlug}/cover`)).response.status, 404, 'unpublished cover must be hidden');
 
