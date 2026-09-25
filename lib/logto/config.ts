@@ -28,6 +28,7 @@ export const logtoConfig: LogtoNextConfig = {
     "identities",
     "plugin:admin",
     "member:admin",
+    "project:publish",
   ],
   resources: [CQAI_API_RESOURCE],
 };

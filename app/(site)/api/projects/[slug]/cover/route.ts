@@ -12,7 +12,7 @@ export async function GET(_request: Request, context: RouteContext): Promise<Nex
   const { slug } = await context.params;
   try {
     const project = await prisma.project.findFirst({
-      where: { slug, status: "published" },
+      where: { slug, status: "published", reviewedAt: { not: null } },
       select: { coverStorageKey: true, coverMimeType: true },
     });
     if (!project?.coverStorageKey || !project.coverMimeType) {

@@ -2952,10 +2952,9 @@
         // ========== 首页推荐项目 ==========
         const featuredProjectGrid = document.getElementById('featuredProjectGrid');
         const projectStageLabels = {
-            idea: '构想验证',
             build: '开发中',
-            pilot: '试点运行',
-            live: '已上线'
+            pilot: '试运行',
+            live: '正式上线'
         };
 
         function appendProjectState(title, description, actions) {
@@ -3043,7 +3042,9 @@
             summary.textContent = String(project.summary || '期待与你一起探索这个项目的更多可能。');
             const detail = document.createElement('span');
             detail.className = 'project-card-cta';
-            detail.textContent = '查看项目详情 →';
+            detail.textContent = project.publicContact?.type === 'club'
+                ? '了解项目并联系俱乐部 →'
+                : '查看项目详情 →';
 
             info.appendChild(title);
             if (meta.childElementCount) info.appendChild(meta);

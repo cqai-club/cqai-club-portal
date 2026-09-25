@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getLogtoContext } from "@/lib/logto";
-import { hasMemberAdminPermission } from "@/lib/member/permissions";
+import { hasMemberAdminPermission, hasProjectPublishPermission } from "@/lib/member/permissions";
+import { ProjectPublishPermissionProvider } from "./project-permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,11 @@ export default async function ProjectAdminLayout({
 
   if (!isAuthenticated) redirect("/member/sign-in");
   if (!(await hasMemberAdminPermission())) redirect("/member/dashboard");
+  const canPublish = await hasProjectPublishPermission();
 
-  return children;
+  return (
+    <ProjectPublishPermissionProvider canPublish={canPublish}>
+      {children}
+    </ProjectPublishPermissionProvider>
+  );
 }

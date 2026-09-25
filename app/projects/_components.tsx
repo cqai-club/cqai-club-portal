@@ -6,10 +6,9 @@ import type { PublicContact, PublicProjectView } from "./_types";
 import styles from "./projects.module.css";
 
 const STAGE_LABELS: Record<string, string> = {
-  idea: "构想验证",
   build: "开发中",
-  pilot: "试点运行",
-  live: "已上线",
+  pilot: "试运行",
+  live: "正式上线",
 };
 
 export const projectStageLabel = (stage: string): string =>
@@ -93,8 +92,8 @@ export function ProjectCard({ project }: { project: PublicProjectView }) {
         <h2>{project.name}</h2>
         {project.ownerName && <p className={styles.owner}>负责人：{project.ownerName}</p>}
         <p className={styles.summary}>{project.summary}</p>
-        <span className={styles.cardCta} aria-hidden="true">
-          查看项目详情 →
+        <span className={styles.cardCta}>
+          {project.publicContact.type === "club" ? "了解项目并联系俱乐部 →" : "查看项目详情 →"}
         </span>
       </div>
     </Link>
@@ -130,7 +129,7 @@ export function EmptyState({
   );
 }
 
-export function PublicContactAction({ contact }: { contact: PublicContact }) {
+export function PublicContactAction({ contact, projectName }: { contact: PublicContact; projectName: string }) {
   if (contact.type === "none") return null;
 
   if (contact.type === "email" && contact.value) {
@@ -155,8 +154,8 @@ export function PublicContactAction({ contact }: { contact: PublicContact }) {
   }
 
   return (
-    <Link className={styles.primaryAction} href="/#join">
+    <a className={styles.primaryAction} href={`mailto:781728683@qq.com?subject=${encodeURIComponent(`咨询项目：${projectName}`)}`}>
       联系俱乐部
-    </Link>
+    </a>
   );
 }

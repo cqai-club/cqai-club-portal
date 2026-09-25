@@ -92,10 +92,10 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  查看演示 ↗
+                  立即体验 ↗
                 </a>
               )}
-              <PublicContactAction contact={project.publicContact} />
+              <PublicContactAction contact={project.publicContact} projectName={project.name} />
             </div>
           </div>
         </header>

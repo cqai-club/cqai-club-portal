@@ -42,6 +42,7 @@ import {
   projectStageLabels,
   projectStatusLabels,
 } from "../types";
+import { useProjectPublishPermission } from "../project-permissions";
 
 type ProjectForm = {
   name: string;
@@ -62,6 +63,7 @@ type ProjectForm = {
 
 const statusVariants: Record<ProjectStatus, BadgeProps["variant"]> = {
   draft: "secondary",
+  pending_review: "outline",
   published: "default",
   unpublished: "outline",
 };
@@ -78,8 +80,8 @@ function formFromProject(project: AdminProject): ProjectForm {
     collaborationNeeds: project.collaborationNeeds || "",
     demoUrl: project.demoUrl || "",
     internalContact: project.internalContact || "",
-    publicContactType: project.publicContactType || "club",
-    publicContactValue: project.publicContactValue || "",
+    publicContactType: project.sourceSubmissionId ? "club" : project.publicContactType || "club",
+    publicContactValue: project.sourceSubmissionId ? "" : project.publicContactValue || "",
     featured: Boolean(project.featured),
     featuredOrder: project.featuredOrder ? String(project.featuredOrder) : "",
   };
@@ -98,6 +100,7 @@ function humanFileSize(size: number | null) {
 }
 
 export default function ProjectEditorPage() {
+  const canPublish = useProjectPublishPermission();
   const params = useParams<{ id: string }>();
   const projectId = Array.isArray(params.id) ? params.id[0] : params.id;
   const [project, setProject] = useState<AdminProject | null>(null);
@@ -245,10 +248,11 @@ export default function ProjectEditorPage() {
     if (!currentForm.summary.trim()) return "发布前请填写一句话简介。";
     if (!currentForm.description.trim()) return "发布前请填写详细介绍。";
     if (!coverFile && !project?.coverOriginalName && !project?.coverUrl) return "发布前请上传项目封面。";
+    if (!["build", "pilot", "live"].includes(currentForm.stage)) return "请先选择开发中、试运行或正式上线。";
     return "";
   }
 
-  async function saveProject(nextStatus?: "published") {
+  async function saveProject(nextStatus?: "published" | "pending_review") {
     if (!form || !project) return;
     setError("");
     setSuccess("");
@@ -257,7 +261,7 @@ export default function ProjectEditorPage() {
       reportError("请填写项目名称。");
       return;
     }
-    if (nextStatus === "published") {
+    if (nextStatus) {
       const validationError = validateForPublish(form);
       if (validationError) {
         reportError(validationError);
@@ -291,14 +295,14 @@ export default function ProjectEditorPage() {
         clearPendingCover();
       }
 
-      if (nextStatus === "published") {
+      if (nextStatus) {
         const statusResponse = await fetch(`/api/admin/projects/${encodeURIComponent(project.id)}/status`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json", "If-Match": updated.updatedAt },
-          body: JSON.stringify({ status: "published" }),
+          body: JSON.stringify({ status: nextStatus }),
         });
         const statusResult = await statusResponse.json().catch(() => ({}));
-        if (!statusResponse.ok) throw new Error(statusResult.error || "项目资料已保存，但发布失败。");
+        if (!statusResponse.ok) throw new Error(statusResult.error || "项目资料已保存，但状态更新失败。");
         updated = statusResult;
         setProject(updated);
       }
@@ -308,6 +312,8 @@ export default function ProjectEditorPage() {
       setSuccess(
         nextStatus === "published"
           ? "项目已发布，公开页面已即时更新。"
+          : nextStatus === "pending_review"
+            ? "项目已提交终审，审核通过前不会公开。"
           : project.status === "published"
             ? "项目已保存，公开页面已即时更新。"
             : "项目草稿已保存。"
@@ -361,6 +367,7 @@ export default function ProjectEditorPage() {
 
   const imageUrl = coverPreview || project.coverUrl;
   const publicContactNeedsValue = form.publicContactType === "email" || form.publicContactType === "url";
+  const canEdit = project.status !== "published" || canPublish;
 
   return (
     <div className="space-y-6">
@@ -386,14 +393,20 @@ export default function ProjectEditorPage() {
               </Link>
             </Button>
           )}
-          <Button variant="outline" onClick={() => void saveProject()} disabled={saving}>
+          {canEdit && <Button variant="outline" onClick={() => void saveProject()} disabled={saving}>
             <Save className="h-4 w-4" />{saving ? "保存中..." : "保存"}
-          </Button>
+          </Button>}
           {project.status === "published" ? (
             <Button variant="destructive" onClick={event => { unpublishTriggerRef.current = event.currentTarget; setUnpublishError(""); setUnpublishOpen(true); }} disabled={saving}>下架</Button>
-          ) : (
+          ) : canPublish ? (
             <Button onClick={() => void saveProject("published")} disabled={saving}>
-              {saving ? "发布中..." : "保存并发布"}
+              {saving ? "发布中..." : "保存并审核发布"}
+            </Button>
+          ) : project.status === "pending_review" ? (
+            <span className="self-center text-sm text-muted-foreground">等待超级管理员终审</span>
+          ) : (
+            <Button onClick={() => void saveProject("pending_review")} disabled={saving}>
+              {saving ? "提交中..." : "保存并提交终审"}
             </Button>
           )}
         </div>
@@ -410,7 +423,7 @@ export default function ProjectEditorPage() {
         </div>
       )}
 
-      <fieldset disabled={saving} className="contents">
+      <fieldset disabled={saving || !canEdit} className="contents">
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,1fr)]">
         <div className="space-y-6">
           <Card>
@@ -458,6 +471,7 @@ export default function ProjectEditorPage() {
                   <option value="">暂不展示</option>
                   {Object.entries(projectStageLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
+                <p className="text-xs text-muted-foreground">对外发布须选择开发中、试运行或正式上线；构想验证仅用于草稿。</p>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="project-focus">AI 技术 / 应用方向</Label>
@@ -506,12 +520,14 @@ export default function ProjectEditorPage() {
                   className="h-9 rounded-md border bg-background px-3 text-sm"
                   value={form.publicContactType}
                   onChange={event => setField("publicContactType", event.target.value as PublicContactType)}
+                  disabled={Boolean(project.sourceSubmissionId)}
                 >
                   <option value="club">联系俱乐部</option>
                   <option value="email">公开邮箱</option>
                   <option value="url">HTTPS 联系链接</option>
                   <option value="none">不展示</option>
                 </select>
+                {project.sourceSubmissionId && <p className="text-xs text-muted-foreground">会员提交项目统一由俱乐部对接，不公开提交人的联系方式。</p>}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="public-contact-value">公开联系内容{publicContactNeedsValue ? " *" : ""}</Label>
@@ -607,6 +623,8 @@ export default function ProjectEditorPage() {
               <div className="flex justify-between gap-4"><span className="text-muted-foreground">当前状态</span><Badge variant={statusVariants[project.status]}>{projectStatusLabels[project.status]}</Badge></div>
               <div className="flex justify-between gap-4"><span className="text-muted-foreground">创建时间</span><span className="text-right">{formatDate(project.createdAt)}</span></div>
               <div className="flex justify-between gap-4"><span className="text-muted-foreground">发布时间</span><span className="text-right">{formatDate(project.publishedAt)}</span></div>
+              <div className="flex justify-between gap-4"><span className="text-muted-foreground">终审时间</span><span className="text-right">{formatDate(project.reviewedAt)}</span></div>
+              {project.reviewedBy && <div className="flex justify-between gap-4"><span className="text-muted-foreground">终审人 ID</span><span className="text-right break-all">{project.reviewedBy}</span></div>}
             </CardContent>
           </Card>
         </div>
@@ -614,13 +632,17 @@ export default function ProjectEditorPage() {
       </fieldset>
 
       <div className="sticky bottom-4 flex flex-wrap justify-end gap-2 rounded-lg border bg-background/95 p-3 shadow-lg backdrop-blur">
-        <Button variant="outline" onClick={() => void saveProject()} disabled={saving}>
+        <Button variant="outline" onClick={() => void saveProject()} disabled={saving || !canEdit}>
           <Save className="h-4 w-4" />{saving ? "保存中..." : "保存项目"}
         </Button>
         {project.status === "published" ? (
           <Button variant="destructive" onClick={event => { unpublishTriggerRef.current = event.currentTarget; setUnpublishError(""); setUnpublishOpen(true); }} disabled={saving}>下架项目</Button>
+        ) : canPublish ? (
+          <Button onClick={() => void saveProject("published")} disabled={saving}>{saving ? "发布中..." : "保存并审核发布"}</Button>
+        ) : project.status === "pending_review" ? (
+          <span className="self-center text-sm text-muted-foreground">等待超级管理员终审</span>
         ) : (
-          <Button onClick={() => void saveProject("published")} disabled={saving}>{saving ? "发布中..." : "保存并发布"}</Button>
+          <Button onClick={() => void saveProject("pending_review")} disabled={saving}>{saving ? "提交中..." : "保存并提交终审"}</Button>
         )}
       </div>
 
