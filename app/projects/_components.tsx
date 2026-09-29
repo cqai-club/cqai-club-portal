@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- cover URLs are controlled dynamic API resources */
 
 import Link from "next/link";
+import { Menu, X } from "lucide-react";
 
 import type { PublicContact, PublicProjectView } from "./_types";
 import styles from "./projects.module.css";
@@ -14,7 +15,17 @@ const STAGE_LABELS: Record<string, string> = {
 export const projectStageLabel = (stage: string): string =>
   STAGE_LABELS[stage] ?? stage;
 
-export function SiteHeader() {
+export function SiteHeader({ current }: { current: "events" | "projects" }) {
+  const cta = current === "events"
+    ? { href: "/member/dashboard/activities", label: "我的报名" }
+    : { href: "/collect/?type=project", label: "提交项目" };
+  const links = [
+    { href: "/", label: "俱乐部首页" },
+    { href: "/events/", label: "活动交流", current: current === "events" },
+    { href: "/projects/", label: "项目广场", current: current === "projects" },
+    { href: "/member", label: "会员中心" },
+  ];
+
   return (
     <header className={styles.header}>
       <div className={styles.headerInner}>
@@ -25,20 +36,20 @@ export function SiteHeader() {
             <small>CHONGQING AI INNOVATION CLUB</small>
           </span>
         </Link>
-        <nav className={styles.nav} aria-label="项目广场导航">
-          <Link className={styles.navLink} href="/">
-            俱乐部首页
-          </Link>
-          <Link className={styles.navLink} href="/projects/" aria-current="page">
-            项目广场
-          </Link>
-          <Link className={`${styles.navLink} ${styles.memberNavLink}`} href="/member">
-            会员中心
-          </Link>
-          <Link className={styles.navCta} href="/collect/?type=project">
-            提交项目
-          </Link>
+        <nav className={styles.nav} aria-label="俱乐部门户导航">
+          {links.map(link => <Link key={link.href} className={`${styles.navLink} ${link.href === "/member" ? styles.memberNavLink : ""}`} href={link.href} aria-current={link.current ? "page" : undefined}>{link.label}</Link>)}
+          <Link className={styles.navCta} href={cta.href}>{cta.label}</Link>
         </nav>
+        <details className={styles.mobileMenu}>
+          <summary className={styles.mobileMenuToggle}>
+            <Menu className={styles.menuIcon} aria-hidden="true" size={20} />
+            <X className={styles.closeIcon} aria-hidden="true" size={20} />
+          </summary>
+          <nav className={styles.mobileNav} aria-label="移动端俱乐部门户导航">
+            {links.map(link => <Link key={link.href} className={styles.mobileNavLink} href={link.href} aria-label={link.label} aria-current={link.current ? "page" : undefined}>{link.label}</Link>)}
+            <Link className={styles.mobileNavCta} href={cta.href} aria-label={cta.label}>{cta.label}</Link>
+          </nav>
+        </details>
       </div>
     </header>
   );
@@ -54,6 +65,7 @@ export function SiteFooter() {
         </div>
         <nav className={styles.footerLinks} aria-label="页脚导航">
           <Link href="/">俱乐部首页</Link>
+          <Link href="/events/">活动交流</Link>
           <Link href="/projects/">项目广场</Link>
           <Link href="/collect/?type=project">提交项目</Link>
         </nav>

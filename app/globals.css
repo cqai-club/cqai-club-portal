@@ -239,6 +239,66 @@ img {
   --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
+/* Keep the member workspace palette separate from the public site. The body
+   selector also covers dialogs and menus rendered into a portal. */
+body:has(.member-center),
+.member-center {
+  --background: #f7f7f8;
+  --foreground: #18181b;
+  --card: #ffffff;
+  --card-foreground: #18181b;
+  --popover: #ffffff;
+  --popover-foreground: #18181b;
+  --primary: #6d28d9;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f1f3;
+  --secondary-foreground: #27272a;
+  --muted: #f4f4f5;
+  --muted-foreground: #52525b;
+  --accent: #f2ecff;
+  --accent-foreground: #5b21b6;
+  --border: #e4e4e7;
+  --input: #d4d4d8;
+  --ring: #7c3aed;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #27272a;
+  --sidebar-primary: #6d28d9;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f2ecff;
+  --sidebar-accent-foreground: #5b21b6;
+  --sidebar-border: #e4e4e7;
+  --sidebar-ring: #7c3aed;
+}
+
+.dark body:has(.member-center),
+.dark .member-center {
+  --background: #111114;
+  --foreground: #f4f4f5;
+  --card: #1b1b20;
+  --card-foreground: #f4f4f5;
+  --popover: #1b1b20;
+  --popover-foreground: #f4f4f5;
+  --primary: #b794f6;
+  --primary-foreground: #211330;
+  --secondary: #2a2a31;
+  --secondary-foreground: #f4f4f5;
+  --muted: #29292f;
+  --muted-foreground: #b4b4bf;
+  --accent: #352641;
+  --accent-foreground: #eadbff;
+  --border: #37373f;
+  --input: #4b4b54;
+  --ring: #b794f6;
+  --sidebar: #1b1b20;
+  --sidebar-foreground: #f4f4f5;
+  --sidebar-primary: #b794f6;
+  --sidebar-primary-foreground: #211330;
+  --sidebar-accent: #352641;
+  --sidebar-accent-foreground: #eadbff;
+  --sidebar-border: #37373f;
+  --sidebar-ring: #b794f6;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

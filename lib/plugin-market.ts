@@ -47,6 +47,26 @@ export const pluginInputSchema = z.object({
 
 export type PluginInput = z.infer<typeof pluginInputSchema>;
 
+function unique(values: string[]): string[] {
+  return [...new Set(values.map(value => value.trim()).filter(Boolean))];
+}
+
+export function pluginDbData(input: PluginInput) {
+  return {
+    packageName: input.packageName,
+    displayName: input.displayName,
+    summary: input.summary,
+    description: input.description || null,
+    categoriesJson: JSON.stringify(unique(input.categories)),
+    keywordsJson: JSON.stringify(unique(input.keywords)),
+    repositoryUrl: input.repositoryUrl || null,
+    homepageUrl: input.homepageUrl || null,
+    iconUrl: input.iconUrl || null,
+    compatibilityApiVersion: input.compatibilityApiVersion || null,
+    compatibilityHostsJson: JSON.stringify(unique(input.compatibilityHosts)),
+  };
+}
+
 export const pluginStatusSchema = z.enum(PLUGIN_STATUSES);
 
 function parseJsonArray(value: string, fallback: string[] = []): string[] {

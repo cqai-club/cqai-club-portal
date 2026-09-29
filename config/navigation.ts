@@ -3,12 +3,12 @@ import {
   LayoutDashboard,
   User,
   Shield,
-  Link2,
-  Settings,
   Users,
   Files,
   Store,
   BriefcaseBusiness,
+  CalendarDays,
+  ClipboardList,
 } from "lucide-react";
 import { t, type Language } from "@/lib/i18n";
 
@@ -39,20 +39,20 @@ export const mainNavItems: NavItem[] = [
     icon: Shield,
   },
   {
-    href: "/member/dashboard/connections",
-    title: "社交连接",
-    titleKey: "nav.connections",
-    icon: Link2,
-  },
-  {
-    href: "/member/dashboard/settings",
-    title: "偏好设置",
-    titleKey: "nav.settings",
-    icon: Settings,
+    href: "/member/dashboard/activities",
+    title: "我的活动",
+    titleKey: "nav.activities",
+    icon: CalendarDays,
   },
 ];
 
 export const adminNavItems: NavItem[] = [
+  {
+    href: "/member/dashboard/admin/activities",
+    title: "活动管理",
+    titleKey: "nav.adminActivities",
+    icon: ClipboardList,
+  },
   {
     href: "/member/dashboard/admin/members",
     title: "会员申请",

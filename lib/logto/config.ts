@@ -29,9 +29,21 @@ export const logtoConfig: LogtoNextConfig = {
     "plugin:admin",
     "member:admin",
     "project:publish",
+    ...(process.env.CQAI_ACTIVITY_PUBLISH_SCOPE_ENABLED === "true" ? ["activity:publish"] : []),
   ],
   resources: [CQAI_API_RESOURCE],
 };
+
+/** Keep optional local previews readable until a Logto Web app is configured. */
+export function isLogtoConfigured(): boolean {
+  return Boolean(
+    logtoConfig.endpoint &&
+    logtoConfig.appId &&
+    logtoConfig.appSecret &&
+    logtoConfig.baseUrl &&
+    logtoConfig.cookieSecret
+  );
+}
 
 /**
  * Management API (M2M) 配置

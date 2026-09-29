@@ -9,7 +9,7 @@ export default function ProjectsLayout({ children }: { children: ReactNode }) {
       <a className={styles.skipLink} href="#projects-main">
         跳到主要内容
       </a>
-      <SiteHeader />
+      <SiteHeader current="projects" />
       {children}
       <SiteFooter />
     </div>

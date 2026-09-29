@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { signIn, logtoConfig } from "@/lib/logto";
+import Link from "next/link";
+import { signIn, logtoConfig, isLogtoConfigured } from "@/lib/logto";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,16 @@ export default async function SignInPage() {
     // redirect URI so it matches the Logto console registration
     // (http://localhost:3000/member/callback or https://cqaiclub.asia/member/callback).
     await signIn(`${logtoConfig.baseUrl}/callback`);
+  }
+
+  if (!isLogtoConfigured()) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-4 text-center">
+        <h1 className="text-2xl font-semibold">登录暂不可用</h1>
+        <p className="text-muted-foreground">当前预览环境尚未连接会员登录服务。</p>
+        <Link href="/events/" className="text-primary underline">返回活动交流</Link>
+      </main>
+    );
   }
 
   return (

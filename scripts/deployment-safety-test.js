@@ -27,6 +27,16 @@ assert.equal(
   'candidate and production containers must resolve uploads through the mounted storage path'
 );
 assert.match(nginxConfig, /client_max_body_size\s+6m;/, 'nginx must admit valid project covers up to the application limit');
+assert.equal(
+  nginxConfig.split('location ~ ^/api/v1/activities/[^/]+/recap/?$').length - 1,
+  2,
+  'HTTPS and loopback proxy blocks must give recap uploads their own limit'
+);
+assert.equal(
+  (nginxConfig.match(/client_max_body_size\s+31m;/g) || []).length,
+  2,
+  'recap proxy blocks must admit six 5 MiB images plus multipart framing'
+);
 assert.match(dockerIgnore, /^\.next$/m, 'Docker builds must exclude local Next.js artifacts');
 assert.match(dockerIgnore, /^storage$/m, 'Docker builds must exclude local uploaded content');
 assert.match(dockerIgnore, /^\*\.tsbuildinfo$/m, 'Docker builds must exclude local TypeScript caches');
@@ -37,11 +47,27 @@ assert.equal(
   'preflight and post-deploy probes must cover the full 5 MiB application limit'
 );
 assert.equal(
-  (workflow.match(/--request PUT/g) || []).length,
+  (workflow.match(/--form "cover=/g) || []).length,
   2,
-  'project-cover proxy probes must use the implemented PUT method'
+  'preflight and post-deploy cover probes must use the multipart cover field'
+);
+assert.equal(
+  (workflow.match(/--form "images=/g) || []).length,
+  2,
+  'recap proxy probes must use the multipart image field'
+);
+assert.equal(
+  (workflow.match(/--request PUT/g) || []).length,
+  4,
+  'all cover and recap proxy probes must use the implemented PUT methods'
 );
 assert.match(workflow, /cover_proxy_status[^]*'401'/, 'the proxy probe must reach the protected application route');
+assert.equal(
+  (workflow.match(/bs=1048576 count=7/g) || []).length,
+  2,
+  'preflight and post-deploy probes must exceed the old 6 MiB recap proxy limit'
+);
+assert.match(workflow, /recap_proxy_status[^]*'401'/, 'the recap proxy probe must reach the protected application route');
 assert.ok(
   workflow.indexOf('Preflight public proxy upload capacity') < workflow.indexOf('Deploy with rollback protection'),
   'proxy upload capacity must be checked before cutover'

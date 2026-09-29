@@ -89,7 +89,7 @@ export type {
 } from "./types";
 
 // Config
-export { logtoConfig, validateLogtoConfig } from "./config";
+export { isLogtoConfigured, logtoConfig, validateLogtoConfig } from "./config";
 
 // Error types
 export { LogtoApiError } from "./fetch-with-auth";

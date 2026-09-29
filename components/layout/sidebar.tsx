@@ -1,84 +1,86 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import {
   adminNavItems,
   mainNavItems,
   isNavItemActive,
   getNavLabel,
 } from "@/config/navigation";
-import { Home, ExternalLink } from "lucide-react";
+import { ArrowUpRight, Home, Sparkles } from "lucide-react";
 import { useTranslations } from "@/lib/i18n/client";
 
 interface SidebarProps {
   canAccessAdmin?: boolean;
   canAccessMemberAdmin?: boolean;
   canAccessPluginAdmin?: boolean;
+  canAccessActivityAdmin?: boolean;
 }
 
-export function Sidebar({ canAccessAdmin = false, canAccessMemberAdmin = false, canAccessPluginAdmin = false }: SidebarProps) {
+export function Sidebar({ canAccessAdmin = false, canAccessMemberAdmin = false, canAccessPluginAdmin = false, canAccessActivityAdmin = false }: SidebarProps) {
   const pathname = usePathname();
   const { t, language } = useTranslations();
   const visibleAdminNavItems = adminNavItems.filter(item =>
-    item.titleKey === "nav.adminPlugins" ? canAccessPluginAdmin : canAccessMemberAdmin
+    item.titleKey === "nav.adminPlugins" ? canAccessPluginAdmin
+      : item.titleKey === "nav.adminActivities" ? canAccessActivityAdmin
+        : canAccessMemberAdmin
   );
 
   return (
-    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col border-r bg-card md:flex">
-      {/* Header */}
-      <div className="flex h-16 items-center border-b px-6">
-        <Link href="/member/dashboard" className="flex items-center gap-2 font-semibold">
-          <Image
-            src="/images/logo-nav.png"
-            alt={t("meta.appTitle")}
-            width={30}
-            height={30}
-            className="h-[30px] w-[30px] object-contain"  
-          />
-          <span>{t("meta.appTitle")}</span>
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:flex">
+      <div className="flex h-20 shrink-0 items-center border-b border-sidebar-border px-5">
+        <Link href="/member/dashboard" className="flex min-h-11 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring">
+          <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Sparkles aria-hidden="true" className="size-5" />
+          </span>
+          <span className="flex flex-col leading-tight">
+            <span className="text-xs font-semibold tracking-[0.12em] text-muted-foreground">CQAI CLUB</span>
+            <span className="mt-0.5 text-base font-semibold">{t("meta.appTitle")}</span>
+          </span>
         </Link>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3 mt-4">
+      <nav aria-label={t("nav.menu")} className="min-h-0 flex-1 overflow-y-auto px-3 py-5">
+        <p className="px-3 pb-2 text-xs font-medium text-muted-foreground">{t("nav.accountSection")}</p>
         {mainNavItems.map((item) => {
           const isActive = isNavItemActive(item.href, pathname);
           return (
-            <Link key={item.href} href={item.href}>
-              <Button
-                variant={isActive ? "secondary" : "ghost"}
-                className={cn(
-                  "w-full justify-start gap-3",
-                  isActive && "font-medium"
-                )}
-              >
-                <item.icon className="h-4 w-4" />
-                {getNavLabel(item, language)}
-              </Button>
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={isActive ? "page" : undefined}
+              className={cn(
+                "mb-1 flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                isActive && "bg-sidebar-accent font-semibold text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              )}
+            >
+              <item.icon aria-hidden="true" className="size-[18px] shrink-0" />
+              <span className="flex-1">{getNavLabel(item, language)}</span>
+              {isActive && <span aria-hidden="true" className="size-1.5 rounded-full bg-primary" />}
             </Link>
           );
         })}
         {canAccessAdmin && visibleAdminNavItems.length > 0 && (
           <>
-            <div className="my-3 border-t" />
+            <div className="mx-3 my-5 border-t border-sidebar-border" />
+            <p className="px-3 pb-2 text-xs font-medium text-muted-foreground">{t("nav.manageSection")}</p>
             {visibleAdminNavItems.map((item) => {
               const isActive = isNavItemActive(item.href, pathname);
               return (
-                <Link key={item.href} href={item.href}>
-                  <Button
-                    variant={isActive ? "secondary" : "ghost"}
-                    className={cn(
-                      "w-full justify-start gap-3",
-                      isActive && "font-medium"
-                    )}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    {getNavLabel(item, language)}
-                  </Button>
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={isActive ? "page" : undefined}
+                  className={cn(
+                    "mb-1 flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                    isActive && "bg-sidebar-accent font-semibold text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  )}
+                >
+                  <item.icon aria-hidden="true" className="size-[18px] shrink-0" />
+                  <span className="flex-1">{getNavLabel(item, language)}</span>
+                  {isActive && <span aria-hidden="true" className="size-1.5 rounded-full bg-primary" />}
                 </Link>
               );
             })}
@@ -86,17 +88,16 @@ export function Sidebar({ canAccessAdmin = false, canAccessMemberAdmin = false, 
         )}
       </nav>
 
-      {/* Footer */}
-      <div className="border-t p-4">
+      <div className="shrink-0 border-t border-sidebar-border p-3">
         <a
           href="/"
           target="_blank"
           rel="noreferrer"
-          className="flex items-center justify-center gap-2 text-center text-xs text-muted-foreground transition-colors hover:text-foreground"
+          className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
         >
-          <Home className="h-3.5 w-3.5" />
-          {t("meta.backToSite")}
-          <ExternalLink className="h-3 w-3" />
+          <Home aria-hidden="true" className="size-[18px]" />
+          <span className="flex-1">{t("meta.backToSite")}</span>
+          <ArrowUpRight aria-hidden="true" className="size-4" />
         </a>
       </div>
     </aside>
