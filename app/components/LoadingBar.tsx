@@ -29,35 +29,19 @@ const LoadingBar = () => {
   }, [pathname]);
 
   useEffect(() => {
-    // 监听全局点击事件以捕获导航和表单提交
+    // 只为会切换页面的站内链接启动进度条；本页操作不会触发路由完成回调。
     const handleClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      
-      const clickableElement = target.closest('a, button, [role="button"], [data-navigate]');
-      
-      if (clickableElement) {
-        const element = clickableElement as HTMLAnchorElement | HTMLButtonElement;
-        
-        if (element.tagName === 'A') {
-          const href = element.getAttribute('href');
-          if (href && href.startsWith('/') && href !== pathname) {
-            NProgress.start();
-          }
-        }
-        
-        if (element.tagName === 'BUTTON') {
-          const type = element.getAttribute('type');
-          const form = element.closest('form');
-          
-          if (type === 'submit' || form) {
-            NProgress.start();
-          }
-        }
-      }
-    };
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
-    const handleFormSubmit = () => {
-      NProgress.start();
+      const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href]') : null;
+      if (!link || (link.target && link.target !== '_self') || link.hasAttribute('download')) return;
+
+      const href = link.getAttribute('href');
+      if (!href?.startsWith('/') || href.startsWith('//')) return;
+
+      if (new URL(href, window.location.origin).pathname !== pathname) {
+        NProgress.start();
+      }
     };
 
     const handleBeforeUnload = () => {
@@ -65,12 +49,10 @@ const LoadingBar = () => {
     };
 
     document.addEventListener('click', handleClick);
-    document.addEventListener('submit', handleFormSubmit);
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
       document.removeEventListener('click', handleClick);
-      document.removeEventListener('submit', handleFormSubmit);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [pathname]);
