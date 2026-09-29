@@ -63,7 +63,8 @@ export function MarkdownField({
         </div>
       ) : (
         <div data-color-mode={resolvedTheme === "dark" ? "dark" : "light"}>
-          <MDEditor value={value} onChange={nextValue => {
+          {/* The editor otherwise writes body overflow while a Dialog or Sheet owns the scroll lock. */}
+          <MDEditor overflow={false} value={value} onChange={nextValue => {
             if (nextValue !== undefined && nextValue.length <= maxLength) onChange(nextValue);
           }}
             height={Math.max(250, Math.min(460, rows * 30 + 85))}
