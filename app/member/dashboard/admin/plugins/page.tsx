@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ClipboardList, ExternalLink, Package, Pencil, Plus, RefreshCw, Search, Store } from "lucide-react";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { MarkdownContent } from "@/components/markdown/MarkdownContent";
+import { MarkdownField } from "@/components/markdown/MarkdownField";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -67,14 +69,14 @@ function pluginJsonPrompt(repositoryUrl: string) {
 3. 准确读取 npm 包名、插件名称、简介、README 说明、分类、关键词、仓库地址、主页、图标和兼容信息。
 4. packageName 必须是有效 npm 包名；URL 必须使用 HTTPS；分类使用小写 ID。
 5. JSON 尽量使用以下字段：packageName、displayName、summary、description、categories、keywords、repositoryUrl、homepageUrl、iconUrl、compatibilityApiVersion、compatibilityHosts。
-6. summary 不超过 1000 个字符，description 不超过 5000 个字符；categories、keywords、compatibilityHosts 使用字符串数组。
+6. summary 不超过 1000 个字符；description 使用 Markdown，不超过 5000 个字符。categories、keywords、compatibilityHosts 使用字符串数组。
 
 请返回类似下面的结构：
 {
   "packageName": "example-package",
   "displayName": "Example Plugin",
   "summary": "一句话简介",
-  "description": "详细说明",
+  "description": "## 详细说明\\n\\n- 核心能力一\\n- 核心能力二",
   "categories": ["productivity"],
   "keywords": ["dsh", "cqai"],
   "repositoryUrl": "${address}",
@@ -188,6 +190,14 @@ function normalizeJsonPlugin(value: unknown): PluginForm {
     compatibilityApiVersion,
     compatibilityHosts: compatibilityHosts.join(", "),
   };
+}
+
+function previewDescriptionFromJson(value: string): string | null {
+  try {
+    return normalizeJsonPlugin(JSON.parse(value)).description;
+  } catch {
+    return null;
+  }
 }
 
 export default function PluginMarketAdminPage() {
@@ -352,6 +362,10 @@ export default function PluginMarketAdminPage() {
     await loadPlugins(page, filters);
   }
 
+  const jsonDescriptionPreview = jsonMode && !editor && jsonText.trim()
+    ? previewDescriptionFromJson(jsonText)
+    : null;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -428,7 +442,10 @@ export default function PluginMarketAdminPage() {
             <label className="grid gap-2 text-sm"><span>npm 包名 *</span><Input value={form.packageName} onChange={event => setForm({ ...form, packageName: event.target.value })} placeholder="dsh-plugin-example" /></label>
             <label className="grid gap-2 text-sm"><span>展示名称 *</span><Input value={form.displayName} onChange={event => setForm({ ...form, displayName: event.target.value })} placeholder="Example Plugin" /></label>
             <label className="grid gap-2 text-sm md:col-span-2"><span>一句话简介 *</span><Input value={form.summary} onChange={event => setForm({ ...form, summary: event.target.value })} /></label>
-            <label className="grid gap-2 text-sm md:col-span-2"><span>详细说明</span><textarea className="min-h-24 rounded-md border bg-background px-3 py-2" value={form.description} onChange={event => setForm({ ...form, description: event.target.value })} /></label>
+            <MarkdownField id="plugin-description" label="详细说明" value={form.description}
+              onChange={value => setForm(current => ({ ...current, description: value }))}
+              maxLength={5000} rows={7} className="md:col-span-2"
+              placeholder="使用 Markdown 介绍插件能力、使用方式与注意事项…" />
             <label className="grid gap-2 text-sm"><span>分类</span><Input value={form.categories} onChange={event => setForm({ ...form, categories: event.target.value })} placeholder="productivity, interface" /><small className="text-muted-foreground">使用小写分类 ID，逗号分隔。</small></label>
             <label className="grid gap-2 text-sm"><span>关键词</span><Input value={form.keywords} onChange={event => setForm({ ...form, keywords: event.target.value })} placeholder="ai, automation" /></label>
             <label className="grid gap-2 text-sm"><span>仓库地址</span><Input value={form.repositoryUrl} onChange={event => setForm({ ...form, repositoryUrl: event.target.value })} placeholder="https://github.com/example/plugin" /></label>
@@ -436,6 +453,10 @@ export default function PluginMarketAdminPage() {
             <label className="grid gap-2 text-sm md:col-span-2"><span>图标地址</span><Input value={form.iconUrl} onChange={event => setForm({ ...form, iconUrl: event.target.value })} placeholder="https://cdn.example.com/plugin.png" /><small className="text-muted-foreground">门户会通过同域代理提供给 DSH；仅支持 HTTPS 图片，最大 1 MB。</small></label>
             <label className="grid gap-2 text-sm"><span>兼容 API 版本</span><Input value={form.compatibilityApiVersion} onChange={event => setForm({ ...form, compatibilityApiVersion: event.target.value })} placeholder="1.0" /></label>
             <label className="grid gap-2 text-sm"><span>兼容 Host</span><Input value={form.compatibilityHosts} onChange={event => setForm({ ...form, compatibilityHosts: event.target.value })} placeholder="dsh-desktop, dsh" /></label>
+          </div>}
+          {jsonDescriptionPreview !== null && <div className="rounded-md border p-3 text-sm">
+            <p className="mb-2 font-medium">详细说明 · Markdown 预览</p>
+            {jsonDescriptionPreview ? <MarkdownContent content={jsonDescriptionPreview} /> : <p className="text-muted-foreground">JSON 中没有详细说明。</p>}
           </div>}
           <DialogFooter><span className="mr-auto self-center text-xs text-muted-foreground">{copyMessage}</span><Button variant="outline" onClick={() => setEditor(undefined)} disabled={saving}>取消</Button>{promptMode && !editor ? <Button variant="outline" onClick={() => void copyPrompt()}>复制提示词</Button> : jsonMode && !editor ? <><Button variant="outline" onClick={() => void copyJson(jsonText)} disabled={saving || !jsonText.trim()}>复制 JSON</Button><Button onClick={() => void saveJsonPlugin()} disabled={saving || !jsonText.trim()}>{saving ? "校验并添加中..." : "校验并直接添加"}</Button></> : <><Button variant="outline" onClick={() => void copyJson(payloadFromForm(form))} disabled={saving}>复制 JSON</Button><Button onClick={() => void savePlugin()} disabled={saving}>{saving ? "保存中..." : "保存"}</Button></>}</DialogFooter>
         </DialogContent>

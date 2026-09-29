@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, ExternalLink, RefreshCw } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { MarkdownContent } from "@/components/markdown/MarkdownContent";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -155,7 +156,7 @@ export default function PluginSubmissionsPage() {
               <div><dt className="text-muted-foreground">npm 包</dt><dd className="break-all font-mono">{selected.packageName}</dd></div>
               <div><dt className="text-muted-foreground">状态</dt><dd>{statusLabels[selected.status]}</dd></div>
               <div className="sm:col-span-2"><dt className="text-muted-foreground">简介</dt><dd className="whitespace-pre-wrap">{selected.summary}</dd></div>
-              {selected.description && <div className="sm:col-span-2"><dt className="text-muted-foreground">详细说明</dt><dd className="max-h-52 overflow-auto whitespace-pre-wrap">{selected.description}</dd></div>}
+              {selected.description && <div className="sm:col-span-2"><dt className="text-muted-foreground">详细说明 · Markdown 预览</dt><dd className="mt-2 max-h-52 overflow-auto rounded-md border p-3"><MarkdownContent content={selected.description} /></dd></div>}
               <div><dt className="text-muted-foreground">分类</dt><dd>{selected.categories.join("、") || "无"}</dd></div>
               <div><dt className="text-muted-foreground">关键词</dt><dd>{selected.keywords.join("、") || "无"}</dd></div>
               <div><dt className="text-muted-foreground">兼容 API</dt><dd>{selected.compatibilityApiVersion || "未填写"}</dd></div>

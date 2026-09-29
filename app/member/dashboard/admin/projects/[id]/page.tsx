@@ -12,6 +12,7 @@ import {
   Star,
 } from "lucide-react";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { MarkdownField } from "@/components/markdown/MarkdownField";
 import { Button } from "@/components/ui/button";
 import { ProjectCoverCropDialog } from "@/components/project-cover-crop-dialog";
 import {
@@ -486,14 +487,12 @@ export default function ProjectEditorPage() {
               <CardDescription>详细介绍为发布必填项；合作需求和演示链接可选。</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="project-description">详细介绍 *</Label>
-                <textarea id="project-description" className="min-h-48 rounded-md border bg-background px-3 py-2 text-sm" value={form.description} onChange={event => setField("description", event.target.value)} />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="project-needs">期望对接 / 合作方向</Label>
-                <textarea id="project-needs" className="min-h-28 rounded-md border bg-background px-3 py-2 text-sm" value={form.collaborationNeeds} onChange={event => setField("collaborationNeeds", event.target.value)} />
-              </div>
+              <MarkdownField id="project-description" label="详细介绍" required value={form.description}
+                onChange={value => setField("description", value)} maxLength={20000} rows={10}
+                placeholder="使用 Markdown 介绍项目背景、目标用户、进展和成果…" />
+              <MarkdownField id="project-needs" label="期望对接 / 合作方向" value={form.collaborationNeeds}
+                onChange={value => setField("collaborationNeeds", value)} maxLength={5000} rows={5}
+                placeholder="使用 Markdown 说明希望对接的场景、伙伴或资源…" />
               <div className="grid gap-2">
                 <Label htmlFor="project-demo-url">官网 / 演示链接</Label>
                 <Input id="project-demo-url" type="url" value={form.demoUrl} onChange={event => setField("demoUrl", event.target.value)} placeholder="https://" />

@@ -9,6 +9,14 @@ const plainText = z
   .trim()
   .refine(value => !/[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/u.test(value), "文本包含不支持的控制字符。");
 
+const markdownText = z
+  .string()
+  .transform(value => value.replace(/\r\n?/gu, "\n").trim())
+  .pipe(z.string().max(5000).refine(
+    value => !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/u.test(value),
+    "文本包含不支持的控制字符。"
+  ));
+
 const httpsUrl = z.string().trim().refine(value => {
   if (!value) return true;
   try {
@@ -35,7 +43,7 @@ export const pluginInputSchema = z.object({
   packageName: npmPackageName,
   displayName: plainText.min(1).max(120),
   summary: plainText.min(1).max(1000),
-  description: plainText.max(5000).optional().default(""),
+  description: markdownText.optional().default(""),
   categories: z.array(categoryId).max(32).default([]),
   keywords: z.array(plainText.min(1).max(64)).max(64).default([]),
   repositoryUrl: httpsUrl.max(2048).optional().or(z.literal("")),

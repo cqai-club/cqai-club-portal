@@ -7,6 +7,7 @@ import { ExternalLink, ImagePlus, MoreHorizontal, RefreshCw, Search } from "luci
 
 import { ProjectCoverCropDialog } from "@/components/project-cover-crop-dialog";
 import { ActivityRecapDrawer } from "@/components/activities/ActivityRecapDrawer";
+import { MarkdownField } from "@/components/markdown/MarkdownField";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -762,10 +763,10 @@ export function ActivityManager({ previewData }: { previewData?: ActivityManager
                 <input id="activity-summary" maxLength={300} value={form.summary} onChange={event => update("summary", event.target.value)} aria-invalid={Boolean(formErrors.summary)} aria-describedby={formErrors.summary ? "activity-summary-error" : undefined} className={controlClass} />
                 <FieldError field="summary" errors={formErrors} />
               </div>
-              <div>
-                <label htmlFor="activity-content" className="text-sm font-medium">活动介绍</label>
-                <textarea id="activity-content" rows={5} maxLength={20000} value={form.content} onChange={event => update("content", event.target.value)} className={controlClass + " resize-y"} />
-              </div>
+              <MarkdownField id="activity-content" label="活动介绍" value={form.content}
+                onChange={value => update("content", value)} maxLength={20000} rows={8}
+                disabled={busy || lockedDetails} previewOnly={lockedDetails}
+                placeholder="使用 Markdown 介绍活动内容、议程和参与方式…" />
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label htmlFor="activity-mode" className="text-sm font-medium">形式</label>

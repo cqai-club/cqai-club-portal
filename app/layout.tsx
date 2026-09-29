@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import "@uiw/react-md-editor/markdown-editor.css";
+import "@uiw/react-markdown-preview/markdown.css";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import LoadingBar from "./components/LoadingBar";

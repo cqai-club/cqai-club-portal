@@ -8,6 +8,7 @@
     <link rel="apple-touch-icon" href="/images/logo-nav.png">
   <meta name="description" content="重庆AI创享俱乐部会员、企业与AI项目征集页面">
   <title>重庆AI创享俱乐部 · 资料征集</title>
+  <link rel="stylesheet" href="/collect/assets/easymde.min.css">
   <style>
     :root {
       --ink: #111a43;
@@ -129,6 +130,27 @@
     }
     input[type="text"], input[type="url"], input[type="tel"], select { height: 48px; padding: 0 14px; }
     textarea { min-height: 112px; padding: 13px 14px; resize: vertical; line-height: 1.7; }
+    .markdown-field .EasyMDEContainer { min-width: 0; }
+    .markdown-field .editor-toolbar { border-color: var(--line); border-radius: 12px 12px 0 0; background: #f7f9ff; }
+    .markdown-field .editor-toolbar button { min-width: 32px; color: var(--navy); }
+    .markdown-field .editor-toolbar button:focus-visible { outline: 3px solid #7d98e8; outline-offset: 2px; }
+    .markdown-field .CodeMirror { border-color: var(--line); border-radius: 0 0 12px 12px; color: var(--ink); background: #fbfcff; }
+    .markdown-field .CodeMirror-focused { border-color: #7d98e8; box-shadow: 0 0 0 4px rgba(71,120,238,.11); }
+    .markdown-field .CodeMirror textarea { min-height: 0; padding: 0; border: 0; box-shadow: none; }
+    .markdown-field .editor-preview, .markdown-field .editor-preview-side { padding: 14px; overflow-wrap: anywhere; color: var(--ink); background: #fbfcff; font-size: 14px; line-height: 1.8; }
+    .markdown-field .editor-preview > :first-child, .markdown-field .editor-preview-side > :first-child { margin-top: 0; }
+    .markdown-field .editor-preview p, .markdown-field .editor-preview-side p { white-space: pre-wrap; }
+    .markdown-field .editor-preview h1, .markdown-field .editor-preview h2, .markdown-field .editor-preview h3, .markdown-field .editor-preview-side h1, .markdown-field .editor-preview-side h2, .markdown-field .editor-preview-side h3 { margin: 1.2em 0 .5em; line-height: 1.4; }
+    .markdown-field .editor-preview ul, .markdown-field .editor-preview-side ul { padding-left: 1.6em; list-style: disc; }
+    .markdown-field .editor-preview ol, .markdown-field .editor-preview-side ol { padding-left: 1.6em; list-style: decimal; }
+    .markdown-field .editor-preview blockquote, .markdown-field .editor-preview-side blockquote { margin: 1em 0; padding: .2em 1em; border-left: 3px solid #9aadd9; background: #f1f4fb; }
+    .markdown-field .editor-preview a, .markdown-field .editor-preview-side a { color: #3159ad; text-decoration: underline; }
+    .markdown-field .editor-preview code, .markdown-field .editor-preview-side code { padding: .12em .32em; border-radius: 4px; background: #e9edf7; }
+    .markdown-field .editor-preview pre, .markdown-field .editor-preview-side pre { max-width: 100%; overflow: auto; padding: 1em; border-radius: 8px; background: #17213a; color: #f5f7ff; }
+    .markdown-field .editor-preview pre code, .markdown-field .editor-preview-side pre code { padding: 0; background: transparent; }
+    .markdown-field .editor-preview table, .markdown-field .editor-preview-side table { display: block; max-width: 100%; overflow: auto; border-collapse: collapse; }
+    .markdown-field .editor-preview th, .markdown-field .editor-preview td, .markdown-field .editor-preview-side th, .markdown-field .editor-preview-side td { padding: .4em .7em; border: 1px solid #cbd4e7; }
+    .markdown-field .editor-preview img, .markdown-field .editor-preview-side img { display: block; max-width: 100%; height: auto; margin: 1em 0; border-radius: 8px; }
     input::placeholder, textarea::placeholder { color: #aeb8cd; }
     input:focus, select:focus, textarea:focus { background: #fff; border-color: #7d98e8; box-shadow: 0 0 0 4px rgba(71,120,238,.11); }
     select:invalid { color: #aeb8cd; }
@@ -363,6 +385,8 @@
   </dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+  <script src="/collect/assets/markdown-it.min.js"></script>
+  <script src="/collect/assets/easymde.min.js"></script>
   <script>
     const typeConfig = {
       member: {
@@ -400,8 +424,8 @@
           { name: "oneLine", label: "一句话项目简介", type: "text", placeholder: "用一句话说清项目为谁创造什么价值", required: true, full: true, maxLength: 1000 },
           { name: "stage", label: "项目阶段", type: "select", required: true, options: [["", "请选择当前阶段"], ["idea", "构想验证"], ["build", "开发中"], ["pilot", "试点运行"], ["live", "已上线"]] },
           { name: "projectFocus", label: "AI 技术 / 应用方向", type: "text", placeholder: "例如：智能体、视觉识别、AI+文旅", required: true, maxLength: 300 },
-          { name: "projectBio", label: "项目介绍", type: "textarea", placeholder: "项目背景、目标用户、当前进展与已取得的成果", required: true, full: true, maxLength: 20000 },
-          { name: "needs", label: "期望对接 / 合作方向", type: "textarea", placeholder: "例如：场景试点、技术伙伴、融资、渠道资源", full: true, maxLength: 5000 },
+          { name: "projectBio", label: "项目介绍", type: "textarea", placeholder: "使用 Markdown 介绍项目背景、目标用户、进展和成果", required: true, full: true, maxLength: 20000, markdown: true },
+          { name: "needs", label: "期望对接 / 合作方向", type: "textarea", placeholder: "使用 Markdown 说明希望对接的场景、伙伴或资源", full: true, maxLength: 5000, markdown: true },
           { name: "demoUrl", label: "官网 / 演示链接", type: "url", placeholder: "https://", maxLength: 2048 },
           { name: "projectContact", label: "联系方式", type: "tel", placeholder: "手机或微信号", required: true, maxLength: 500 },
           { name: "projectCover", label: "项目封面", type: "file", hint: "JPG / PNG，选择后按 16:10 裁剪并压缩，不超过 5MB" }
@@ -452,6 +476,8 @@
     let cropProcessing = false;
     let cropPointer = null;
     const cropState = { zoom: 1, x: 0, y: 0 };
+    const markdownRenderer = window.markdownit({ html: false, linkify: true, breaks: true });
+    let markdownEditors = [];
 
     function fieldMarkup(field) {
       const required = field.required ? " required" : "";
@@ -468,7 +494,8 @@
       } else {
         control = `<input id="${field.name}" name="${field.name}" type="${field.type}" placeholder="${field.placeholder || ""}"${required}${maxLength}>`;
       }
-      return `<div class="${classes}"><label for="${field.name}">${field.label}${star}</label>${control}</div>`;
+      const markdownHint = field.markdown ? `<p class="field-hint">支持 Markdown；使用工具栏插入格式、切换预览或分屏。</p>` : "";
+      return `<div class="${classes}${field.markdown ? " markdown-field" : ""}"><label for="${field.name}">${field.label}${star}</label>${markdownHint}${control}</div>`;
     }
 
     function formatFileSize(size) {
@@ -781,6 +808,8 @@
       const config = typeConfig[currentType];
       formSubtitle.textContent = config.label;
       formDescription.textContent = config.description;
+      markdownEditors.forEach(({ editor }) => editor.toTextArea());
+      markdownEditors = [];
       fields.innerHTML = config.fields.map(fieldMarkup).join("") + `<label class="consent"><input id="consent" name="consent" type="checkbox" required><span>我同意重庆 AI 创享俱乐部在发布前与我确认，并在获得授权后，将以上内容用于官网展示、活动介绍和合作对接。</span></label>`;
       const draft = drafts[currentType];
       Object.entries(draft).forEach(([name, value]) => {
@@ -788,6 +817,45 @@
         if (!element || element.type === "file") return;
         if (element.type === "checkbox") element.checked = value === true || value === "on";
         else element.value = value;
+      });
+      fields.querySelectorAll(".markdown-field").forEach(field => {
+        const textarea = field.querySelector("textarea");
+        const editor = new window.EasyMDE({
+          element: textarea,
+          forceSync: true,
+          initialValue: textarea.value,
+          minHeight: "190px",
+          spellChecker: false,
+          status: false,
+          sideBySideFullscreen: false,
+          toolbar: ["bold", "italic", "heading", "|", "quote", "unordered-list", "ordered-list", "link", "image", "table", "code", "|", "preview", "side-by-side", "fullscreen"],
+          previewRender: source => {
+            if (!source.trim()) return "<p>暂无内容，切换到编辑填写 Markdown。</p>";
+            const preview = document.createElement("template");
+            preview.innerHTML = markdownRenderer.render(source);
+            preview.content.querySelectorAll("a").forEach(link => {
+              link.target = "_blank";
+              link.rel = "noopener noreferrer";
+            });
+            preview.content.querySelectorAll("img").forEach(image => {
+              image.loading = "lazy";
+              image.referrerPolicy = "no-referrer";
+            });
+            return preview.innerHTML;
+          },
+        });
+        editor.codemirror.getInputField().setAttribute("aria-label", `${field.querySelector("label").textContent} Markdown 编辑器`);
+        editor.codemirror.on("beforeChange", (instance, change) => {
+          if (!textarea.maxLength || textarea.maxLength < 0) return;
+          const replaced = instance.indexFromPos(change.to) - instance.indexFromPos(change.from);
+          const nextLength = instance.getValue().length - replaced + change.text.join("\n").length;
+          if (nextLength > textarea.maxLength) change.cancel();
+        });
+        editor.codemirror.on("change", () => {
+          textarea.value = editor.value();
+          textarea.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+        markdownEditors.push({ editor, textarea });
       });
       fields.querySelectorAll('input[type="file"]').forEach(input => {
         const label = document.getElementById(`${input.id}-name`);
@@ -1000,6 +1068,12 @@
     form.addEventListener("submit", async event => {
       event.preventDefault();
       if (submitting) return;
+      const emptyMarkdown = markdownEditors.find(({ editor, textarea }) => textarea.required && !editor.value().trim());
+      if (emptyMarkdown) {
+        emptyMarkdown.editor.codemirror.focus();
+        showToast("请先补充带 * 的必填信息");
+        return;
+      }
       if (!form.checkValidity()) {
         form.reportValidity();
         showToast("请先补充带 * 的必填信息");

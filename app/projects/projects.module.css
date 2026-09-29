@@ -1,4 +1,7 @@
 .siteShell {
+  --markdown-link: #6d28d9;
+  --markdown-link-hover: #5521ad;
+  --markdown-line: #d8d2e3;
   --project-primary: #7c3aed;
   --project-primary-deep: #6d28d9;
   --project-accent: #6d28d9;
@@ -635,7 +638,7 @@
   margin-top: 42px;
 }
 
-.proseSection h2 {
+.proseSection > h2 {
   margin: 0 0 16px;
   color: var(--project-ink);
   font-size: 22px;

@@ -106,7 +106,7 @@
   background: #fff;
 }
 
-.article h2,
+.article > h2,
 .gallery h2 {
   margin: 0 0 22px;
   color: var(--project-ink);
@@ -115,7 +115,6 @@
 }
 
 .articleText {
-  white-space: pre-wrap;
   overflow-wrap: anywhere;
   color: var(--project-ink);
   font-size: 16px;

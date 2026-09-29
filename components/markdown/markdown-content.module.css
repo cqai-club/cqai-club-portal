@@ -1,0 +1,88 @@
+.root {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: inherit;
+  line-height: 1.8;
+}
+
+.root > :first-child { margin-top: 0; }
+.root > :last-child { margin-bottom: 0; }
+
+.root p,
+.root ul,
+.root ol,
+.root blockquote,
+.root pre,
+.root table { margin: 0 0 1em; }
+
+.root p,
+.root li { white-space: pre-wrap; }
+
+.root h1,
+.root h2,
+.root h3,
+.root h4,
+.root h5,
+.root h6 {
+  margin: 1.3em 0 .55em;
+  color: inherit;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.root h1 { font-size: 1.65em; }
+.root h2 { font-size: 1.4em; }
+.root h3 { font-size: 1.2em; }
+.root h4,
+.root h5,
+.root h6 { font-size: 1em; }
+
+.root ul,
+.root ol { padding-left: 1.6em; }
+.root ul { list-style: disc; }
+.root ol { list-style: decimal; }
+.root li { padding-left: .15em; }
+.root li + li { margin-top: .3em; }
+.root li > ul,
+.root li > ol { margin: .35em 0 0; }
+.root input[type="checkbox"] { margin-right: .4em; }
+
+.root a {
+  color: var(--markdown-link, #3159ad);
+  text-decoration: underline;
+  text-underline-offset: .2em;
+}
+.root a:hover { color: var(--markdown-link-hover, #1d3e83); }
+.root a:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
+.root blockquote {
+  padding: .2em 1em;
+  border-left: 3px solid #9aadd9;
+  color: inherit;
+  background: rgb(100 120 170 / 7%);
+}
+.root blockquote > :last-child { margin-bottom: 0; }
+
+.root code {
+  padding: .12em .32em;
+  border-radius: 4px;
+  background: rgb(100 120 170 / 12%);
+  font-size: .9em;
+}
+.root pre {
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 1em;
+  border-radius: 8px;
+  background: #17213a;
+  color: #f5f7ff;
+  line-height: 1.6;
+}
+.root pre code { padding: 0; background: transparent; color: inherit; }
+
+.root table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; }
+.root th,
+.root td { padding: .45em .7em; border: 1px solid var(--markdown-line, #cbd4e7); text-align: left; }
+.root th { background: rgb(100 120 170 / 9%); font-weight: 650; }
+.root img { display: block; max-width: 100%; height: auto; margin: 1em 0; border-radius: 8px; }
+.root hr { margin: 1.5em 0; border: 0; border-top: 1px solid var(--markdown-line, #cbd4e7); }
