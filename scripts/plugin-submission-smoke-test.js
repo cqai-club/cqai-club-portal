@@ -117,7 +117,7 @@ async function main() {
       packageName: '@cqai/plugin-smoke',
       displayName: '投稿流程测试',
       summary: '验证登录投稿与待审核隔离',
-      description: '由临时数据库承载。',
+      description: '## 插件能力\n\n- 由临时数据库承载\n- 支持 Markdown 说明',
       categories: ['productivity'],
       keywords: ['cqai'],
       repositoryUrl: 'https://github.com/cqai/plugin-smoke',
@@ -146,6 +146,7 @@ async function main() {
     assert.equal(approved.body.status, 'approved');
     const plugin = await db.plugin.findUnique({ where: { packageName: payload.packageName } });
     assert.equal(plugin.status, 'draft');
+    assert.equal(plugin.description, payload.description, 'multiline Markdown should survive submission and review');
     assert.equal((await request('/v1/plugins')).body.items.length, 0);
     assert.equal((await request(reviewPath, { method: 'POST', token: adminToken, origin: true, body: { decision: 'approve' } })).status, 409);
     assert.equal((await request('/api/v1/me/plugin-submissions', { token: alice })).body[0].status, 'approved');

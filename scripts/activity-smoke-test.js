@@ -123,7 +123,7 @@ async function main() {
     const now = Date.now();
     const startsAt = new Date(now + 3 * 86_400_000).toISOString();
     const input = {
-      title: '活动接口联调', summary: '报名和权限回归验证', content: '纯文本内容',
+      title: '活动接口联调', summary: '报名和权限回归验证', content: '## 活动议程\n\n- 主题分享\n- 现场交流',
       mode: 'offline', location: '重庆', startsAt,
       endsAt: new Date(now + 3 * 86_400_000 + 2 * 3_600_000).toISOString(),
       registrationOpensAt: new Date(now - 3_600_000).toISOString(),
@@ -172,6 +172,8 @@ async function main() {
     assert.equal(detailPage.status, 200);
     const detailHtml = await detailPage.text();
     assert.ok(detailHtml.includes('报名和权限回归验证'));
+    assert.match(detailHtml, /<h2>活动议程<\/h2>/);
+    assert.match(detailHtml, /<li>主题分享<\/li>/);
     assert.ok(detailHtml.includes(withCover.coverUrl));
 
     const simultaneous = await Promise.all([
@@ -241,7 +243,7 @@ async function main() {
       if (withImage) form.append('images', new Blob([coverBytes], { type: 'image/png' }), 'recap.png');
       return form;
     };
-    const recapContent = '活动现场围绕智能体应用展开讨论，成员分享了产品实践与后续合作计划。';
+    const recapContent = '## 现场亮点\n\n- 智能体应用讨论\n- 产品实践与合作计划';
     const prematureRecap = await fetch(`${baseUrl}/api/v1/activities/${recapId}/recap`, {
       method: 'PUT', headers: { Authorization: `Bearer ${managerA}` }, body: recapForm(recapContent),
     });
@@ -312,7 +314,9 @@ async function main() {
     assert.ok(historyHtml.includes('阅读图文回顾'));
     const recapPage = await fetch(`${baseUrl}/events/recaps/${recapId}/`);
     assert.equal(recapPage.status, 200);
-    assert.ok((await recapPage.text()).includes(recapContent));
+    const recapHtml = await recapPage.text();
+    assert.match(recapHtml, /<h2>现场亮点<\/h2>/);
+    assert.match(recapHtml, /<li>智能体应用讨论<\/li>/);
 
     const recapEdited = await fetch(`${baseUrl}/api/v1/activities/${recapId}/recap`, {
       method: 'PUT', headers: { Authorization: `Bearer ${managerB}` }, body: recapForm('', []),

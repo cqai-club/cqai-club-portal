@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { MarkdownContent } from "@/components/markdown/MarkdownContent";
 import { projectStageLabel, PublicContactAction } from "../_components";
 import { getPublishedProject } from "../_data";
 import styles from "../projects.module.css";
@@ -104,12 +105,12 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
           <div>
             <section className={styles.proseSection} aria-labelledby="project-description-title">
               <h2 id="project-description-title">项目介绍</h2>
-              <p>{project.description}</p>
+              <MarkdownContent content={project.description} />
             </section>
             {project.collaborationNeeds && (
               <section className={styles.proseSection} aria-labelledby="project-needs-title">
                 <h2 id="project-needs-title">期待合作</h2>
-                <p>{project.collaborationNeeds}</p>
+                <MarkdownContent content={project.collaborationNeeds} />
               </section>
             )}
           </div>

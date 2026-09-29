@@ -11,6 +11,8 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "scripts/dist/**",
+      "site/collect/assets/markdown-it.min.js",
+      "site/collect/assets/easymde.min.js",
       "scripts/ci-smoke-test.js",
       "scripts/deployment-safety-test.js",
       "next-env.d.ts",

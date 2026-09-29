@@ -293,6 +293,13 @@ const main = async () => {
   const collectionPage = await request(baseUrl, '/collect/?type=project');
   assert.equal(collectionPage.response.status, 200, 'project collection page should load');
   assert.match(collectionPage.body, /name:\s*["']projectCover["']/);
+  assert.match(collectionPage.body, /markdown-it\.min\.js/);
+  assert.match(collectionPage.body, /easymde\.min\.js/);
+  assert.match(collectionPage.body, /new window\.EasyMDE/);
+  const markdownEditorAsset = await request(baseUrl, '/collect/assets/easymde.min.js');
+  assert.equal(markdownEditorAsset.response.status, 200, 'project Markdown editor asset should load');
+  const markdownEditorStyles = await request(baseUrl, '/collect/assets/easymde.min.css');
+  assert.equal(markdownEditorStyles.response.status, 200, 'project Markdown editor styles should load');
 
   const projectSquare = await request(baseUrl, '/projects/');
   assert.equal(projectSquare.response.status, 200, 'public project square should load');
@@ -443,7 +450,7 @@ const main = async () => {
     packageName: 'dsh-plugin-ci-market',
     displayName: 'CI Market Plugin',
     summary: 'A plugin used by the catalog smoke test.',
-    description: 'Smoke test detail.',
+    description: '## Plugin detail\n\n- Markdown list item',
     categories: ['testing', 'automation'],
     keywords: ['ci', 'catalog'],
     repositoryUrl: 'https://github.com/example/dsh-plugin-ci-market',
@@ -597,8 +604,8 @@ const main = async () => {
     oneLine: 'A collection smoke test',
     stage: 'pilot',
     projectFocus: 'Automation',
-    projectBio: 'Collection submission for automated testing\nSecond paragraph',
-    needs: 'Pilot customer\nTechnical partner',
+    projectBio: '## Project detail\n\n- Collection submission for automated testing\n- Second paragraph',
+    needs: '### Cooperation\n\n- Pilot customer\n- Technical partner',
     demoUrl: 'https://example.invalid/demo',
     projectContact: '19900000001',
     consent: 'true'
@@ -805,6 +812,9 @@ const main = async () => {
   const importedPublicPage = await request(baseUrl, `/projects/${importedProjectSlug}`);
   assert.match(importedPublicPage.body, /立即体验/);
   assert.match(importedPublicPage.body, /联系俱乐部/);
+  assert.match(importedPublicPage.body, /<h2>Project detail<\/h2>/);
+  assert.match(importedPublicPage.body, /<li>Collection submission for automated testing<\/li>/);
+  assert.match(importedPublicPage.body, /<h3>Cooperation<\/h3>/);
   const visibleProjectCover = await requestBuffer(
     baseUrl,
     `/api/projects/${importedProjectSlug}/cover`

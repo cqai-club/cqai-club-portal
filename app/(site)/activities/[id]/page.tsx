@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ActivitySignup } from "@/components/activities/ActivitySignup";
+import { MarkdownContent } from "@/components/markdown/MarkdownContent";
 import { ActivityError, getPublicActivity } from "@/lib/club-activities";
 import styles from "../activities.module.css";
 
@@ -88,7 +89,7 @@ export default async function ActivityDetailPage({ params }: { params: Promise<{
 
           <section className={styles.intro} aria-labelledby="activity-intro-title">
             <h2 id="activity-intro-title">活动介绍</h2>
-            <p>{activity.content || activity.summary}</p>
+            <MarkdownContent content={activity.content || activity.summary} />
           </section>
         </div>
       </div>

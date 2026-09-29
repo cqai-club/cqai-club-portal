@@ -171,6 +171,9 @@ img {
 }
 
 :root {
+  --markdown-link: #3159ad;
+  --markdown-link-hover: #1d3e83;
+  --markdown-line: #cbd4e7;
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
@@ -206,6 +209,9 @@ img {
 }
 
 .dark {
+  --markdown-link: #9ebdff;
+  --markdown-link-hover: #c5d7ff;
+  --markdown-line: #4d5870;
   --background: oklch(0.129 0.042 264.695);
   --foreground: oklch(0.984 0.003 247.858);
   --card: oklch(0.208 0.042 265.755);

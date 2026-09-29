@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { FileText, ImagePlus, X } from "lucide-react";
 
+import { MarkdownField } from "@/components/markdown/MarkdownField";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { MAX_RECAP_IMAGE_BYTES, MAX_RECAP_IMAGES } from "@/lib/club-activity-recap-config";
 import type { ActivityRecapView, ActivityView } from "@/lib/club-activities";
@@ -220,9 +221,11 @@ export function ActivityRecapDrawer({
               <div><label htmlFor="recap-title" className="text-sm font-medium">回顾标题</label><input id="recap-title" maxLength={120} value={form.title} onChange={event => setForm(current => ({ ...current, title: event.target.value }))} disabled={saving} className={inputClass} /></div>
               <div><label htmlFor="recap-summary" className="text-sm font-medium">回顾摘要 <span className="font-normal text-muted-foreground">· 可选</span></label><textarea id="recap-summary" rows={3} maxLength={300} value={form.summary} onChange={event => setForm(current => ({ ...current, summary: event.target.value }))} placeholder="留空则使用活动摘要" disabled={saving} className={inputClass + " resize-y"} /></div>
               <div>
-                <div className="flex flex-wrap items-center justify-between gap-2"><label htmlFor="recap-content" className="text-sm font-medium">回顾正文 <span className="font-normal text-muted-foreground">· 可选</span></label><button type="button" disabled={saving} onClick={() => textInputRef.current?.click()} className="inline-flex min-h-11 items-center gap-1.5 text-xs font-medium text-primary hover:underline disabled:opacity-50"><FileText aria-hidden="true" className="size-4" />导入 TXT 文字稿</button></div>
-                <textarea id="recap-content" rows={11} maxLength={20000} value={form.content} onChange={event => setForm(current => ({ ...current, content: event.target.value }))} placeholder="记录活动亮点、嘉宾观点、现场讨论与后续成果…" disabled={saving} aria-describedby="recap-content-help" className={inputClass + " resize-y leading-6"} />
-                <p id="recap-content-help" className="mt-1.5 text-xs text-muted-foreground">留空也可生成回顾卡片；填写后会生成图文详情页，最多 20000 字。</p>
+                <div className="flex justify-end"><button type="button" disabled={saving} onClick={() => textInputRef.current?.click()} className="inline-flex min-h-11 items-center gap-1.5 text-xs font-medium text-primary hover:underline disabled:opacity-50"><FileText aria-hidden="true" className="size-4" />导入 TXT 文字稿</button></div>
+                <MarkdownField id="recap-content" label="回顾正文 · 可选" value={form.content}
+                  onChange={value => setForm(current => ({ ...current, content: value }))} maxLength={20000} rows={11}
+                  placeholder="记录活动亮点、嘉宾观点、现场讨论与后续成果…" disabled={saving}
+                  help="留空也可生成回顾卡片；填写后会生成图文详情页。支持 Markdown 标题、列表、链接、图片、代码与表格。" />
                 <input ref={textInputRef} type="file" accept=".txt,text/plain" className="hidden" tabIndex={-1} aria-hidden="true" onChange={event => void importText(event.target.files?.[0])} />
               </div>
             </section>

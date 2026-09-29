@@ -5,6 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, CalendarDays, Images } from "lucide-react";
 
+import { MarkdownContent } from "@/components/markdown/MarkdownContent";
 import { ActivityError, getPublicActivityRecap } from "@/lib/club-activities";
 import styles from "./recap.module.css";
 
@@ -57,7 +58,7 @@ export default async function ActivityRecapPage({ params }: { params: Promise<{ 
       <div className={styles.bodyGrid}>
         <article className={styles.article} aria-labelledby="recap-body-title">
           <h2 id="recap-body-title">活动现场回顾</h2>
-          <div className={styles.articleText}>{recap.content}</div>
+          <MarkdownContent content={recap.content} className={styles.articleText} />
         </article>
         <aside className={styles.aside}>
           <p className={styles.asideLabel}>ABOUT THIS EVENT</p>

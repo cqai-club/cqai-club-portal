@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, Files, FolderInput, Pencil, RefreshCw, Search } from "lucide-react";
+import { MarkdownContent } from "@/components/markdown/MarkdownContent";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -255,7 +256,7 @@ export default function CollectionSubmissionsPage() {
           {detail && <>
             <DialogHeader><DialogTitle ref={detailTitleRef} tabIndex={-1}>{detail.displayName || "资料详情"}</DialogTitle><DialogDescription>{typeLabels[detail.type] || detail.type} · {formatDate(detail.createdAt)}</DialogDescription></DialogHeader>
             <div className="grid gap-3 rounded-md border p-4 text-sm sm:grid-cols-2"><div><span className="text-muted-foreground">联系方式：</span>{detail.contact}</div><div><span className="text-muted-foreground">手机：</span>{detail.phone || "-"}</div><div><span className="text-muted-foreground">邮箱：</span>{detail.email || "-"}</div><div><span className="text-muted-foreground">授权：</span>{detail.consent ? "已同意" : "未同意"}</div><div><span className="text-muted-foreground">提交 IP：</span>{detail.ipAddress || "-"}</div><div><span className="text-muted-foreground">审核状态：</span><Badge variant={statusVariants[detail.status] || "secondary"}>{statusLabels[detail.status] || detail.status}</Badge></div></div>
-            <div><h3 className="mb-2 font-medium">资料字段</h3><div className="grid gap-2 rounded-md border p-4 text-sm">{Object.entries(detail.payload || {}).map(([key, value]) => <div key={key} className="grid gap-1 border-b pb-2 last:border-0 last:pb-0 sm:grid-cols-[160px_1fr]"><strong>{key}</strong><span className="text-muted-foreground">{displayValue(value)}</span></div>)}</div></div>
+            <div><h3 className="mb-2 font-medium">资料字段</h3><div className="grid gap-2 rounded-md border p-4 text-sm">{Object.entries(detail.payload || {}).map(([key, value]) => <div key={key} className="grid gap-1 border-b pb-2 last:border-0 last:pb-0 sm:grid-cols-[160px_1fr]"><strong>{key}</strong><div className="min-w-0 text-muted-foreground">{detail.type === "project" && (key === "projectBio" || key === "needs") && typeof value === "string" ? <MarkdownContent content={value} /> : displayValue(value)}</div></div>)}</div></div>
             {detail.type === "project" && (
               <div className="space-y-3 rounded-md border bg-muted/20 p-4">
                 <div>
