@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +10,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -27,15 +30,20 @@ import {
   LogOut,
   ChevronDown,
   Home,
-  ExternalLink,
+  ArrowUpRight,
+  Sparkles,
+  Globe2,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useTranslations } from "@/lib/i18n/client";
+import { t as translate } from "@/lib/i18n";
+import { useToast } from "@/hooks/use-toast";
 
 interface NavbarProps {
   canAccessAdmin?: boolean;
   canAccessMemberAdmin?: boolean;
   canAccessPluginAdmin?: boolean;
+  canAccessActivityAdmin?: boolean;
   user?: {
     name?: string;
     username?: string;
@@ -45,118 +53,187 @@ interface NavbarProps {
   onSignOut?: () => void;
 }
 
-export function Navbar({ user, onSignOut, canAccessAdmin = false, canAccessMemberAdmin = false, canAccessPluginAdmin = false }: NavbarProps) {
+export function Navbar({ user, onSignOut, canAccessAdmin = false, canAccessMemberAdmin = false, canAccessPluginAdmin = false, canAccessActivityAdmin = false }: NavbarProps) {
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
-  const { t, language } = useTranslations();
+  const router = useRouter();
+  const { resolvedTheme, setTheme } = useTheme();
+  const { t, language, setLanguage } = useTranslations();
+  const { toast } = useToast();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isUpdatingLanguage, setIsUpdatingLanguage] = useState(false);
   const visibleAdminNavItems = adminNavItems.filter(item =>
-    item.titleKey === "nav.adminPlugins" ? canAccessPluginAdmin : canAccessMemberAdmin
+    item.titleKey === "nav.adminPlugins" ? canAccessPluginAdmin
+      : item.titleKey === "nav.adminActivities" ? canAccessActivityAdmin
+        : canAccessMemberAdmin
   );
+  const currentNavItem = [...mainNavItems, ...visibleAdminNavItems].find(item => isNavItemActive(item.href, pathname));
+
+  const handleLanguageChange = async (value: string) => {
+    if (isUpdatingLanguage || (value !== "zh-CN" && value !== "en")) return;
+
+    const nextLanguage = value === "en" ? "en" : "zh";
+    if (nextLanguage === language) return;
+
+    setIsUpdatingLanguage(true);
+    setLanguage(nextLanguage);
+
+    try {
+      const response = await fetch("/member/api/account/profile/details", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locale: value }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update language");
+
+      router.refresh();
+      toast({
+        title: translate("settings.languageUpdatedTitle", nextLanguage),
+        description: translate("settings.languageUpdatedDesc", nextLanguage),
+      });
+    } catch {
+      // Keep the browser preference when the account service is unavailable.
+      toast({
+        title: translate("settings.languageUpdatedTitle", nextLanguage),
+        description: translate("settings.languageUpdatedLocalDesc", nextLanguage),
+      });
+    } finally {
+      setIsUpdatingLanguage(false);
+    }
+  };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-16 items-center justify-between px-4 lg:px-8">
-        {/* Left - Mobile Menu */}
-        <div className="flex items-center gap-4">
-          <Sheet>
-            <SheetTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="icon">
-                <Menu className="h-5 w-5" />
+    <header className="sticky top-0 z-30 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85">
+      <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6 lg:px-10">
+        <div className="flex min-w-0 items-center gap-3">
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="size-11 md:hidden" aria-label={t("nav.menu")}>
+                <Menu aria-hidden="true" className="size-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-64 p-0">
+            <SheetContent side="left" className="member-center flex h-dvh w-[min(20rem,85vw)] flex-col gap-0 bg-sidebar p-0 text-sidebar-foreground [&>button]:flex [&>button]:size-11 [&>button]:items-center [&>button]:justify-center">
               <SheetTitle className="sr-only">{t("nav.menu")}</SheetTitle>
-              <div className="flex h-16 items-center border-b px-6">
-                <span className="font-semibold">{t("meta.appTitle")}</span>
+              <div className="flex h-20 shrink-0 items-center gap-3 border-b border-sidebar-border px-5">
+                <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Sparkles aria-hidden="true" className="size-5" />
+                </span>
+                <span className="flex flex-col leading-tight">
+                  <span className="text-xs font-semibold tracking-[0.12em] text-muted-foreground">CQAI CLUB</span>
+                  <span className="mt-0.5 text-base font-semibold">{t("meta.appTitle")}</span>
+                </span>
               </div>
-              <nav className="space-y-1 p-3">
+              <nav aria-label={t("nav.menu")} className="min-h-0 flex-1 overflow-y-auto px-3 py-5">
+                <p className="px-3 pb-2 text-xs font-medium text-muted-foreground">{t("nav.accountSection")}</p>
                 {mainNavItems.map((item) => {
                   const isActive = isNavItemActive(item.href, pathname);
                   return (
-                    <Link key={item.href} href={item.href}>
-                      <Button
-                        variant={isActive ? "secondary" : "ghost"}
-                        className={cn("w-full justify-start gap-3", isActive && "font-medium")}
-                      >
-                        <item.icon className="h-4 w-4" />
-                        {getNavLabel(item, language)}
-                      </Button>
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      aria-current={isActive ? "page" : undefined}
+                      className={cn(
+                        "mb-1 flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                        isActive && "bg-sidebar-accent font-semibold text-sidebar-accent-foreground"
+                      )}
+                    >
+                      <item.icon aria-hidden="true" className="size-[18px] shrink-0" />
+                      <span className="flex-1">{getNavLabel(item, language)}</span>
+                      {isActive && <span aria-hidden="true" className="size-1.5 rounded-full bg-primary" />}
                     </Link>
                   );
                 })}
                 {canAccessAdmin && visibleAdminNavItems.length > 0 && (
                   <>
-                    <div className="my-2 border-t" />
+                    <div className="mx-3 my-5 border-t border-sidebar-border" />
+                    <p className="px-3 pb-2 text-xs font-medium text-muted-foreground">{t("nav.manageSection")}</p>
                     {visibleAdminNavItems.map((item) => {
                       const isActive = isNavItemActive(item.href, pathname);
                       return (
-                        <Link key={item.href} href={item.href}>
-                          <Button
-                            variant={isActive ? "secondary" : "ghost"}
-                            className={cn("w-full justify-start gap-3", isActive && "font-medium")}
-                          >
-                            <item.icon className="h-4 w-4" />
-                            {getNavLabel(item, language)}
-                          </Button>
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setMobileMenuOpen(false)}
+                          aria-current={isActive ? "page" : undefined}
+                          className={cn(
+                            "mb-1 flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                            isActive && "bg-sidebar-accent font-semibold text-sidebar-accent-foreground"
+                          )}
+                        >
+                          <item.icon aria-hidden="true" className="size-[18px] shrink-0" />
+                          <span className="flex-1">{getNavLabel(item, language)}</span>
+                          {isActive && <span aria-hidden="true" className="size-1.5 rounded-full bg-primary" />}
                         </Link>
                       );
                     })}
                   </>
                 )}
-                <Link href="/" target="_blank">
-                  <Button variant="ghost" className="w-full justify-start gap-3">
-                    <Home className="h-4 w-4" />
-                    {t("meta.backToSite")}
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
-                </Link>
               </nav>
+              <div className="shrink-0 border-t border-sidebar-border p-3">
+                <a href="/" target="_blank" rel="noreferrer" className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring">
+                  <Home aria-hidden="true" className="size-[18px]" />
+                  <span className="flex-1">{t("meta.backToSite")}</span>
+                  <ArrowUpRight aria-hidden="true" className="size-4" />
+                </a>
+              </div>
             </SheetContent>
           </Sheet>
-          {/* Logo - Mobile */}
-          <Link href="/member/dashboard" className="flex items-center gap-2 font-semibold md:hidden">
-            <span>{t("meta.appTitle")}</span>
+          <Link href="/member/dashboard" className="truncate rounded-md text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden">
+            {t("meta.appTitle")}
           </Link>
+          <span className="hidden truncate text-sm font-medium md:block">{currentNavItem ? getNavLabel(currentNavItem, language) : t("meta.appTitle")}</span>
         </div>
 
-        {/* Right - Actions */}
-        <div className="flex items-center gap-2">
-          {/* Club site link */}
-          <Link href="/" target="_blank">
-            <Button variant="ghost" className="hidden gap-2 sm:inline-flex">
-              <Home className="h-4 w-4" />
-              <span>{t("meta.backToSite")}</span>
-              <ExternalLink className="h-3.5 w-3.5" />
-            </Button>
-          </Link>
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="h-11 min-w-11 gap-2 rounded-xl px-2.5"
+                aria-label={`${t("settings.interfaceLanguage")}：${language === "en" ? "English" : "简体中文"}`}
+                disabled={isUpdatingLanguage}
+              >
+                <Globe2 aria-hidden="true" className="size-4" />
+                <span className="hidden text-xs font-medium sm:inline">{language === "en" ? "EN" : "中文"}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuLabel>{t("settings.interfaceLanguage")}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuRadioGroup value={language === "en" ? "en" : "zh-CN"} onValueChange={(value) => void handleLanguageChange(value)}>
+                <DropdownMenuRadioItem value="zh-CN" className="min-h-11">简体中文</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="en" className="min-h-11">English</DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-          {/* Theme Toggle */}
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="size-11"
+            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+            aria-label={t("common.toggleTheme")}
           >
-            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="sr-only">{t("common.toggleTheme")}</span>
+            <Sun aria-hidden="true" className="size-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <Moon aria-hidden="true" className="absolute size-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
           </Button>
 
-          {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="gap-2 pl-2">
-                <Avatar className="h-8 w-8">
+              <Button variant="ghost" className="h-11 gap-2 rounded-xl pl-1.5 pr-2.5" aria-label={user?.name || user?.username || t("common.user")}>
+                <Avatar className="size-8">
                   {user?.avatar && (
                     <AvatarImage src={user.avatar} alt={user?.name || user?.username || t("common.user")} />
                   )}
-                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-xs font-bold text-white">
+                  <AvatarFallback className="bg-primary/10 text-xs font-bold text-primary">
                     {user?.name?.charAt(0) || user?.username?.charAt(0) || t("common.userInitial")}
                   </AvatarFallback>
                 </Avatar>
                 <span className="hidden max-w-[100px] truncate sm:inline">
                   {user?.name || user?.username || t("common.user")}
                 </span>
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                <ChevronDown aria-hidden="true" className="size-4 text-muted-foreground" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -170,12 +247,12 @@ export function Navbar({ user, onSignOut, canAccessAdmin = false, canAccessMembe
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {mainNavItems.slice(1, 3).map((item) => (
-                <Link key={item.href} href={item.href}>
-                  <DropdownMenuItem>
-                    <item.icon className="mr-2 h-4 w-4" />
+                <DropdownMenuItem key={item.href} asChild>
+                  <Link href={item.href}>
+                    <item.icon aria-hidden="true" className="mr-2 size-4" />
                     {getNavLabel(item, language)}
-                  </DropdownMenuItem>
-                </Link>
+                  </Link>
+                </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
               {onSignOut && (

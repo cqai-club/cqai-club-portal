@@ -104,6 +104,15 @@ jobs:
             413) echo "Nginx rejected a valid-size multipart request; install the 6m body limit before deployment."; exit 1 ;;
             *) echo "Unexpected proxy preflight status: $proxy_status"; exit 1 ;;
           esac
+          dd if=/dev/zero of="$RUNNER_TEMP/preflight-activity-recap-proxy-probe.bin" bs=1048576 count=7 status=none
+          recap_proxy_status="$(curl --silent --show-error --request PUT --output /dev/null --write-out '%{http_code}' \
+            --form "images=@$RUNNER_TEMP/preflight-activity-recap-proxy-probe.bin;type=image/png" \
+            https://cqaiclub.asia/api/v1/activities/proxy-size-probe/recap)"
+          case "$recap_proxy_status" in
+            401|404|405) ;;
+            413) echo "Nginx rejected a multi-image recap request; install the route-specific 31m body limit before deployment."; exit 1 ;;
+            *) echo "Unexpected recap proxy preflight status: $recap_proxy_status"; exit 1 ;;
+          esac
 
       - name: Deploy with rollback protection
         env:
@@ -152,6 +161,11 @@ jobs:
             --form "cover=@$RUNNER_TEMP/project-cover-proxy-probe.bin;type=image/png" \
             https://cqaiclub.asia/api/admin/projects/proxy-size-probe/cover)"
           test "$cover_proxy_status" = '401'
+          dd if=/dev/zero of="$RUNNER_TEMP/activity-recap-proxy-probe.bin" bs=1048576 count=7 status=none
+          recap_proxy_status="$(curl --silent --show-error --request PUT --output /dev/null --write-out '%{http_code}' \
+            --form "images=@$RUNNER_TEMP/activity-recap-proxy-probe.bin;type=image/png" \
+            https://cqaiclub.asia/api/v1/activities/proxy-size-probe/recap)"
+          test "$recap_proxy_status" = '401'
           legacy_admin_location="$(curl --silent --show-error --dump-header - --output /dev/null \
             https://cqaiclub.asia/admin/ | awk 'tolower($1) == "location:" {print $2}' | tr -d '\r')"
           case "$legacy_admin_location" in

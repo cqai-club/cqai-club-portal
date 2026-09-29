@@ -94,9 +94,32 @@ model Plugin {
   createdAt                 DateTime @default(now())
   updatedAt                 DateTime @updatedAt
   publishedAt               DateTime?
+  submissions               PluginSubmission[]
 
   @@index([status])
   @@index([updatedAt])
+}
+
+model PluginSubmission {
+  id                String   @id @default(uuid())
+  status            String   @default("pending")
+  packageName       String
+  payloadJson       String
+  submittedByIssuer String
+  submittedBySub    String
+  submittedByName   String?
+  reviewedByIssuer  String?
+  reviewedBySub     String?
+  reviewNote        String?
+  pluginId          String?  @unique
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  reviewedAt        DateTime?
+  plugin            Plugin?  @relation(fields: [pluginId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([packageName])
+  @@index([submittedByIssuer, submittedBySub, createdAt])
 }
 
 model Project {
@@ -131,4 +154,88 @@ model Project {
   @@index([status])
   @@index([featured, featuredOrder])
   @@index([publishedAt])
+}
+
+model ClubActivity {
+  id                    String                     @id @default(uuid())
+  title                 String
+  summary               String
+  content               String                     @default("")
+  coverStorageKey       String?
+  coverOriginalName     String?
+  coverMimeType         String?
+  coverSize             Int?
+  mode                  String                     @default("offline")
+  location              String
+  startsAt              DateTime
+  endsAt                DateTime
+  registrationOpensAt   DateTime
+  registrationClosesAt  DateTime
+  capacity              Int
+  registeredCount       Int                        @default(0)
+  status                String                     @default("draft")
+  createdByIssuer       String
+  createdBySub          String
+  updatedByIssuer       String?
+  updatedBySub          String?
+  publishedAt           DateTime?
+  cancelledAt           DateTime?
+  detailsChangedAt      DateTime?
+  recapTitle            String?
+  recapSummary          String?
+  recapContent          String?
+  recapPublishedAt      DateTime?
+  deletedAt             DateTime?
+  createdAt             DateTime                   @default(now())
+  updatedAt             DateTime                   @updatedAt
+  registrations         ClubActivityRegistration[]
+  audits                ClubActivityAudit[]
+  recapImages           ClubActivityRecapImage[]
+
+  @@index([status, startsAt])
+  @@index([deletedAt])
+  @@index([recapPublishedAt, endsAt])
+}
+
+model ClubActivityRecapImage {
+  id           String       @id @default(uuid())
+  activityId   String
+  storageKey   String       @unique
+  originalName String
+  mimeType     String       @default("image/jpeg")
+  size         Int
+  position     Int
+  createdAt    DateTime     @default(now())
+  activity     ClubActivity @relation(fields: [activityId], references: [id], onDelete: Restrict)
+
+  @@index([activityId, position])
+}
+
+model ClubActivityRegistration {
+  id          String       @id @default(uuid())
+  activityId  String
+  userIssuer  String
+  userSub     String
+  displayName String?
+  status      String       @default("confirmed")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  cancelledAt DateTime?
+  activity    ClubActivity @relation(fields: [activityId], references: [id], onDelete: Restrict)
+
+  @@unique([activityId, userIssuer, userSub])
+  @@index([userIssuer, userSub])
+}
+
+model ClubActivityAudit {
+  id          String       @id @default(uuid())
+  activityId  String
+  actorIssuer String
+  actorSub    String
+  action      String
+  detailsJson String       @default("{}")
+  createdAt   DateTime     @default(now())
+  activity    ClubActivity @relation(fields: [activityId], references: [id], onDelete: Restrict)
+
+  @@index([activityId, createdAt])
 }

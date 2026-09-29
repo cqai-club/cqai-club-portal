@@ -4,32 +4,13 @@ import { requireAdminAccess } from "@/lib/site/api-helpers";
 import { PLUGIN_ADMIN_PERMISSION } from "@/lib/member/permissions";
 import {
   PLUGIN_STATUSES,
+  pluginDbData,
   pluginInputSchema,
   serializePlugin,
 } from "@/lib/plugin-market";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function unique(values: string[]): string[] {
-  return [...new Set(values.map(value => value.trim()).filter(Boolean))];
-}
-
-function pluginData(input: ReturnType<typeof pluginInputSchema.parse>) {
-  return {
-    packageName: input.packageName,
-    displayName: input.displayName,
-    summary: input.summary,
-    description: input.description || null,
-    categoriesJson: JSON.stringify(unique(input.categories)),
-    keywordsJson: JSON.stringify(unique(input.keywords)),
-    repositoryUrl: input.repositoryUrl || null,
-    homepageUrl: input.homepageUrl || null,
-    iconUrl: input.iconUrl || null,
-    compatibilityApiVersion: input.compatibilityApiVersion || null,
-    compatibilityHostsJson: JSON.stringify(unique(input.compatibilityHosts)),
-  };
-}
 
 export async function GET(request: Request): Promise<NextResponse> {
   const denied = await requireAdminAccess(request.headers.get("authorization") ?? "", PLUGIN_ADMIN_PERMISSION);
@@ -90,7 +71,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   try {
-    const plugin = await prisma.plugin.create({ data: pluginData(parsed.data) });
+    const plugin = await prisma.plugin.create({ data: pluginDbData(parsed.data) });
     return NextResponse.json(serializePlugin(plugin), { status: 201 });
   } catch (error: unknown) {
     if (typeof error === "object" && error !== null && "code" in error && error.code === "P2002") {

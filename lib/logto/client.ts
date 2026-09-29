@@ -12,7 +12,7 @@ import {
 } from "@logto/next/server-actions";
 import { Prompt } from "@logto/next";
 
-import { logtoConfig } from "./config";
+import { isLogtoConfigured, logtoConfig } from "./config";
 import { logger } from "@/lib/logger";
 
 type LogtoContext = Awaited<ReturnType<typeof _getLogtoContext>>;
@@ -21,6 +21,7 @@ type LogtoContext = Awaited<ReturnType<typeof _getLogtoContext>>;
  * 获取 Logto 上下文（认证状态）
  */
 export async function getLogtoContext(resource?: string): Promise<LogtoContext> {
+  if (!isLogtoConfigured()) return { isAuthenticated: false };
   const context = await _getLogtoContext(
     logtoConfig,
     resource ? { getAccessToken: true, resource } : undefined

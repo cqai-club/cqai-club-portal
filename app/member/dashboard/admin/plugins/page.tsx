@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ExternalLink, Package, Pencil, Plus, RefreshCw, Search, Store } from "lucide-react";
+import Link from "next/link";
+import { ClipboardList, ExternalLink, Package, Pencil, Plus, RefreshCw, Search, Store } from "lucide-react";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -359,6 +360,7 @@ export default function PluginMarketAdminPage() {
           <p className="text-muted-foreground">维护 DSH Desktop 可读取的 CQAI 官方插件目录。</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline"><Link href="/member/dashboard/admin/plugin-submissions"><ClipboardList className="mr-2 h-4 w-4" />投稿审核</Link></Button>
           <Button variant="outline" onClick={() => void loadPlugins(page)} disabled={loading}><RefreshCw className="mr-2 h-4 w-4" />刷新</Button>
           <Button onClick={openCreate}><Plus className="mr-2 h-4 w-4" />新增插件</Button>
         </div>

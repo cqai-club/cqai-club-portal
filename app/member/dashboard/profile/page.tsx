@@ -234,24 +234,24 @@ export default function ProfilePage() {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-         <h1 className="text-2xl font-bold tracking-tight">{t("profile.title")}</h1>
-         <p className="text-muted-foreground">
+         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t("profile.title")}</h1>
+         <p className="mt-2 text-sm leading-6 text-muted-foreground sm:text-base">
            {t("profile.description")}
          </p>
        </div>
 
       {/* Avatar Card */}
       {avatarConfig && avatarConfig.enabled && (
-        <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-600/10 to-purple-600/10 p-6">
+        <Card className="gap-0 overflow-hidden border-t-2 border-t-primary py-0">
+          <div className="bg-muted/40 p-6">
             <div className="flex flex-col items-center gap-4 sm:flex-row">
               <div className="relative">
                 <Avatar className="h-24 w-24 border-4 border-background">
                   {accountInfo?.avatar ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={accountInfo.avatar} alt="Avatar" className="h-full w-full object-cover" />
+                    <img src={accountInfo.avatar} alt={accountInfo?.name || t("profile.avatar.title")} className="h-full w-full object-cover" />
                   ) : (
-                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-2xl font-bold text-white">
+                    <AvatarFallback className="bg-primary/10 text-2xl font-bold text-primary">
                       {accountInfo?.name?.charAt(0) || accountInfo?.username?.charAt(0) || "U"}
                     </AvatarFallback>
                   )}
@@ -271,7 +271,8 @@ export default function ProfilePage() {
                     <Button
                       size="icon"
                       variant="secondary"
-                      className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full"
+                      className="absolute -bottom-1 -right-1 size-11 rounded-full border border-border"
+                      aria-label={avatarConfig.label}
                     >
                       <Camera className="h-4 w-4" />
                     </Button>
@@ -283,8 +284,9 @@ export default function ProfilePage() {
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                       <div className="space-y-2">
-                        <Label>{avatarConfig.label} URL</Label>
+                        <Label htmlFor="profile-avatar-url">{avatarConfig.label} URL</Label>
                         <Input
+                          id="profile-avatar-url"
                           placeholder={avatarConfig.placeholder}
                           value={getFormState("avatar").value}
                           onChange={(e) => setFormState("avatar", { value: e.target.value })}
@@ -311,11 +313,11 @@ export default function ProfilePage() {
               </div>
               <div className="text-center sm:text-left">
                 <h2 className="text-xl font-semibold">{accountInfo?.name || t("profile.nameNotSet")}</h2>
-                <p className="text-muted-foreground">@{accountInfo?.username}</p>
+                {accountInfo?.username && <p className="text-muted-foreground">@{accountInfo.username}</p>}
                 <div className="mt-2 flex flex-wrap justify-center gap-2 sm:justify-start">
                   <Badge variant="secondary" className="font-mono">ID: {accountInfo?.id}</Badge>
                   {accountInfo?.primaryEmail && (
-                    <Badge variant="outline">{accountInfo.primaryEmail}</Badge>
+                    <Badge variant="outline" className="max-w-full break-all whitespace-normal">{accountInfo.primaryEmail}</Badge>
                   )}
                 </div>
               </div>
@@ -327,7 +329,7 @@ export default function ProfilePage() {
       {/* Profile Cards Grid */}
        {enabledFields.length > 0 && (
          <div>
-           <h3 className="mb-4 text-lg font-semibold">{t("profile.basicInfo")}</h3>
+           <h2 className="mb-4 text-lg font-semibold">{t("profile.basicInfo")}</h2>
           <div className="grid items-stretch gap-4 lg:gap-6 sm:grid-cols-2">
             {enabledFields.map(({ key, config }) => {
               const Icon = iconMap[key];
@@ -346,7 +348,7 @@ export default function ProfilePage() {
                     }
                   }}
                 >
-                  <Card className="cursor-pointer transition-all hover:shadow-md">
+                  <Card className="transition-colors hover:border-primary/20">
                     <CardHeader className="pb-3">
                       <div className="flex items-center gap-2">
                         {Icon && <Icon className="h-5 w-5 text-muted-foreground" />}
@@ -368,8 +370,9 @@ export default function ProfilePage() {
                        <DialogDescription>{config.description}</DialogDescription>
                      </DialogHeader>
                     <div className="py-4">
-                      <Label>{config.label}</Label>
+                      <Label htmlFor={`profile-${key}`}>{config.label}</Label>
                       <Input
+                        id={`profile-${key}`}
                         placeholder={config.placeholder}
                         value={formState.value}
                         onChange={(e) => setFormState(key, { value: e.target.value })}

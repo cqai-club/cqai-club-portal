@@ -18,9 +18,15 @@
 
 会员提交项目的内部联系方式仅供后台使用，公开页面统一引导联系俱乐部。已发布项目的直接编辑和封面替换也要求 `project:publish`，并更新终审记录。
 
+## 活动管理权限与回顾图片
+
+活动管理使用门户 API 资源上的 `activity:publish` 权限。先在 Logto 创建该权限并只授予活动管理员，再在生产环境设置 `CQAI_ACTIVITY_PUBLISH_SCOPE_ENABLED=true`，让管理员重新登录以获取新资源令牌。未完成配置时，公开活动页仍可访问，但管理入口不会出现。
+
+活动回顾最多上传 6 张图片，每张不超过 5 MiB。生产 Nginx 的 `/api/v1/activities/<id>/recap` 路由需要独立的 `31m` 请求上限；其他路由继续使用 `6m`。在合并发布前同步 `deploy/nginx-club.conf` 到生产站点配置，先运行 `nginx -t`，再 reload。发布流程会在切流前用 7 MiB 请求验证该路由已放行，发布后再次验证请求到达应用认证层。
+
 ## 存储与资源门禁
 
-资料征集附件和项目封面共用持久化挂载 `$CQAI_STORAGE_DIR`，并分别保存在 `uploads/collection` 和 `uploads/projects`。发布时会自动创建这两个目录，回滚容器继续复用同一挂载。替换封面不会立即删除旧文件，避免数据库回滚或历史备份恢复后出现断图；无引用文件只能在相关数据库备份过期后清理。Nginx 模板允许 6MB 请求体以容纳 multipart 开销，应用层仍将项目封面严格限制为 JPG/PNG 且不超过 5MB。自动部署不会安装系统 Nginx 配置，首次上线前需人工同步并通过 `nginx -t`；切换前后的公网 Smoke Test 使用完整 5MB 未授权上传探针区分应用响应与代理 413。
+资料征集附件、项目封面和活动图片共用持久化挂载 `$CQAI_STORAGE_DIR`，分别保存在 `uploads/collection`、`uploads/projects` 和 `uploads/activities`。写入时会创建活动图片目录，回滚容器继续复用同一挂载。替换封面不会立即删除旧文件，避免数据库回滚或历史备份恢复后出现断图；无引用文件只能在相关数据库备份过期后清理。Nginx 的普通路由上限为 6 MiB，以容纳项目封面 multipart 开销；应用层仍将项目封面严格限制为 JPG/PNG 且不超过 5 MiB。自动部署不会安装系统 Nginx 配置，须在发布前人工同步并通过 `nginx -t`；切换前后的公网 Smoke Test 使用完整 5 MiB 未授权上传探针区分应用响应与代理 413。
 
 资源门禁默认值：
 

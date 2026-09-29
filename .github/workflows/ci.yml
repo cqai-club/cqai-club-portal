@@ -40,4 +40,8 @@ jobs:
         run: npm run build
 
       - name: Run smoke tests
-        run: node scripts/ci-smoke-test.js
+        run: |
+          npm run test:deployment
+          node scripts/ci-smoke-test.js
+          npm run test:activities
+          npm run test:plugin-submissions

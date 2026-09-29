@@ -40,11 +40,16 @@ export const zh = {
   // Navigation
   nav: {
     menu: "导航菜单",
-    dashboard: "会员中心",
+    skipToContent: "跳转到主要内容",
+    accountSection: "会员服务",
+    manageSection: "管理工作台",
+    dashboard: "概览",
     profile: "个人资料",
     security: "安全设置",
     connections: "社交连接",
     settings: "偏好设置",
+    activities: "我的活动",
+    adminActivities: "活动管理",
     adminMembers: "会员申请",
     adminCollections: "资料征集",
     adminProjects: "项目广场",
@@ -55,7 +60,10 @@ export const zh = {
   // Dashboard
   dashboard: {
     title: "会员中心",
-    description: "管理您的账户信息、安全设置和个性化偏好",
+    description: "管理您的账户信息与安全设置",
+    accountSummary: "账户信息",
+    accountUnavailable: "账户信息暂时无法加载，请稍后刷新页面重试。",
+    viewProfile: "查看个人资料",
     welcome: "欢迎回来",
     lastSignIn: "上次登录",
     email: "邮箱",
@@ -65,6 +73,8 @@ export const zh = {
     passwordNotSet: "未设置",
     registerTime: "注册时间",
     quickActions: {
+      title: "常用操作",
+      description: "快速前往需要管理的账户设置",
       profile: "个人资料",
       profileDesc: "编辑您的个人信息和头像",
       security: "安全设置",
@@ -74,6 +84,7 @@ export const zh = {
     },
     securityStatus: {
       title: "安全状态",
+      description: "查看账户保护方式",
       loginPassword: "登录密码",
       mfa: "双因素认证",
       socialBinding: "社交账号绑定",
@@ -287,7 +298,7 @@ export const zh = {
     languageSynced: "语言设置已同步到您的账户资料",
     languageUpdatedTitle: "语言已更新",
     languageUpdatedDesc: "语言偏好已保存到您的账户",
-    languageUpdatedLocalDesc: "已保存到本地，刷新页面后生效",
+    languageUpdatedLocalDesc: "已保存在当前浏览器，账户同步暂时失败",
     dangerZone: "危险操作区",
     dangerZoneDesc: "这些操作可能会对您的账户产生不可逆的影响",
     deleteAccount: "删除账户",

@@ -1,39 +1,29 @@
-import { getLogtoContext, getAccountInfo, AccountInfo, getMfaVerifications, getSocialIdentities } from "@/lib/logto";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
-export const dynamic = "force-dynamic";
+import { getLogtoContext, getAccountInfo, getMfaVerifications, type AccountInfo } from "@/lib/logto";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 import {
-  UserCircle,
-  Shield,
-  Link2,
-  ArrowRight,
-  Calendar,
-  Mail,
-  Smartphone,
-  Key,
+  ArrowRight, CalendarDays, KeyRound, Mail, ShieldCheck,
+  Smartphone, UserRound, type LucideIcon,
 } from "lucide-react";
 import { normalizeLocale, t as translate } from "@/lib/i18n";
+
+export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const { isAuthenticated, claims } = await getLogtoContext();
   let accountInfo: AccountInfo | { error: string } | null = null;
   let mfaVerifications: { type?: string }[] = [];
-  let socialIdentities: { socialIdentities: unknown[] } = { socialIdentities: [] };
 
   if (isAuthenticated) {
     try {
-      [accountInfo, mfaVerifications, socialIdentities] = await Promise.all([
+      [accountInfo, mfaVerifications] = await Promise.all([
         getAccountInfo(),
         getMfaVerifications().catch(() => []),
-        getSocialIdentities().catch(() => ({ socialIdentities: [] })),
       ]);
     } catch {
-      accountInfo = { error: "获取账户信息失败" };
+      accountInfo = { error: "Account information unavailable" };
     }
   }
 
@@ -42,225 +32,146 @@ export default async function DashboardPage() {
   const tt = (key: string, params?: Record<string, string>) => translate(key, locale, params);
   const displayName = displayInfo?.name || claims?.name || displayInfo?.username || claims?.username || tt("common.user");
 
-  const formatDate = (date: string | number | Date): string =>
+  const formatDate = (date: string | number | Date, includeTime = false): string =>
     new Date(date).toLocaleString(locale === "en" ? "en-US" : "zh-CN", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+      year: "numeric", month: "long", day: "numeric",
+      ...(includeTime ? { hour: "2-digit" as const, minute: "2-digit" as const } : {}),
     });
 
-  const formatRelativeTime = (date: string | number | Date): string => {
-    const now = new Date().getTime();
-    const target = new Date(date).getTime();
-    const seconds = Math.floor((now - target) / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
+  const accountDetails: { label: string; value: string; icon: LucideIcon }[] = [
+    { label: tt("dashboard.email"), value: displayInfo?.primaryEmail || tt("profile.notSet"), icon: Mail },
+    { label: tt("dashboard.phone"), value: displayInfo?.primaryPhone || tt("profile.notSet"), icon: Smartphone },
+    { label: tt("dashboard.password"), value: displayInfo?.hasPassword ? tt("dashboard.passwordSet") : tt("dashboard.passwordNotSet"), icon: KeyRound },
+    { label: tt("dashboard.registerTime"), value: displayInfo?.createdAt ? formatDate(displayInfo.createdAt) : tt("profile.notSet"), icon: CalendarDays },
+  ];
 
-    if (days > 30) {
-      return formatDate(date);
-    }
+  const quickActions: { href: string; title: string; description: string; icon: LucideIcon }[] = [
+    { href: "/member/dashboard/profile", title: tt("dashboard.quickActions.profile"), description: tt("dashboard.quickActions.profileDesc"), icon: UserRound },
+    { href: "/member/dashboard/security", title: tt("dashboard.quickActions.security"), description: tt("dashboard.quickActions.securityDesc"), icon: ShieldCheck },
+  ];
 
-    if (days > 0) {
-      return tt("security.timeAgo.daysAgo", { count: String(days) });
-    }
-
-    if (hours > 0) {
-      return tt("security.timeAgo.hoursAgo", { count: String(hours) });
-    }
-
-    if (minutes > 0) {
-      return tt("security.timeAgo.minutesAgo", { count: String(minutes) });
-    }
-
-    return tt("security.timeAgo.justNow");
-  };
-
-  const hasMfa = mfaVerifications.length > 0;
-  const socialCount = socialIdentities.socialIdentities.length;
+  const securityItems: { href: string; label: string; status: string; active: boolean; icon: LucideIcon }[] = [
+    {
+      href: "/member/dashboard/security", label: tt("dashboard.securityStatus.loginPassword"),
+      status: displayInfo?.hasPassword ? tt("dashboard.passwordSet") : tt("dashboard.passwordNotSet"),
+      active: Boolean(displayInfo?.hasPassword), icon: KeyRound,
+    },
+    {
+      href: "/member/dashboard/security", label: tt("dashboard.securityStatus.mfa"),
+      status: mfaVerifications.length > 0
+        ? tt("security.mfa.mfaSetCount", { count: String(mfaVerifications.length) })
+        : tt("dashboard.passwordNotSet"),
+      active: mfaVerifications.length > 0, icon: ShieldCheck,
+    },
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">账户概览</h1>
-        <p className="text-muted-foreground">
-          {tt("dashboard.description")}
-        </p>
-      </div>
+    <div className="space-y-7 lg:space-y-8">
+      <header>
+        <p className="text-xs font-semibold tracking-[0.14em] text-primary">CQAI CLUB</p>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{tt("dashboard.title")}</h1>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground sm:text-base">{tt("dashboard.description")}</p>
+      </header>
 
-      {/* Welcome Card */}
-      <Card className="overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16 border-2 border-white/20">
-              {(displayInfo?.avatar || claims?.picture) && (
-                <AvatarImage 
-                  src={displayInfo?.avatar || claims?.picture || ""} 
-                  alt={displayName}
-                />
-              )}
-              <AvatarFallback className="bg-white/20 text-xl font-bold text-white">
-                {displayName.charAt(0) || tt("common.userInitial")}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h2 className="text-xl font-semibold">
-                {tt("dashboard.welcome")}，{displayName}
-              </h2>
-              <p className="text-white/80">
-                {tt("dashboard.lastSignIn")}: {displayInfo?.lastSignInAt ? formatRelativeTime(displayInfo.lastSignInAt) : tt("service.status.unknown")}
-              </p>
-            </div>
-          </div>
-        </div>
-        <CardContent className="p-6">
-          <div className="grid gap-4 lg:gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-                <Mail className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{tt("dashboard.email")}</p>
-                <p className="font-medium">{displayInfo?.primaryEmail || tt("profile.notSet")}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
-                <Smartphone className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{tt("dashboard.phone")}</p>
-                <p className="font-medium">{displayInfo?.primaryPhone || tt("profile.notSet")}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
-                <Key className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{tt("dashboard.password")}</p>
-                <Badge variant={displayInfo?.hasPassword ? "default" : "secondary"}>
-                  {displayInfo?.hasPassword ? tt("dashboard.passwordSet") : tt("dashboard.passwordNotSet")}
-                </Badge>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400">
-                <Calendar className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{tt("dashboard.registerTime")}</p>
-                <p className="font-medium">
-                  {displayInfo?.createdAt ? formatDate(displayInfo.createdAt).split(" ")[0] : "-"}
+      {accountInfo && "error" in accountInfo && (
+        <p role="status" className="rounded-xl border bg-card px-4 py-3 text-sm text-muted-foreground">
+          {tt("dashboard.accountUnavailable")}
+        </p>
+      )}
+
+      <section aria-label={tt("dashboard.accountSummary")}>
+        <Card className="gap-0 overflow-hidden border-t-2 border-t-primary py-0 shadow-sm">
+          <div className="flex flex-col gap-5 px-5 py-7 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-8">
+            <div className="flex min-w-0 items-center gap-4 sm:gap-5">
+              <Avatar className="size-16 shrink-0 border-4 border-background shadow-sm sm:size-[72px]">
+                {(displayInfo?.avatar || claims?.picture) && (
+                  <AvatarImage src={displayInfo?.avatar || claims?.picture || ""} alt={displayName} />
+                )}
+                <AvatarFallback className="bg-primary/10 text-xl font-semibold text-primary">
+                  {displayName.charAt(0) || tt("common.userInitial")}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-primary">{tt("dashboard.accountSummary")}</p>
+                <h2 className="mt-1 break-words text-xl font-semibold tracking-tight sm:text-2xl">
+                  {tt("dashboard.welcome")}{locale === "en" ? ", " : "，"}{displayName}
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {tt("dashboard.lastSignIn")}{locale === "en" ? ": " : "："}{displayInfo?.lastSignInAt ? formatDate(displayInfo.lastSignInAt, true) : tt("service.status.unknown")}
                 </p>
               </div>
             </div>
+            <Button asChild className="h-11 shrink-0 rounded-lg px-5 sm:self-center">
+              <Link href="/member/dashboard/profile">
+                {tt("dashboard.viewProfile")}
+                <ArrowRight aria-hidden="true" className="size-4" />
+              </Link>
+            </Button>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Quick Actions */}
-      <div className="grid items-stretch gap-4 lg:gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Link href="/member/dashboard/profile" className="h-full">
-          <Card className="group h-full cursor-pointer transition-all hover:shadow-md">
-            <CardHeader className="pb-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white dark:bg-blue-900/30">
-                <UserCircle className="h-5 w-5" />
+          <div className="grid gap-px border-t bg-border sm:grid-cols-2 xl:grid-cols-4">
+            {accountDetails.map(({ label, value, icon: Icon }) => (
+              <div key={label} className="flex min-w-0 items-start gap-3 bg-card px-5 py-5 sm:px-6">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                  <Icon aria-hidden="true" className="size-5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">{label}</p>
+                  <p className="mt-1 break-all text-sm font-medium leading-5">{value}</p>
+                </div>
               </div>
-               <CardTitle className="pt-3">{tt("dashboard.quickActions.profile")}</CardTitle>
-               <CardDescription>{tt("dashboard.quickActions.profileDesc")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="ghost" size="sm" className="gap-1 px-0 group-hover:gap-2 transition-all">
-                 {tt("common.next")} <ArrowRight className="h-4 w-4" />
-              </Button>
-            </CardContent>
-          </Card>
-        </Link>
+            ))}
+          </div>
+        </Card>
+      </section>
 
-        <Link href="/member/dashboard/security" className="h-full">
-          <Card className="group h-full cursor-pointer transition-all hover:shadow-md">
-            <CardHeader className="pb-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 text-green-600 transition-colors group-hover:bg-green-600 group-hover:text-white dark:bg-green-900/30">
-                <Shield className="h-5 w-5" />
-              </div>
-               <CardTitle className="pt-3">{tt("dashboard.quickActions.security")}</CardTitle>
-               <CardDescription>{tt("dashboard.quickActions.securityDesc")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="ghost" size="sm" className="gap-1 px-0 group-hover:gap-2 transition-all">
-                 {tt("common.next")} <ArrowRight className="h-4 w-4" />
-              </Button>
-            </CardContent>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.82fr)]">
+        <section aria-labelledby="quick-actions-title">
+          <Card className="h-full gap-0 overflow-hidden py-0 shadow-sm">
+            <div className="px-5 py-5 sm:px-6">
+              <h2 id="quick-actions-title" className="text-lg font-semibold tracking-tight">{tt("dashboard.quickActions.title")}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{tt("dashboard.quickActions.description")}</p>
+            </div>
+            <div className="border-t">
+              {quickActions.map(({ href, title, description, icon: Icon }) => (
+                <Link key={href} href={href} className="group flex min-h-20 items-center gap-4 border-b px-5 py-4 transition-colors last:border-b-0 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-6">
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
+                    <Icon aria-hidden="true" className="size-5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold">{title}</span>
+                    <span className="mt-1 block text-sm leading-5 text-muted-foreground">{description}</span>
+                  </span>
+                  <ArrowRight aria-hidden="true" className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+                </Link>
+              ))}
+            </div>
           </Card>
-        </Link>
+        </section>
 
-        <Link href="/member/dashboard/connections" className="h-full">
-          <Card className="group h-full cursor-pointer transition-all hover:shadow-md">
-            <CardHeader className="pb-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 text-purple-600 transition-colors group-hover:bg-purple-600 group-hover:text-white dark:bg-purple-900/30">
-                <Link2 className="h-5 w-5" />
-              </div>
-               <CardTitle className="pt-3">{tt("dashboard.quickActions.connections")}</CardTitle>
-               <CardDescription>{tt("dashboard.quickActions.connectionsDesc")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="ghost" size="sm" className="gap-1 px-0 group-hover:gap-2 transition-all">
-                 {tt("common.next")} <ArrowRight className="h-4 w-4" />
-              </Button>
-            </CardContent>
+        <section aria-labelledby="security-status-title">
+          <Card className="h-full gap-0 overflow-hidden py-0 shadow-sm">
+            <div className="px-5 py-5 sm:px-6">
+              <h2 id="security-status-title" className="text-lg font-semibold tracking-tight">{tt("dashboard.securityStatus.title")}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{tt("dashboard.securityStatus.description")}</p>
+            </div>
+            <div className="border-t px-5 sm:px-6">
+              {securityItems.map(({ href, label, status, active, icon: Icon }) => (
+                <Link key={label} href={href} className="flex min-h-20 flex-wrap items-center gap-3 border-b py-4 transition-colors last:border-b-0 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:flex-nowrap">
+                  <Icon aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />
+                  <span className="min-w-0 flex-1 text-sm font-medium">{label}</span>
+                  <span className={active
+                    ? "rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
+                    : "rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground"}
+                  >
+                    {status}
+                  </span>
+                  <ArrowRight aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+                </Link>
+              ))}
+            </div>
           </Card>
-        </Link>
-
+        </section>
       </div>
-
-      {/* Security Status */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{tt("dashboard.securityStatus.title")}</CardTitle>
-          <CardDescription>{tt("security.description")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Key className="h-5 w-5 text-muted-foreground" />
-                <span>{tt("dashboard.securityStatus.loginPassword")}</span>
-              </div>
-              <Badge variant={displayInfo?.hasPassword ? "default" : "destructive"}>
-                {displayInfo?.hasPassword ? tt("dashboard.passwordSet") : tt("dashboard.passwordNotSet")}
-              </Badge>
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Shield className="h-5 w-5 text-muted-foreground" />
-                <span>{tt("dashboard.securityStatus.mfa")}</span>
-              </div>
-              <Link href="/member/dashboard/security">
-                <Badge variant={hasMfa ? "default" : "secondary"} className="cursor-pointer hover:bg-primary/90">
-                  {hasMfa ? tt("security.mfa.mfaSetCount", { count: String(mfaVerifications.length) }) : tt("dashboard.passwordNotSet")}
-                </Badge>
-              </Link>
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Link2 className="h-5 w-5 text-muted-foreground" />
-                <span>{tt("dashboard.securityStatus.socialBinding")}</span>
-              </div>
-              <Link href="/member/dashboard/connections">
-                <Badge variant={socialCount > 0 ? "default" : "secondary"} className="cursor-pointer hover:bg-primary/90">
-                  {socialCount > 0 ? tt("connections.connectedBadge") : tt("profile.notSet")}
-                </Badge>
-              </Link>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

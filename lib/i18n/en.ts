@@ -38,11 +38,16 @@ export const en = {
 
   nav: {
     menu: "Navigation menu",
-    dashboard: "Member Center",
+    skipToContent: "Skip to main content",
+    accountSection: "Member services",
+    manageSection: "Management",
+    dashboard: "Overview",
     profile: "Profile",
     security: "Security",
     connections: "Social Connections",
     settings: "Preferences",
+    activities: "My Activities",
+    adminActivities: "Activity Management",
     adminMembers: "Member Applications",
     adminCollections: "Submissions",
     adminProjects: "Project Showcase",
@@ -52,7 +57,10 @@ export const en = {
 
   dashboard: {
     title: "Member Center",
-    description: "Manage your account information, security settings and preferences",
+    description: "Manage your account information and security settings",
+    accountSummary: "Account information",
+    accountUnavailable: "Account information is temporarily unavailable. Refresh this page to try again.",
+    viewProfile: "View profile",
     welcome: "Welcome back",
     lastSignIn: "Last sign-in",
     email: "Email",
@@ -62,6 +70,8 @@ export const en = {
     passwordNotSet: "Not set",
     registerTime: "Registered",
     quickActions: {
+      title: "Quick actions",
+      description: "Get to the account settings you need",
       profile: "Profile",
       profileDesc: "Edit your personal information and avatar",
       security: "Security",
@@ -71,6 +81,7 @@ export const en = {
     },
     securityStatus: {
       title: "Security Status",
+      description: "Review account protection",
       loginPassword: "Login password",
       mfa: "Two-factor authentication",
       socialBinding: "Social account binding",
@@ -280,7 +291,7 @@ export const en = {
     languageSynced: "Language preference is synced to your account profile",
     languageUpdatedTitle: "Language updated",
     languageUpdatedDesc: "Language preference has been saved to your account",
-    languageUpdatedLocalDesc: "Saved locally. Refresh to apply",
+    languageUpdatedLocalDesc: "Saved in this browser. Account sync is unavailable",
     dangerZone: "Danger Zone",
     dangerZoneDesc: "These operations may have irreversible impact on your account",
     deleteAccount: "Delete Account",

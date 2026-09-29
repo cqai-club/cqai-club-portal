@@ -41,7 +41,8 @@ type DragState = {
 type ProjectCoverCropDialogProps = {
   open: boolean;
   file: File | null;
-  returnFocusRef?: RefObject<HTMLInputElement | null>;
+  subject?: string;
+  returnFocusRef?: RefObject<HTMLElement | null>;
   onOpenChange: (open: boolean) => void;
   onConfirm: (result: CroppedProjectCover) => void;
 };
@@ -55,6 +56,7 @@ function formatFileSize(size: number): string {
 export function ProjectCoverCropDialog({
   open,
   file,
+  subject = "项目",
   returnFocusRef,
   onOpenChange,
   onConfirm,
@@ -271,7 +273,7 @@ export function ProjectCoverCropDialog({
       >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Crosshair className="h-5 w-5" />裁剪项目封面
+            <Crosshair className="h-5 w-5" />裁剪{subject}封面
           </DialogTitle>
           <DialogDescription>
             封面固定为 16:10。拖动图片或使用位置滑块调整构图，确认后会转为 JPEG 并自动压缩。
@@ -285,7 +287,7 @@ export function ProjectCoverCropDialog({
               width={PREVIEW_WIDTH}
               height={PREVIEW_HEIGHT}
               tabIndex={ready && !processing ? 0 : -1}
-              aria-label="项目封面裁剪预览。可拖动图片，或使用方向键微调位置；按住 Shift 可加速移动。"
+              aria-label={`${subject}封面裁剪预览。可拖动图片，或使用方向键微调位置；按住 Shift 可加速移动。`}
               className="h-full w-full cursor-grab touch-none object-cover outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:cursor-grabbing"
               onKeyDown={handleCanvasKeyDown}
               onPointerDown={handlePointerDown}

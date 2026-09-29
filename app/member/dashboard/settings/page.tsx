@@ -7,13 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -26,7 +19,6 @@ import {
   Moon,
   Sun,
   Monitor,
-  Globe,
   Trash2,
   TriangleAlert,
   LoaderCircle,
@@ -38,18 +30,16 @@ import type { FeaturesConfig } from "@/config/types";
 import { isFeatureEnabled as isFeatureEnabledFromConfig } from "@/lib/config/feature-helpers";
 import { usePublicConfig } from "@/hooks/use-public-config";
 import { signOutAction } from "@/app/member/actions/auth";
-import { normalizeLocale } from "@/lib/i18n";
 import { useTranslations } from "@/lib/i18n/client";
+import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
   const { toast } = useToast();
-  const { t, language: i18nLanguage, setLanguage: setI18nLanguage } = useTranslations();
+  const { t } = useTranslations();
   const { data: runtimeConfig, loading: configLoading } = usePublicConfig();
   const [mounted, setMounted] = useState(false);
-  const [language, setLanguage] = useState(i18nLanguage === "en" ? "en" : "zh-CN");
-  const [isUpdatingLanguage, setIsUpdatingLanguage] = useState(false);
 
   // 账户删除状态
   const [deleteDialog, setDeleteDialog] = useState({
@@ -71,45 +61,10 @@ export default function SettingsPage() {
     [runtimeFeatures]
   );
 
-  // 避免水合不匹配，并同步 i18n 语言状态
+  // 避免水合不匹配
   useEffect(() => {
     setMounted(true);
-    setLanguage(i18nLanguage === "en" ? "en" : "zh-CN");
-  }, [i18nLanguage]);
-
-  // 处理语言切换 - 同时保存到 localStorage 和 OIDC profile
-  const handleLanguageChange = useCallback(async (value: string) => {
-    const nextLanguage = normalizeLocale(value);
-    setI18nLanguage(nextLanguage);
-    setLanguage(value);
-    setIsUpdatingLanguage(true);
-
-    try {
-      // 调用 API 更新到 OIDC profile 的 locale 字段
-      const res = await fetch("/member/api/account/profile/details", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ locale: value }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to update language");
-      }
-
-      toast({
-        title: t("settings.languageUpdatedTitle"),
-        description: t("settings.languageUpdatedDesc"),
-      });
-    } catch {
-      // 即使 API 调用失败，localStorage 中的设置仍然保留
-      toast({
-        title: t("settings.languageUpdatedTitle"),
-        description: t("settings.languageUpdatedLocalDesc"),
-      });
-    } finally {
-      setIsUpdatingLanguage(false);
-    }
-  }, [setI18nLanguage, t, toast]);
+  }, []);
 
   // 处理账户删除
   const handleDeleteAccount = async () => {
@@ -173,8 +128,8 @@ export default function SettingsPage() {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t("settings.title")}</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t("settings.title")}</h1>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground sm:text-base">
           {t("settings.description")}
         </p>
       </div>
@@ -193,9 +148,10 @@ export default function SettingsPage() {
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-3">
             <Button
-              variant={mounted && theme === "light" ? "default" : "outline"}
+              variant="outline"
               onClick={() => setTheme("light")}
-              className="justify-start gap-3 h-auto py-4"
+              aria-pressed={mounted && theme === "light"}
+              className={cn("h-auto min-h-16 justify-start gap-3 py-4", mounted && theme === "light" && "border-primary bg-primary/5 text-primary")}
             >
               <Sun className="h-5 w-5" />
               <div className="text-left">
@@ -204,9 +160,10 @@ export default function SettingsPage() {
               </div>
             </Button>
             <Button
-              variant={mounted && theme === "dark" ? "default" : "outline"}
+              variant="outline"
               onClick={() => setTheme("dark")}
-              className="justify-start gap-3 h-auto py-4"
+              aria-pressed={mounted && theme === "dark"}
+              className={cn("h-auto min-h-16 justify-start gap-3 py-4", mounted && theme === "dark" && "border-primary bg-primary/5 text-primary")}
             >
               <Moon className="h-5 w-5" />
               <div className="text-left">
@@ -215,9 +172,10 @@ export default function SettingsPage() {
               </div>
             </Button>
             <Button
-              variant={mounted && theme === "system" ? "default" : "outline"}
+              variant="outline"
               onClick={() => setTheme("system")}
-              className="justify-start gap-3 h-auto py-4"
+              aria-pressed={mounted && theme === "system"}
+              className={cn("h-auto min-h-16 justify-start gap-3 py-4", mounted && theme === "system" && "border-primary bg-primary/5 text-primary")}
             >
               <Monitor className="h-5 w-5" />
               <div className="text-left">
@@ -225,36 +183,6 @@ export default function SettingsPage() {
                 <p className="text-xs text-muted-foreground">{t("settings.themeSystemDesc")}</p>
               </div>
             </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Language Settings */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Globe className="h-5 w-5 text-muted-foreground" />
-            <CardTitle>{t("settings.languageTitle")}</CardTitle>
-          </div>
-          <CardDescription>
-            {t("settings.languageDescription")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-2 sm:max-w-xs">
-            <Label>{t("settings.interfaceLanguage")}</Label>
-            <Select value={language} onValueChange={handleLanguageChange} disabled={isUpdatingLanguage}>
-              <SelectTrigger>
-                <SelectValue placeholder={t("settings.languagePlaceholder")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="zh-CN">简体中文</SelectItem>
-                <SelectItem value="en">English</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              {isUpdatingLanguage ? t("settings.languageSaving") : t("settings.languageSynced")}
-            </p>
           </div>
         </CardContent>
       </Card>
@@ -272,7 +200,7 @@ export default function SettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <Trash2 className="h-5 w-5 text-destructive" />
                 <div>
@@ -284,6 +212,7 @@ export default function SettingsPage() {
               </div>
               <Button
                 variant="destructive"
+                className="min-h-11 sm:shrink-0"
                 onClick={() =>
                   setDeleteDialog((prev) => ({ ...prev, open: true }))
                 }

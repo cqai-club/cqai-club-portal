@@ -311,8 +311,8 @@ export default function ConnectionsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t("connections.title")}</h1>
-        <p className="text-muted-foreground">{t("connections.description")}</p>
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t("connections.title")}</h1>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground sm:text-base">{t("connections.description")}</p>
       </div>
 
       <Alert>

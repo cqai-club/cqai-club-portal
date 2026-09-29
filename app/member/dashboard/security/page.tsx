@@ -352,8 +352,8 @@ export default function SecurityPage() {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t("security.title")}</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t("security.title")}</h1>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground sm:text-base">
           {t("security.description")}
         </p>
       </div>
