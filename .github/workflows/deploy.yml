@@ -106,6 +106,7 @@ jobs:
           esac
           dd if=/dev/zero of="$RUNNER_TEMP/preflight-activity-recap-proxy-probe.bin" bs=1048576 count=7 status=none
           recap_proxy_status="$(curl --silent --show-error --request PUT --output /dev/null --write-out '%{http_code}' \
+            --header 'Origin: https://cqaiclub.asia' \
             --form "images=@$RUNNER_TEMP/preflight-activity-recap-proxy-probe.bin;type=image/png" \
             https://cqaiclub.asia/api/v1/activities/proxy-size-probe/recap)"
           case "$recap_proxy_status" in
@@ -163,6 +164,7 @@ jobs:
           test "$cover_proxy_status" = '401'
           dd if=/dev/zero of="$RUNNER_TEMP/activity-recap-proxy-probe.bin" bs=1048576 count=7 status=none
           recap_proxy_status="$(curl --silent --show-error --request PUT --output /dev/null --write-out '%{http_code}' \
+            --header 'Origin: https://cqaiclub.asia' \
             --form "images=@$RUNNER_TEMP/activity-recap-proxy-probe.bin;type=image/png" \
             https://cqaiclub.asia/api/v1/activities/proxy-size-probe/recap)"
           test "$recap_proxy_status" = '401'

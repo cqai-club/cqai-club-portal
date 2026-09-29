@@ -67,6 +67,11 @@ assert.equal(
   2,
   'preflight and post-deploy probes must exceed the old 6 MiB recap proxy limit'
 );
+assert.equal(
+  (workflow.match(/--header 'Origin: https:\/\/cqaiclub\.asia'/g) || []).length,
+  2,
+  'recap probes must include the same-origin header expected by the write route'
+);
 assert.match(workflow, /recap_proxy_status[^]*'401'/, 'the recap proxy probe must reach the protected application route');
 assert.ok(
   workflow.indexOf('Preflight public proxy upload capacity') < workflow.indexOf('Deploy with rollback protection'),
