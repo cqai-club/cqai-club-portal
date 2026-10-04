@@ -52,7 +52,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       total,
       page,
       totalPages: Math.ceil(total / limit),
-    });
+    }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     console.error("List members error:", error);
     return NextResponse.json({ error: "Failed to fetch members" }, { status: 500 });

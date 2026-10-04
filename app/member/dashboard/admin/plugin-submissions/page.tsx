@@ -1,5 +1,6 @@
 "use client";
 
+import { NativeSelect } from "@/components/ui/native-select";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, RefreshCw } from "lucide-react";
@@ -123,9 +124,9 @@ export default function PluginSubmissionsPage() {
         <CardHeader><CardTitle>投稿队列</CardTitle><CardDescription>按创建时间显示，当前筛选共 {total} 条。</CardDescription></CardHeader>
         <CardContent className="space-y-4">
           <label className="flex items-center gap-3 text-sm">状态
-            <select className="h-9 rounded-md border bg-background px-3" value={status} onChange={event => setStatus(event.target.value as SubmissionStatus | "all")}>
+            <NativeSelect clearValue="all" className="h-9 rounded-md border bg-background px-3" value={status} onChange={event => setStatus(event.target.value as SubmissionStatus | "all")}>
               <option value="pending">待审核</option><option value="approved">已通过</option><option value="rejected">已退回</option><option value="all">全部</option>
-            </select>
+            </NativeSelect>
           </label>
           {error && !selected && <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
           {loading ? <p className="py-8 text-center text-muted-foreground">正在加载投稿...</p> : items.length === 0 ? <p className="py-8 text-center text-muted-foreground">暂无投稿。</p> : (

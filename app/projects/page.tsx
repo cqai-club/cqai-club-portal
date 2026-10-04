@@ -68,7 +68,7 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
           <h1>项目广场</h1>
           <p>让真实需求遇见技术、场景与伙伴，一起把 AI 项目带到真实世界。</p>
           <div className={styles.heroActions}>
-            <Link className={styles.primaryAction} href="/collect/?type=project">
+            <Link className={styles.primaryAction} href="/member/dashboard/project-submission">
               提交我的项目
             </Link>
             <Link className={styles.secondaryAction} href="/#projects">

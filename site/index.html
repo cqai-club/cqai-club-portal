@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="连接产业、学术与资本的本地化 AI 技术共创社群。在重庆，做 AI，我们陪你从入门到顶尖。">
     <title>重庆AI创享俱乐部 | 在重庆，做AI</title>
+    <script src="/home-i18n.js?v=c96f1c0f4a46"></script>
+    <script src="/home-language.js"></script>
+    <script src="/home-membership.js?v=dbd908d2f22e" defer></script>
     <link rel="icon" type="image/png" sizes="256x256" href="/images/logo-nav.png">
     <link rel="apple-touch-icon" href="/images/logo-nav.png">
     <style>
@@ -205,7 +209,7 @@
 
         nav ul {
             display: flex;
-            gap: 40px;
+            gap: clamp(12px, 1.5vw, 24px);
         }
 
         nav ul li a {
@@ -214,7 +218,11 @@
             font-weight: 400;
             letter-spacing: 0.5px;
             transition: color 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            min-height: 44px;
             padding: 6px 0;
+            white-space: nowrap;
             border-bottom: 1px solid transparent;
         }
 
@@ -1195,147 +1203,6 @@
             to { transform: translateY(-50%); }
         }
 
-        /* ============ 加入我们 ============ */
-        .price-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 24px;
-            margin-bottom: 56px;
-        }
-
-        .price-card {
-            border: 1px solid var(--line);
-            border-radius: 16px;
-            padding: 36px 28px;
-            text-align: center;
-            background: var(--white);
-            transition: all 0.35s ease;
-        }
-
-        .price-card:hover {
-            box-shadow: var(--shadow);
-            transform: translateY(-4px);
-        }
-
-        .price-card .type-label {
-            font-size: 12px;
-            font-weight: 500;
-            letter-spacing: 2px;
-            color: var(--ink-light);
-            margin-bottom: 18px;
-            text-transform: uppercase;
-        }
-
-        .price-card .price {
-            font-size: 38px;
-            font-weight: 500;
-            color: var(--primary-deep);
-            line-height: 1.1;
-            margin-bottom: 6px;
-        }
-
-        .price-card .price span {
-            font-size: 14px;
-            font-weight: 300;
-            color: var(--ink-light);
-        }
-
-        .price-card .note {
-            font-size: 13px;
-            color: var(--ink-light);
-            margin-top: 12px;
-            font-weight: 300;
-        }
-
-        .price-card.featured {
-            background: var(--deep);
-            border-color: var(--deep);
-        }
-
-        .price-card.featured .type-label {
-            color: rgba(255, 255, 255, 0.62);
-        }
-
-        .price-card.featured .price {
-            color: var(--white);
-        }
-
-        .price-card.featured .price span {
-            color: rgba(255, 255, 255, 0.62);
-        }
-
-        .price-card.featured .note {
-            color: rgba(255, 255, 255, 0.78);
-        }
-
-        .join-venue {
-            display: flex;
-            gap: 16px;
-            align-items: center;
-            border: 1px solid var(--line);
-            padding: 24px 28px;
-            margin-bottom: 48px;
-            background: var(--bg-soft);
-            border-radius: 12px;
-        }
-
-        .join-venue .icon {
-            font-size: 17px;
-            color: var(--accent);
-        }
-
-        .join-venue h5 {
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--primary-deep);
-            margin-bottom: 2px;
-        }
-
-        .join-venue p {
-            font-size: 13px;
-            color: var(--ink-light);
-            font-weight: 300;
-        }
-
-        .join-cta {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .join-cta .hint {
-            margin-top: 14px;
-            font-size: 13px;
-            color: var(--ink-light);
-        }
-
-        .contact-row {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 44px;
-            padding-top: 32px;
-            border-top: 1px solid var(--line);
-        }
-
-        .contact-row a,
-        .contact-row span {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            color: var(--ink-light);
-            transition: color 0.3s ease;
-            font-weight: 300;
-        }
-
-        .contact-row a:hover {
-            color: var(--primary);
-        }
-
-        .contact-row svg.fa-icon {
-            color: var(--accent);
-        }
-
         /* ============ 页脚 ============ */
         footer {
             background: var(--deep);
@@ -1408,54 +1275,6 @@
         }
 
         /* ============ 弹窗 ============ */
-        .collection-fab {
-            position: fixed;
-            right: 24px;
-            bottom: 24px;
-            z-index: 998;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            min-height: 46px;
-            padding: 0 16px;
-            border: 1px solid rgba(255, 255, 255, 0.42);
-            border-radius: 999px;
-            color: var(--white);
-            background: var(--primary);
-            box-shadow: 0 10px 24px rgba(52, 36, 104, 0.24);
-            font-size: 14px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
-        }
-
-        .collection-fab:hover {
-            color: var(--white);
-            background: var(--deep);
-            box-shadow: 0 14px 28px rgba(52, 36, 104, 0.3);
-            transform: translateY(-3px);
-        }
-
-        .collection-fab:focus-visible {
-            outline: 3px solid rgba(255, 255, 255, 0.92);
-            outline-offset: 3px;
-        }
-
-        .collection-fab .fa-icon {
-            width: 14px;
-            height: 14px;
-            fill: currentColor;
-        }
-
-        @media (max-width: 480px) {
-            .collection-fab {
-                right: 16px;
-                bottom: 16px;
-                min-height: 44px;
-                padding: 0 14px;
-                font-size: 13px;
-            }
-        }
 
         .modal-overlay {
             position: fixed;
@@ -1623,8 +1442,7 @@
 
             .activity-grid,
             .member-grid,
-            .partner-groups,
-            .price-grid {
+            .partner-groups {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 28px;
             }
@@ -1733,7 +1551,6 @@
             .activity-grid,
             .member-grid,
             .partner-groups,
-            .price-grid,
             .stats-grid {
                 grid-template-columns: 1fr;
             }
@@ -1741,12 +1558,6 @@
             .footer-grid {
                 grid-template-columns: 1fr;
                 gap: 32px;
-            }
-
-            .contact-row {
-                flex-direction: column;
-                align-items: center;
-                gap: 16px;
             }
         }
 
@@ -1811,23 +1622,6 @@
             .btn-action {
                 padding: 13px 0;
                 font-size: 14px;
-            }
-
-            .price-card {
-                padding: 30px 22px;
-            }
-
-            .price-card.featured .note {
-                color: rgba(255, 255, 255, 0.95);
-                font-weight: 500;
-            }
-
-            .join-venue {
-                padding: 20px 22px;
-            }
-
-            .join-cta .hint {
-                margin-top: 16px;
             }
 
             .modal-box {
@@ -2172,40 +1966,6 @@
             @keyframes partnerHScroll {
                 to { transform: translateX(calc(-50% - 12px)); }
             }
-
-            /* 7. 加入我们：2×2 会员卡 */
-            .join {
-                padding: 56px 0;
-            }
-
-            .price-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 12px;
-                margin-bottom: 36px;
-            }
-
-            .price-card {
-                padding: 20px 12px;
-            }
-
-            .price-card .type-label {
-                font-size: 11px;
-                margin-bottom: 10px;
-                letter-spacing: 1px;
-            }
-
-            .price-card .price {
-                font-size: 1.5rem;
-            }
-
-            .price-card .price span {
-                font-size: 12px;
-            }
-
-            .price-card .note {
-                font-size: 11px;
-                margin-top: 8px;
-            }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -2223,11 +1983,6 @@
             }
 
             .activities .section-header .desc {
-                font-size: 12.5px;
-                white-space: nowrap;
-            }
-
-            .join .section-header .desc {
                 font-size: 12.5px;
                 white-space: nowrap;
             }
@@ -2300,70 +2055,6 @@
                 mask-image: linear-gradient(to bottom, black 0%, black 72%, transparent 100%);
             }
 
-            /* 6. 加入我们：整体压缩至一屏 */
-            .join {
-                padding: 40px 0;
-            }
-
-            .join .section-header {
-                margin-bottom: 22px;
-                padding-bottom: 12px;
-            }
-
-            .price-grid {
-                gap: 10px;
-                margin-bottom: 22px;
-            }
-
-            .price-card {
-                padding: 16px 10px;
-            }
-
-            .price-card .type-label {
-                font-size: 10.5px;
-                margin-bottom: 8px;
-            }
-
-            .price-card .price {
-                font-size: 1.35rem;
-            }
-
-            .price-card .note {
-                font-size: 10.5px;
-                margin-top: 6px;
-            }
-
-            .join-venue {
-                padding: 14px 16px;
-                margin-bottom: 22px;
-            }
-
-            .join-venue h5 {
-                font-size: 14px;
-            }
-
-            .join-venue p {
-                font-size: 12px;
-            }
-
-            .join-cta {
-                margin-bottom: 22px;
-            }
-
-            .join-cta .btn {
-                padding: 13px 36px;
-            }
-
-            .join-cta .hint {
-                margin-top: 10px;
-                font-size: 12px;
-            }
-
-            .contact-row {
-                padding-top: 18px;
-                gap: 12px;
-            }
-
             /* 7. 页脚：仅保留联系、据点，左对齐整体居中 */
             .footer-grid {
                 display: flex;
@@ -2403,6 +2094,47 @@
         section[id] { scroll-margin-top: 72px; }
         a:focus-visible, button:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
 
+        /* Language controls stay available beside the mobile menu. */
+        header { gap: 16px; }
+        .header-actions { position: relative; z-index: 1001; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+        .github-link { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex-shrink: 0; border: 1px solid currentColor; border-radius: 8px; color: inherit; transition: background .2s ease; }
+        .github-link svg { width: 22px; height: 22px; fill: currentColor; }
+        .github-link:hover { background: rgba(167, 139, 250, .15); }
+        header:has(#navLinks.open) .github-link { color: var(--primary-deep); background: var(--white); }
+        .language-switch { min-width: 44px; min-height: 44px; padding: 8px 12px; border: 1px solid currentColor; border-radius: 8px; background: transparent; color: inherit; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .language-switch:hover { background: rgba(167, 139, 250, .15); }
+        header:has(#navLinks.open) .language-switch { color: var(--primary-deep); background: var(--white); }
+        header:has(#navLinks.open) .nav-toggle span { background: var(--primary-deep); }
+        .logo { min-width: 0; }
+        .logo img { flex-shrink: 0; }
+        html[lang="en"] nav ul { gap: 16px; }
+        html[lang="en"] .hero h1 { font-size: clamp(2.3rem, 5vw, 3.7rem); }
+        html[lang="en"] .hero p { letter-spacing: .5px; }
+        html[lang="en"] .section-header { gap: 24px; }
+        html[lang="en"] .section-header > div { min-width: 0; }
+        html[lang="en"] .section-header .btn { flex-shrink: 0; }
+        html[lang="en"] .ring-name { min-width: 108px; }
+        @media (min-width: 1101px) and (max-width: 1200px) {
+            html[lang="en"] .nav-cta { display: none; }
+        }
+        @media (max-width: 1100px) {
+            .header-actions { gap: 8px; }
+            .nav-toggle { min-width: 44px; min-height: 44px; }
+            html[lang="en"] nav ul { gap: 10px; }
+        }
+        @media (max-width: 768px) {
+            header { gap: 8px; }
+            .logo { font-size: 14px; line-height: 1.4; }
+            .logo img { width: 32px; height: 32px; }
+            .language-switch { padding: 8px; }
+            html[lang="en"] .section-header { align-items: flex-start; flex-direction: column; gap: 16px; }
+            html[lang="en"] .activities .section-header .desc { white-space: normal; }
+            html[lang="en"] .eco-tabs { gap: 12px; }
+            html[lang="en"] .eco-tab { flex: 1; min-width: 0; flex-direction: column; align-items: flex-start; font-size: 13px; }
+            html[lang="en"] .eco-tab .t-sub::before { display: none; }
+            html[lang="en"] .footer-grid { flex-wrap: wrap; gap: 24px; }
+        }
+
     </style>
     <link rel="preload" as="image" href="images/hero-hd.webp">
 </head>
@@ -2411,35 +2143,42 @@
     <!-- ========== 导航 ========== -->
     <header id="header">
         <a href="#home" class="logo">
-            <img src="images/logo-nav.png" alt="重庆AI创享俱乐部">
-            重庆AI创享俱乐部
+            <img src="images/logo-nav.png" alt="重庆AI创享俱乐部" data-i18n-alt="brand.name">
+            <span data-i18n="brand.short">重庆AI创享俱乐部</span>
         </a>
         <nav>
             <ul id="navLinks">
-                <li><a href="#about">关于我们</a></li>
-                <li><a href="/events/">活动交流</a></li>
-                <li><a href="#timeline">近期动态</a></li>
-                <li><a href="/projects/">项目广场</a></li>
-                <li><a href="#join">加入我们</a></li>
-                <li><a href="/member">会员中心</a></li>
+                <li><a data-i18n="nav.about" href="#about">关于我们</a></li>
+                <li><a data-i18n="nav.activities" href="#activities">活动体系</a></li>
+                <li><a data-i18n="nav.updates" href="#timeline">近期动态</a></li>
+                <li><a data-i18n="nav.partners" href="#partners">合作伙伴</a></li>
+                <li><a data-i18n="nav.events" href="/events/">活动交流</a></li>
+                <li><a data-i18n="nav.projects" href="/projects/">项目广场</a></li>
+                <li><a data-i18n="nav.member" href="/member">会员中心</a></li>
             </ul>
         </nav>
-        <a href="/apply/" class="btn nav-cta">入会申请</a>
-        <button class="nav-toggle" id="navToggle" type="button" aria-label="切换导航菜单" aria-controls="navLinks" aria-expanded="false">
+        <div class="header-actions">
+        <a data-home-membership-link data-i18n="nav.apply" href="/member/dashboard/application" class="btn nav-cta">申请入会</a>
+        <a href="https://github.com/cqai-club" class="github-link" target="_blank" rel="noopener noreferrer" aria-label="GitHub（在新窗口打开）" data-i18n-aria-label="nav.github" title="GitHub">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 .75a11.25 11.25 0 0 0-3.56 21.92c.56.1.77-.24.77-.54v-2.1c-3.14.68-3.8-1.34-3.8-1.34-.51-1.3-1.25-1.65-1.25-1.65-1.02-.7.08-.69.08-.69 1.13.08 1.73 1.16 1.73 1.16 1.01 1.73 2.65 1.23 3.3.94.1-.72.39-1.21.71-1.49-2.5-.29-5.13-1.25-5.13-5.56 0-1.23.44-2.23 1.16-3.02-.12-.28-.5-1.43.11-2.98 0 0 .95-.3 3.1 1.15a10.8 10.8 0 0 1 5.64 0c2.15-1.46 3.1-1.15 3.1-1.15.61 1.55.23 2.7.11 2.98.73.79 1.16 1.79 1.16 3.02 0 4.32-2.63 5.27-5.14 5.55.4.35.76 1.03.76 2.08v3.09c0 .3.2.65.77.54A11.25 11.25 0 0 0 12 .75Z"/></svg>
+        </a>
+        <button class="language-switch" id="languageSwitch" type="button" aria-label="Switch to English" hidden>EN</button>
+        <button class="nav-toggle" id="navToggle" type="button" aria-label="切换导航菜单" data-i18n-aria-label="nav.toggle" aria-controls="navLinks" aria-expanded="false">
             <span></span><span></span><span></span>
         </button>
+        </div>
     </header>
 
     <!-- ========== Hero ========== -->
     <section class="hero" id="home">
         <div class="hero-bg" id="heroBg"></div>
         <div class="hero-content" id="heroContent">
-            <h1 class="anim anim-1">在重庆，做AI</h1>
-            <h2 class="anim anim-2">连接产业、学术与资本的高素质AI创研社群</h2>
-            <p class="anim anim-3">资源筑基 · 内容驱动 · 社群沉淀 · 服务变现</p>
+            <h1 data-i18n="hero.title" class="anim anim-1">在重庆，做AI</h1>
+            <h2 data-i18n="hero.subtitle" class="anim anim-2">连接产业、学术与资本的高素质AI创研社群</h2>
+            <p data-i18n="hero.tagline" class="anim anim-3">资源筑基 · 内容驱动 · 社群沉淀 · 服务变现</p>
             <div class="btn-group anim anim-4">
-                <a href="/apply/" class="btn btn-light">入会申请 <svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z"/></svg></a>
-                <a href="#about" class="btn btn-ghost-light">了解我们</a>
+                <a data-home-membership-link href="/member/dashboard/application" class="btn btn-light"><span data-i18n="nav.apply">申请入会</span> <svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z"/></svg></a>
+                <a data-i18n="hero.about" href="#about" class="btn btn-ghost-light">了解我们</a>
             </div>
         </div>
     </section>
@@ -2449,33 +2188,33 @@
         <div class="container">
             <div class="section-header reveal">
                 <div>
-                    <span class="section-label">ABOUT</span>
-                    <h3>关于我们</h3>
-                    <p class="desc">连接山城AI智慧，赋能产业智能升级。</p>
+                    <span class="section-label" data-i18n="section.about">ABOUT</span>
+                    <h3 data-i18n="nav.about">关于我们</h3>
+                    <p data-i18n="about.description" class="desc">连接山城AI智慧，赋能产业智能升级。</p>
                 </div>
             </div>
             <div class="about-grid">
                 <div class="about-text reveal">
-                    <h3>本地化AI技术共创社群</h3>
-                    <p>重庆AI创享俱乐部是由重庆义凡文化传媒有限公司运营的<span class="highlight">本地化AI技术共创社群</span>，汇聚AI开发者、创业者、行业专家与投资人，以"资源筑基、内容驱动、社群沉淀、服务变现"为核心理念。</p>
-                    <p>每月常态化举办茶话会、微型专家讲座、工作坊与项目路演，累计服务数百位AI实践者。</p>
+                    <h3 data-i18n="about.title">本地化AI技术共创社群</h3>
+                    <p><span data-i18n="about.intro.before">重庆AI创享俱乐部是由重庆义凡文化传媒有限公司运营的</span><span class="highlight" data-i18n="about.intro.highlight">本地化AI技术共创社群</span><span data-i18n="about.intro.after">，汇聚AI开发者、创业者、行业专家与投资人，以"资源筑基、内容驱动、社群沉淀、服务变现"为核心理念。</span></p>
+                    <p data-i18n="about.activities">每月常态化举办茶话会、微型专家讲座、工作坊与项目路演，累计服务数百位AI实践者。</p>
                     <div class="about-rings">
                         <div class="ring-row">
-                            <span class="ring-name">创享圈</span>
-                            <span class="ring-desc">学习交流 · 高质量交流平台</span>
+                            <span data-i18n="ecosystem.learning.name" class="ring-name">创享圈</span>
+                            <span data-i18n="about.learning" class="ring-desc">学习交流 · 高质量交流平台</span>
                         </div>
                         <div class="ring-row">
-                            <span class="ring-name">创研圈</span>
-                            <span class="ring-desc">项目共创 · 真实项目协同研发</span>
+                            <span data-i18n="ecosystem.cocreation.name" class="ring-name">创研圈</span>
+                            <span data-i18n="about.cocreation" class="ring-desc">项目共创 · 真实项目协同研发</span>
                         </div>
                         <div class="ring-row">
-                            <span class="ring-name">创投圈</span>
-                            <span class="ring-desc">资源变现 · 连接项目与资本</span>
+                            <span data-i18n="ecosystem.capital.name" class="ring-name">创投圈</span>
+                            <span data-i18n="about.capital" class="ring-desc">资源变现 · 连接项目与资本</span>
                         </div>
                     </div>
                 </div>
                 <div class="about-image reveal">
-                    <img src="images/about.jpg" loading="lazy" alt="俱乐部交流场景">
+                    <img src="images/about.jpg" loading="lazy" alt="俱乐部交流场景" data-i18n-alt="about.imageAlt">
                 </div>
             </div>
         </div>
@@ -2486,59 +2225,59 @@
         <div class="container">
             <div class="section-header reveal">
                 <div>
-                    <span class="section-label">ECOSYSTEM</span>
-                    <h3>三层同心圆生态</h3>
-                    <p class="desc">从学习交流到项目共创，再到资源变现，让每个人找到自己的位置。</p>
+                    <span class="section-label" data-i18n="section.ecosystem">ECOSYSTEM</span>
+                    <h3 data-i18n="ecosystem.title">三层同心圆生态</h3>
+                    <p data-i18n="ecosystem.description" class="desc">从学习交流到项目共创，再到资源变现，让每个人找到自己的位置。</p>
                 </div>
             </div>
             <div class="eco-tabs reveal">
-                <button class="eco-tab active" data-tab="eco-1"><span class="t-main">创享圈</span><span class="t-sub">学习交流</span></button>
-                <button class="eco-tab" data-tab="eco-2"><span class="t-main">创研圈</span><span class="t-sub">项目共创</span></button>
-                <button class="eco-tab" data-tab="eco-3"><span class="t-main">创投圈</span><span class="t-sub">资源变现</span></button>
+                <button class="eco-tab active" data-tab="eco-1"><span data-i18n="ecosystem.learning.name" class="t-main">创享圈</span><span data-i18n="ecosystem.learning.short" class="t-sub">学习交流</span></button>
+                <button class="eco-tab" data-tab="eco-2"><span data-i18n="ecosystem.cocreation.name" class="t-main">创研圈</span><span data-i18n="ecosystem.cocreation.short" class="t-sub">项目共创</span></button>
+                <button class="eco-tab" data-tab="eco-3"><span data-i18n="ecosystem.capital.name" class="t-main">创投圈</span><span data-i18n="ecosystem.capital.short" class="t-sub">资源变现</span></button>
             </div>
             <div class="eco-panel active" id="eco-1">
                 <div class="eco-text">
-                    <span class="sub">Learning</span>
-                    <h4>高质量的学习交流平台</h4>
-                    <p>以月度常态化的专业活动连接行业前沿，围绕产业与技术议题深度研讨，构建山城最认真的AI交流网络。</p>
+                    <span class="sub" data-i18n="ecosystem.learning.eyebrow">Learning</span>
+                    <h4 data-i18n="ecosystem.learning.title">高质量的学习交流平台</h4>
+                    <p data-i18n="ecosystem.learning.description">以月度常态化的专业活动连接行业前沿，围绕产业与技术议题深度研讨，构建山城最认真的AI交流网络。</p>
                     <ul class="eco-list">
-                        <li><svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg> 茶话会与闭门研讨</li>
-                        <li><svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg> 一线专家前沿分享</li>
-                        <li><svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg> 动手实操与技能训练</li>
+                        <li><svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg> <span data-i18n="ecosystem.learning.discussion">茶话会与闭门研讨</span></li>
+                        <li><svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg> <span data-i18n="ecosystem.learning.experts">一线专家前沿分享</span></li>
+                        <li><svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg> <span data-i18n="ecosystem.learning.practice">动手实操与技能训练</span></li>
                     </ul>
                 </div>
                 <div class="panel-img">
-                    <img src="images/eco-1.jpg" alt="学习交流场景">
+                    <img src="images/eco-1.jpg" alt="学习交流场景" data-i18n-alt="ecosystem.learning.imageAlt">
                 </div>
             </div>
             <div class="eco-panel" id="eco-2">
                 <div class="eco-text">
-                    <span class="sub">Co-creation</span>
-                    <h4>真实项目为载体的协同研发</h4>
-                    <p>围绕具身智能与AI应用方向孵化项目，汇聚硬件、算法、产品与市场资源，让想法落地为产品。</p>
+                    <span class="sub" data-i18n="ecosystem.cocreation.eyebrow">Co-creation</span>
+                    <h4 data-i18n="ecosystem.cocreation.title">真实项目为载体的协同研发</h4>
+                    <p data-i18n="ecosystem.cocreation.description">围绕具身智能与AI应用方向孵化项目，汇聚硬件、算法、产品与市场资源，让想法落地为产品。</p>
                     <ul class="eco-list">
-                        <li><svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg> 项目组队与攻坚</li>
-                        <li><svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg> 技术共创与资源共享</li>
-                        <li><svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg> 高校与企业协同研发</li>
+                        <li><svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg> <span data-i18n="ecosystem.cocreation.teams">项目组队与攻坚</span></li>
+                        <li><svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg> <span data-i18n="ecosystem.cocreation.resources">技术共创与资源共享</span></li>
+                        <li><svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg> <span data-i18n="ecosystem.cocreation.research">高校与企业协同研发</span></li>
                     </ul>
                 </div>
                 <div class="panel-img">
-                    <img src="images/eco-2.jpg" alt="项目共创场景">
+                    <img src="images/eco-2.jpg" alt="项目共创场景" data-i18n-alt="ecosystem.cocreation.imageAlt">
                 </div>
             </div>
             <div class="eco-panel" id="eco-3">
                 <div class="eco-text">
-                    <span class="sub">Capital</span>
-                    <h4>连接项目与资本的转化通道</h4>
-                    <p>以项目路演为窗口，将俱乐部孵化的优质项目推向市场与资本，推动成果落地与价值实现。</p>
+                    <span class="sub" data-i18n="ecosystem.capital.eyebrow">Capital</span>
+                    <h4 data-i18n="ecosystem.capital.title">连接项目与资本的转化通道</h4>
+                    <p data-i18n="ecosystem.capital.description">以项目路演为窗口，将俱乐部孵化的优质项目推向市场与资本，推动成果落地与价值实现。</p>
                     <ul class="eco-list">
-                        <li><svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg> 项目路演与投资人对接</li>
-                        <li><svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg> 创业资源与产业落地</li>
-                        <li><svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg> 成果商业化的全链路支持</li>
+                        <li><svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg> <span data-i18n="ecosystem.capital.pitch">项目路演与投资人对接</span></li>
+                        <li><svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg> <span data-i18n="ecosystem.capital.industry">创业资源与产业落地</span></li>
+                        <li><svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg> <span data-i18n="ecosystem.capital.support">成果商业化的全链路支持</span></li>
                     </ul>
                 </div>
                 <div class="panel-img">
-                    <img src="images/eco-3.jpg" alt="路演与资本对接场景">
+                    <img src="images/eco-3.jpg" alt="路演与资本对接场景" data-i18n-alt="ecosystem.capital.imageAlt">
                 </div>
             </div>
         </div>
@@ -2547,25 +2286,25 @@
     <!-- ========== 实力数据 ========== -->
     <section class="stats" id="stats">
         <div class="container">
-            <span class="section-label reveal">MILESTONES</span>
-            <h3 class="reveal">以事实建立信任</h3>
-            <p class="reveal">从活动、项目到人群，持续沉淀的创研生态</p>
+            <span class="section-label reveal" data-i18n="section.milestones">MILESTONES</span>
+            <h3 data-i18n="stats.title" class="reveal">以事实建立信任</h3>
+            <p data-i18n="stats.description" class="reveal">从活动、项目到人群，持续沉淀的创研生态</p>
             <div class="stats-grid">
                 <div class="stat-item reveal">
                     <h4><span class="num-anim" data-val="3">0</span></h4>
-                    <p>层共创生态</p>
+                    <p data-i18n="stats.layers">层共创生态</p>
                 </div>
                 <div class="stat-item reveal">
                     <h4><span class="num-anim" data-val="4">0</span></h4>
-                    <p>种常态活动形式</p>
+                    <p data-i18n="stats.formats">种常态活动形式</p>
                 </div>
                 <div class="stat-item reveal">
                     <h4><span class="num-anim" data-val="20">0</span>+</h4>
-                    <p>个创研项目</p>
+                    <p data-i18n="stats.projects">个创研项目</p>
                 </div>
                 <div class="stat-item reveal">
                     <h4><span class="num-anim" data-val="1000">0</span>+</h4>
-                    <p>位 AI 实践者</p>
+                    <p data-i18n="stats.practitioners">位 AI 实践者</p>
                 </div>
             </div>
         </div>
@@ -2576,43 +2315,43 @@
         <div class="container">
             <div class="section-header reveal">
                 <div>
-                    <span class="section-label">ACTIVITIES</span>
-                    <h3>活动体系</h3>
-                    <p class="desc">每月常态化举办，构建产业与学术的深度交流网络。</p>
+                    <span class="section-label" data-i18n="section.activities">ACTIVITIES</span>
+                    <h3 data-i18n="activities.title">活动体系</h3>
+                    <p data-i18n="activities.description" class="desc">每月常态化举办，构建产业与学术的深度交流网络。</p>
                 </div>
-                <a class="btn btn-outline" href="/events/#history">查看历史活动 →</a>
+                <a data-i18n="activities.history" class="btn btn-outline" href="/events/#history">查看历史活动 →</a>
             </div>
             <div class="activity-grid">
                 <div class="activity-card reveal">
-                    <div class="activity-img"><img src="images/activity-1.jpg" loading="lazy" alt="茶话会"></div>
+                    <div class="activity-img"><img src="images/activity-1.jpg" loading="lazy" alt="茶话会" data-i18n-alt="activities.discussion.title"></div>
                     <div class="activity-body">
                         <span class="num">01</span>
-                        <h4>茶话会</h4>
-                        <p>围绕产业与技术议题的闭门研讨，汇聚机构代表与行业专家。</p>
+                        <h4 data-i18n="activities.discussion.title">茶话会</h4>
+                        <p data-i18n="activities.discussion.description">围绕产业与技术议题的闭门研讨，汇聚机构代表与行业专家。</p>
                     </div>
                 </div>
                 <div class="activity-card reveal">
-                    <div class="activity-img"><img src="images/activity-2.jpg" loading="lazy" alt="微型专家讲座"></div>
+                    <div class="activity-img"><img src="images/activity-2.jpg" loading="lazy" alt="微型专家讲座" data-i18n-alt="activities.talk.title"></div>
                     <div class="activity-body">
                         <span class="num">02</span>
-                        <h4>微型专家讲座</h4>
-                        <p>邀请高校与企业一线专家，分享前沿技术与实践方法。</p>
+                        <h4 data-i18n="activities.talk.title">微型专家讲座</h4>
+                        <p data-i18n="activities.talk.description">邀请高校与企业一线专家，分享前沿技术与实践方法。</p>
                     </div>
                 </div>
                 <div class="activity-card reveal">
-                    <div class="activity-img"><img src="images/activity-3.jpg" loading="lazy" alt="工作坊"></div>
+                    <div class="activity-img"><img src="images/activity-3.jpg" loading="lazy" alt="工作坊" data-i18n-alt="activities.workshop.title"></div>
                     <div class="activity-body">
                         <span class="num">03</span>
-                        <h4>工作坊</h4>
-                        <p>动手实操与技能训练，从工具到方法论，现场产出成果。</p>
+                        <h4 data-i18n="activities.workshop.title">工作坊</h4>
+                        <p data-i18n="activities.workshop.description">动手实操与技能训练，从工具到方法论，现场产出成果。</p>
                     </div>
                 </div>
                 <div class="activity-card reveal">
-                    <div class="activity-img"><img src="images/activity-4.jpg" loading="lazy" alt="项目路演"></div>
+                    <div class="activity-img"><img src="images/activity-4.jpg" loading="lazy" alt="项目路演" data-i18n-alt="activities.pitch.title"></div>
                     <div class="activity-body">
                         <span class="num">04</span>
-                        <h4>项目路演</h4>
-                        <p>项目展示与资本对接，推动创研成果走向市场。</p>
+                        <h4 data-i18n="activities.pitch.title">项目路演</h4>
+                        <p data-i18n="activities.pitch.description">项目展示与资本对接，推动创研成果走向市场。</p>
                     </div>
                 </div>
             </div>
@@ -2623,11 +2362,11 @@
     <section class="club-events-preview" aria-labelledby="clubEventsTitle">
         <div class="container">
             <div class="preview-head">
-                <div><span class="section-label">UPCOMING EVENTS</span><h3 id="clubEventsTitle">近期可报名活动</h3></div>
-                <a href="/events/#upcoming-title">查看全部活动 →</a>
+                <div><span class="section-label" data-i18n="section.events">UPCOMING EVENTS</span><h3 data-i18n="events.title" id="clubEventsTitle">近期可报名活动</h3></div>
+                <a data-i18n="events.all" href="/events/#upcoming-title">查看全部活动 →</a>
             </div>
             <div class="club-events-grid" id="clubEventsGrid" aria-live="polite">
-                <p class="club-events-empty">正在读取活动安排…</p>
+                <p data-i18n="events.loading" class="club-events-empty">正在读取活动安排…</p>
             </div>
         </div>
     </section>
@@ -2638,14 +2377,14 @@
             <div class="tl-head-row">
                 <div class="section-header" style="border: none; margin-bottom: 0; padding-bottom: 0;">
                     <div>
-                        <span class="section-label reveal">UPDATES</span>
-                        <h3 class="reveal">近期动态</h3>
-                        <p class="desc reveal">2026 年代表性活动场次，持续迭代中。</p>
+                        <span class="section-label reveal" data-i18n="section.updates">UPDATES</span>
+                        <h3 data-i18n="nav.updates" class="reveal">近期动态</h3>
+                        <p data-i18n="timeline.description" class="desc reveal">2026 年代表性活动场次，持续迭代中。</p>
                     </div>
                 </div>
                 <div class="tl-controls reveal">
-                    <button class="tl-arrow" id="tlPrev" aria-label="上一组"><svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.2 288 416 288c17.7 0 32-14.3 32-32s-14.3-32-32-32l-306.7 0L214.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></button>
-                    <button class="tl-arrow" id="tlNext" aria-label="下一组"><svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z"/></svg></button>
+                    <button class="tl-arrow" id="tlPrev" aria-label="上一组" data-i18n-aria-label="timeline.previous"><svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.2 288 416 288c17.7 0 32-14.3 32-32s-14.3-32-32-32l-306.7 0L214.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></button>
+                    <button class="tl-arrow" id="tlNext" aria-label="下一组" data-i18n-aria-label="timeline.next"><svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z"/></svg></button>
                 </div>
             </div>
         </div>
@@ -2653,63 +2392,63 @@
             <div class="tl-track" id="tlTrack">
                 <div class="tl-card">
                     <span class="dot"></span>
-                    <div class="img"><img src="images/tl-1.jpg" alt="具身智能茶话会"></div>
+                    <div class="img"><img src="images/tl-1.jpg" alt="具身智能茶话会" data-i18n-alt="timeline.1.imageAlt"></div>
                     <div class="tl-meta">
                         <span class="date">2026.05</span>
-                        <span class="tag">茶话会</span>
+                        <span data-i18n="activities.discussion.title" class="tag">茶话会</span>
                     </div>
-                    <h5>具身智能的现状与发展趋势</h5>
-                    <p>联合七腾机器人、重庆大学等机构代表闭门研讨。</p>
+                    <h5 data-i18n="timeline.1.title">具身智能的现状与发展趋势</h5>
+                    <p data-i18n="timeline.1.description">联合七腾机器人、重庆大学等机构代表闭门研讨。</p>
                 </div>
                 <div class="tl-card">
                     <span class="dot"></span>
-                    <div class="img"><img src="images/tl-2.jpg" alt="程序员职业辩论"></div>
+                    <div class="img"><img src="images/tl-2.jpg" alt="程序员职业辩论" data-i18n-alt="timeline.2.imageAlt"></div>
                     <div class="tl-meta">
                         <span class="date">2026.06</span>
-                        <span class="tag">茶话会</span>
+                        <span data-i18n="activities.discussion.title" class="tag">茶话会</span>
                     </div>
-                    <h5>AI时代，程序员会失业还是更值钱？</h5>
-                    <p>围绕AI编程工具对开发者职业的影响展开深度辩论。</p>
+                    <h5 data-i18n="timeline.2.title">AI时代，程序员会失业还是更值钱？</h5>
+                    <p data-i18n="timeline.2.description">围绕AI编程工具对开发者职业的影响展开深度辩论。</p>
                 </div>
                 <div class="tl-card">
                     <span class="dot"></span>
-                    <div class="img"><img src="images/tl-3.jpg" alt="创研组队攻坚"></div>
+                    <div class="img"><img src="images/tl-3.jpg" alt="创研组队攻坚" data-i18n-alt="timeline.3.imageAlt"></div>
                     <div class="tl-meta">
                         <span class="date">2026.06</span>
-                        <span class="tag">深潜沙龙</span>
+                        <span data-i18n="timeline.salon" class="tag">深潜沙龙</span>
                     </div>
-                    <h5>AI创研项目落地组队攻坚</h5>
-                    <p>创研圈首场活动，项目、技术、市场三方现场组队。</p>
+                    <h5 data-i18n="timeline.3.title">AI创研项目落地组队攻坚</h5>
+                    <p data-i18n="timeline.3.description">创研圈首场活动，项目、技术、市场三方现场组队。</p>
                 </div>
                 <div class="tl-card">
                     <span class="dot"></span>
-                    <div class="img"><img src="images/tl-4.jpg" alt="本地产业AI场景"></div>
+                    <div class="img"><img src="images/tl-4.jpg" alt="本地产业AI场景" data-i18n-alt="timeline.4.imageAlt"></div>
                     <div class="tl-meta">
                         <span class="date">2026.07</span>
-                        <span class="tag">茶话会</span>
+                        <span data-i18n="activities.discussion.title" class="tag">茶话会</span>
                     </div>
-                    <h5>重庆有哪些被低估的AI落地场景？</h5>
-                    <p>聚焦火锅供应链、摩托车配件质检、旅游文创等本地产业。</p>
+                    <h5 data-i18n="timeline.4.title">重庆有哪些被低估的AI落地场景？</h5>
+                    <p data-i18n="timeline.4.description">聚焦火锅供应链、摩托车配件质检、旅游文创等本地产业。</p>
                 </div>
                 <div class="tl-card">
                     <span class="dot"></span>
-                    <div class="img"><img src="images/tl-5.jpg" alt="项目路演"></div>
+                    <div class="img"><img src="images/tl-5.jpg" alt="项目路演" data-i18n-alt="activities.pitch.title"></div>
                     <div class="tl-meta">
                         <span class="date">2026.07</span>
-                        <span class="tag">路演</span>
+                        <span data-i18n="timeline.pitch" class="tag">路演</span>
                     </div>
-                    <h5>俱乐部首场项目路演</h5>
-                    <p>智能绿植养护、AI发型设计、清淤机器人等项目亮相。</p>
+                    <h5 data-i18n="timeline.5.title">俱乐部首场项目路演</h5>
+                    <p data-i18n="timeline.5.description">智能绿植养护、AI发型设计、清淤机器人等项目亮相。</p>
                 </div>
                 <div class="tl-card">
                     <span class="dot"></span>
-                    <div class="img"><img src="images/tl-6.jpg" alt="AI智能体工作坊"></div>
+                    <div class="img"><img src="images/tl-6.jpg" alt="AI智能体工作坊" data-i18n-alt="timeline.6.imageAlt"></div>
                     <div class="tl-meta">
                         <span class="date">2026.08</span>
-                        <span class="tag">工作坊</span>
+                        <span data-i18n="activities.workshop.title" class="tag">工作坊</span>
                     </div>
-                    <h5>AI智能体实战工作坊</h5>
-                    <p>重庆大学副教授主讲，聚焦自动化工作流与Skills体系。</p>
+                    <h5 data-i18n="timeline.6.title">AI智能体实战工作坊</h5>
+                    <p data-i18n="timeline.6.description">重庆大学副教授主讲，聚焦自动化工作流与Skills体系。</p>
                 </div>
             </div>
         </div>
@@ -2720,20 +2459,20 @@
         <div class="container">
             <div class="section-header reveal">
                 <div>
-                    <span class="section-label">PROJECTS</span>
-                    <h3>创研项目</h3>
-                    <p class="desc">以真实需求为起点，围绕具身智能与AI应用两大方向持续孵化。</p>
+                    <span class="section-label" data-i18n="section.projects">PROJECTS</span>
+                    <h3 data-i18n="projects.title">创研项目</h3>
+                    <p data-i18n="projects.description" class="desc">以真实需求为起点，围绕具身智能与AI应用两大方向持续孵化。</p>
                 </div>
                 <div class="project-section-actions">
-                    <a class="btn btn-outline" href="/projects/">查看全部项目
+                    <a class="btn btn-outline" href="/projects/"><span data-i18n="projects.all">查看全部项目</span>
                         <svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L338.8 288 32 288c-17.7 0-32-14.3-32-32z"/></svg>
                     </a>
                 </div>
             </div>
             <div class="project-grid" id="featuredProjectGrid" aria-live="polite" aria-busy="true">
                 <div class="project-state">
-                    <strong>正在加载推荐项目</strong>
-                    <p>请稍候，项目内容马上呈现。</p>
+                    <strong data-i18n="projects.loadingTitle">正在加载推荐项目</strong>
+                    <p data-i18n="projects.loadingDescription">请稍候，项目内容马上呈现。</p>
                 </div>
             </div>
         </div>
@@ -2744,45 +2483,45 @@
         <div class="container">
             <div class="section-header reveal">
                 <div>
-                    <span class="section-label">MEMBERS</span>
-                    <h3>成员构成</h3>
-                    <p class="desc">来自产业、学术与资本的高素质创研团队。</p>
+                    <span class="section-label" data-i18n="section.members">MEMBERS</span>
+                    <h3 data-i18n="members.title">成员构成</h3>
+                    <p data-i18n="members.description" class="desc">来自产业、学术与资本的高素质创研团队。</p>
                 </div>
             </div>
             <div class="member-grid">
 <div class="member-col reveal">
-                    <h4>产业技术</h4>
+                    <h4 data-i18n="members.technology">产业技术</h4>
                     <div class="member-marquee">
                         <div class="member-track">
-                            <div class="member-group"><span>算法工程师</span><span>AI架构师</span><span>全栈工程师</span><span>数据科学家</span><span>机器人工程师</span></div>
-                            <div class="member-group" aria-hidden="true"><span>算法工程师</span><span>AI架构师</span><span>全栈工程师</span><span>数据科学家</span><span>机器人工程师</span></div>
+                            <div class="member-group"><span data-i18n="members.algorithmEngineer">算法工程师</span><span data-i18n="members.aiArchitect">AI架构师</span><span data-i18n="members.fullstackEngineer">全栈工程师</span><span data-i18n="members.dataScientist">数据科学家</span><span data-i18n="members.roboticsEngineer">机器人工程师</span></div>
+                            <div class="member-group" aria-hidden="true"><span data-i18n="members.algorithmEngineer">算法工程师</span><span data-i18n="members.aiArchitect">AI架构师</span><span data-i18n="members.fullstackEngineer">全栈工程师</span><span data-i18n="members.dataScientist">数据科学家</span><span data-i18n="members.roboticsEngineer">机器人工程师</span></div>
                         </div>
                     </div>
                 </div>
 <div class="member-col reveal">
-                    <h4>学术科研</h4>
+                    <h4 data-i18n="members.research">学术科研</h4>
                     <div class="member-marquee">
                         <div class="member-track">
-                            <div class="member-group"><span>高校教师</span><span>计算机博士</span><span>AI算法专家</span><span>科研机构研究员</span></div>
-                            <div class="member-group" aria-hidden="true"><span>高校教师</span><span>计算机博士</span><span>AI算法专家</span><span>科研机构研究员</span></div>
+                            <div class="member-group"><span data-i18n="members.lecturer">高校教师</span><span data-i18n="members.phd">计算机博士</span><span data-i18n="members.aiExpert">AI算法专家</span><span data-i18n="members.researcher">科研机构研究员</span></div>
+                            <div class="member-group" aria-hidden="true"><span data-i18n="members.lecturer">高校教师</span><span data-i18n="members.phd">计算机博士</span><span data-i18n="members.aiExpert">AI算法专家</span><span data-i18n="members.researcher">科研机构研究员</span></div>
                         </div>
                     </div>
                 </div>
 <div class="member-col reveal">
-                    <h4>产品与创业</h4>
+                    <h4 data-i18n="members.product">产品与创业</h4>
                     <div class="member-marquee">
                         <div class="member-track">
-                            <div class="member-group"><span>AI产品经理</span><span>创业者</span><span>独立开发者</span><span>产品设计师</span></div>
-                            <div class="member-group" aria-hidden="true"><span>AI产品经理</span><span>创业者</span><span>独立开发者</span><span>产品设计师</span></div>
+                            <div class="member-group"><span data-i18n="members.productManager">AI产品经理</span><span data-i18n="members.entrepreneur">创业者</span><span data-i18n="members.indieDeveloper">独立开发者</span><span data-i18n="members.productDesigner">产品设计师</span></div>
+                            <div class="member-group" aria-hidden="true"><span data-i18n="members.productManager">AI产品经理</span><span data-i18n="members.entrepreneur">创业者</span><span data-i18n="members.indieDeveloper">独立开发者</span><span data-i18n="members.productDesigner">产品设计师</span></div>
                         </div>
                     </div>
                 </div>
 <div class="member-col reveal">
-                    <h4>资本与生态</h4>
+                    <h4 data-i18n="members.capital">资本与生态</h4>
                     <div class="member-marquee">
                         <div class="member-track">
-                            <div class="member-group"><span>早期AI项目投资人</span><span>AI基金</span><span>产业服务机构</span></div>
-                            <div class="member-group" aria-hidden="true"><span>早期AI项目投资人</span><span>AI基金</span><span>产业服务机构</span></div>
+                            <div class="member-group"><span data-i18n="members.investor">早期AI项目投资人</span><span data-i18n="members.fund">AI基金</span><span data-i18n="members.industryServices">产业服务机构</span></div>
+                            <div class="member-group" aria-hidden="true"><span data-i18n="members.investor">早期AI项目投资人</span><span data-i18n="members.fund">AI基金</span><span data-i18n="members.industryServices">产业服务机构</span></div>
                         </div>
                     </div>
                 </div>
@@ -2795,98 +2534,48 @@
         <div class="container">
             <div class="section-header reveal">
                 <div>
-                    <span class="section-label">PARTNERS</span>
-                    <h3>合作伙伴</h3>
-                    <p class="desc">来自学术、产业与平台生态的支持。</p>
+                    <span class="section-label" data-i18n="section.partners">PARTNERS</span>
+                    <h3 data-i18n="partners.title">合作伙伴</h3>
+                    <p data-i18n="partners.description" class="desc">来自学术、产业与平台生态的支持。</p>
                 </div>
             </div>
                         <div class="partner-groups">
                 <div class="partner-group reveal">
-                    <h4>高校/科研院所</h4>
+                    <h4 data-i18n="partners.research">高校/科研院所</h4>
                     <div class="v-marquee">
                         <div class="v-track">
-                            <div class="v-group"><span class="sep">·</span><span>重庆大学</span><span class="sep">·</span><span>西南大学</span><span class="sep">·</span><span>北京大学重庆大数据研究院</span><span class="sep">·</span><span>重庆医科大学</span><span class="sep">·</span><span>重庆邮电大学</span><span class="sep">·</span><span>重庆工商大学</span><span class="sep">·</span><span>重庆建筑工程职业学院</span></div>
-                            <div class="v-group" aria-hidden="true"><span class="sep">·</span><span>重庆大学</span><span class="sep">·</span><span>西南大学</span><span class="sep">·</span><span>北京大学重庆大数据研究院</span><span class="sep">·</span><span>重庆医科大学</span><span class="sep">·</span><span>重庆邮电大学</span><span class="sep">·</span><span>重庆工商大学</span><span class="sep">·</span><span>重庆建筑工程职业学院</span></div>
+                            <div class="v-group"><span class="sep">·</span><span data-i18n="partners.cqu">重庆大学</span><span class="sep">·</span><span data-i18n="partners.swu">西南大学</span><span class="sep">·</span><span data-i18n="partners.pku">北京大学重庆大数据研究院</span><span class="sep">·</span><span data-i18n="partners.cqmu">重庆医科大学</span><span class="sep">·</span><span data-i18n="partners.cqupt">重庆邮电大学</span><span class="sep">·</span><span data-i18n="partners.ctbu">重庆工商大学</span><span class="sep">·</span><span data-i18n="partners.cqjz">重庆建筑工程职业学院</span></div>
+                            <div class="v-group" aria-hidden="true"><span class="sep">·</span><span data-i18n="partners.cqu">重庆大学</span><span class="sep">·</span><span data-i18n="partners.swu">西南大学</span><span class="sep">·</span><span data-i18n="partners.pku">北京大学重庆大数据研究院</span><span class="sep">·</span><span data-i18n="partners.cqmu">重庆医科大学</span><span class="sep">·</span><span data-i18n="partners.cqupt">重庆邮电大学</span><span class="sep">·</span><span data-i18n="partners.ctbu">重庆工商大学</span><span class="sep">·</span><span data-i18n="partners.cqjz">重庆建筑工程职业学院</span></div>
                         </div>
                     </div>
                 </div>
                 <div class="partner-group reveal">
-                    <h4>企业</h4>
+                    <h4 data-i18n="partners.companies">企业</h4>
                     <div class="v-marquee">
                         <div class="v-track">
-                            <div class="v-group"><span class="sep">·</span><span>七腾机器人</span><span class="sep">·</span><span>重庆九城数字科技</span><span class="sep">·</span><span>智联理园(重庆)科技</span><span class="sep">·</span><span>海工核投科技</span><span class="sep">·</span><span>重庆嘉誉澜庭茶楼</span></div>
-                            <div class="v-group" aria-hidden="true"><span class="sep">·</span><span>七腾机器人</span><span class="sep">·</span><span>重庆九城数字科技</span><span class="sep">·</span><span>智联理园(重庆)科技</span><span class="sep">·</span><span>海工核投科技</span><span class="sep">·</span><span>重庆嘉誉澜庭茶楼</span></div>
+                            <div class="v-group"><span class="sep">·</span><span data-i18n="partners.sevnce">七腾机器人</span><span class="sep">·</span><span data-i18n="partners.jiucheng">重庆九城数字科技</span><span class="sep">·</span><span data-i18n="partners.zhilian">智联理园(重庆)科技</span><span class="sep">·</span><span data-i18n="partners.haigong">海工核投科技</span><span class="sep">·</span><span data-i18n="partners.jiayu">重庆嘉誉澜庭茶楼</span></div>
+                            <div class="v-group" aria-hidden="true"><span class="sep">·</span><span data-i18n="partners.sevnce">七腾机器人</span><span class="sep">·</span><span data-i18n="partners.jiucheng">重庆九城数字科技</span><span class="sep">·</span><span data-i18n="partners.zhilian">智联理园(重庆)科技</span><span class="sep">·</span><span data-i18n="partners.haigong">海工核投科技</span><span class="sep">·</span><span data-i18n="partners.jiayu">重庆嘉誉澜庭茶楼</span></div>
                         </div>
                     </div>
                 </div>
                 <div class="partner-group reveal">
-                    <h4>行业协会</h4>
+                    <h4 data-i18n="partners.associations">行业协会</h4>
                     <div class="v-marquee">
                         <div class="v-track">
-                            <div class="v-group"><span class="sep">·</span><span>重庆MBA企业家联合会·AI专委会</span><span class="sep">·</span><span>重庆市大数据与人工智能产业协会</span></div>
-                            <div class="v-group" aria-hidden="true"><span class="sep">·</span><span>重庆MBA企业家联合会·AI专委会</span><span class="sep">·</span><span>重庆市大数据与人工智能产业协会</span></div>
+                            <div class="v-group"><span class="sep">·</span><span data-i18n="partners.mba">重庆MBA企业家联合会·AI专委会</span><span class="sep">·</span><span data-i18n="partners.bigdata">重庆市大数据与人工智能产业协会</span></div>
+                            <div class="v-group" aria-hidden="true"><span class="sep">·</span><span data-i18n="partners.mba">重庆MBA企业家联合会·AI专委会</span><span class="sep">·</span><span data-i18n="partners.bigdata">重庆市大数据与人工智能产业协会</span></div>
                         </div>
                     </div>
                 </div>
                 <div class="partner-group reveal">
-                    <h4>云平台</h4>
+                    <h4 data-i18n="partners.cloud">云平台</h4>
                     <div class="v-marquee">
                         <div class="v-track">
-                            <div class="v-group"><span class="sep">·</span><span>阿里云</span><span class="sep">·</span><span>腾讯云</span><span class="sep">·</span><span>华为云</span><span class="sep">·</span><span>豆包AI</span><span class="sep">·</span><span>深度求索</span><span class="sep">·</span><span>混元</span></div>
-                            <div class="v-group" aria-hidden="true"><span class="sep">·</span><span>阿里云</span><span class="sep">·</span><span>腾讯云</span><span class="sep">·</span><span>华为云</span><span class="sep">·</span><span>豆包AI</span><span class="sep">·</span><span>深度求索</span><span class="sep">·</span><span>混元</span></div>
+                            <div class="v-group"><span class="sep">·</span><span data-i18n="partners.aliyun">阿里云</span><span class="sep">·</span><span data-i18n="partners.tencent">腾讯云</span><span class="sep">·</span><span data-i18n="partners.huawei">华为云</span><span class="sep">·</span><span data-i18n="partners.doubao">豆包AI</span><span class="sep">·</span><span data-i18n="partners.deepseek">深度求索</span><span class="sep">·</span><span data-i18n="partners.hunyuan">混元</span></div>
+                            <div class="v-group" aria-hidden="true"><span class="sep">·</span><span data-i18n="partners.aliyun">阿里云</span><span class="sep">·</span><span data-i18n="partners.tencent">腾讯云</span><span class="sep">·</span><span data-i18n="partners.huawei">华为云</span><span class="sep">·</span><span data-i18n="partners.doubao">豆包AI</span><span class="sep">·</span><span data-i18n="partners.deepseek">深度求索</span><span class="sep">·</span><span data-i18n="partners.hunyuan">混元</span></div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ========== 加入我们 ========== -->
-    <section class="join" id="join">
-        <div class="container">
-            <div class="section-header reveal">
-                <div>
-                    <span class="section-label">JOIN US</span>
-                    <h3>加入我们</h3>
-                    <p class="desc">无论你处于AI世界的哪一个坐标，这里都有你的位置。</p>
-                </div>
-            </div>
-            <div class="price-grid">
-                <div class="price-card reveal">
-                    <div class="type-label">学生会员</div>
-                    <div class="price">免费<span> 首年</span></div>
-                    <div class="note">凭学生证验证 · 次年半价</div>
-                </div>
-                <div class="price-card reveal">
-                    <div class="type-label">个人会员</div>
-                    <div class="price">399<span> /年</span></div>
-                    <div class="note">个人参与全部活动与社群</div>
-                </div>
-                <div class="price-card reveal">
-                    <div class="type-label">企业会员</div>
-                    <div class="price">999<span> /年</span></div>
-                    <div class="note">支持三人使用</div>
-                </div>
-                <div class="price-card featured reveal">
-                    <div class="type-label">创始会员</div>
-                    <div class="price">2999<span> /终身</span></div>
-                    <div class="note">限量20席</div>
-                </div>
-            </div>
-            <div class="join-venue reveal">
-                <div class="icon"><svg class="fa-icon" viewBox="0 0 384 512" aria-hidden="true" focusable="false"><path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/></svg></div>
-                <div>
-                    <h5>会员据点 · 嘉誉澜庭茶馆</h5>
-                    <p>化龙桥瑞天路56-5号 ｜ 俱乐部会员享专属优惠</p>
-                </div>
-            </div>
-            <div class="join-cta reveal">
-                <button class="btn btn-primary" onclick="openContactModal()">私信了解会员权益 <svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false"><path d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z"/></svg></button>
-                <p class="hint">添加发起人微信，获取完整权益说明</p>
-            </div>
-            <div class="contact-row reveal">
-                <a href="mailto:781728683@qq.com"><svg class="fa-icon" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><path d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4L236.8 313.6c11.4 8.5 27 8.5 38.4 0L492.8 150.4c12.1-9.1 19.2-23.3 19.2-38.4c0-26.5-21.5-48-48-48H48zM0 176V384c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V176L294.4 339.2c-22.8 17.1-54 17.1-76.8 0L0 176z"/></svg> 781728683@qq.com</a>
-                <span><svg class="fa-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M22.405 9.879c.002.016.01.02.07.019h.725a.797.797 0 0 0 .78-.972.794.794 0 0 0-.884-.618.795.795 0 0 0-.692.794c0 .101-.002.666.001.777zm-11.509 4.808c-.203.001-1.353.004-1.685.003a2.528 2.528 0 0 1-.766-.126.025.025 0 0 0-.03.014L7.7 16.127a.025.025 0 0 0 .01.032c.111.06.336.124.495.124.66.01 1.32.002 1.981 0 .01 0 .02-.006.023-.015l.712-1.545a.025.025 0 0 0-.024-.036zM.477 9.91c-.071 0-.076.002-.076.01a.834.834 0 0 0-.01.08c-.027.397-.038.495-.234 3.06-.012.24-.034.389-.135.607-.026.057-.033.042.003.112.046.092.681 1.523.787 1.74.008.015.011.02.017.02.008 0 .033-.026.047-.044.147-.187.268-.391.371-.606.306-.635.44-1.325.486-1.706.014-.11.021-.22.03-.33l.204-2.616.022-.293c.003-.029 0-.033-.03-.034zm7.203 3.757a1.427 1.427 0 0 1-.135-.607c-.004-.084-.031-.39-.235-3.06a.443.443 0 0 0-.01-.082c-.004-.011-.052-.008-.076-.008h-1.48c-.03.001-.034.005-.03.034l.021.293c.076.982.153 1.964.233 2.946.05.4.186 1.085.487 1.706.103.215.223.419.37.606.015.018.037.051.048.049.02-.003.742-1.642.804-1.765.036-.07.03-.055.003-.112zm3.861-.913h-.872a.126.126 0 0 1-.116-.178l1.178-2.625a.025.025 0 0 0-.023-.035l-1.318-.003a.148.148 0 0 1-.135-.21l.876-1.954a.025.025 0 0 0-.023-.035h-1.56c-.01 0-.02.006-.024.015l-.926 2.068c-.085.169-.314.634-.399.938a.534.534 0 0 0-.02.191.46.46 0 0 0 .23.378.981.981 0 0 0 .46.119h.59c.041 0-.688 1.482-.834 1.972a.53.53 0 0 0-.023.172.465.465 0 0 0 .23.398c.15.092.342.12.475.12l1.66-.001c.01 0 .02-.006.023-.015l.575-1.28a.025.025 0 0 0-.024-.035zm-6.93-4.937H3.1a.032.032 0 0 0-.034.033c0 1.048-.01 2.795-.01 6.829 0 .288-.269.262-.28.262h-.74c-.04.001-.044.004-.04.047.001.037.465 1.064.555 1.263.01.02.03.033.051.033.157.003.767.009.938-.014.153-.02.3-.06.438-.132.3-.156.49-.419.595-.765.052-.172.075-.353.075-.533.002-2.33 0-4.66-.007-6.991a.032.032 0 0 0-.032-.032zm11.784 6.896c0-.014-.01-.021-.024-.022h-1.465c-.048-.001-.049-.002-.05-.049v-4.66c0-.072-.005-.07.07-.07h.863c.08 0 .075.004.075-.074V8.393c0-.082.006-.076-.08-.076h-3.5c-.064 0-.075-.006-.075.073v1.445c0 .083-.006.077.08.077h.854c.075 0 .07-.004.07.07v4.624c0 .095.008.084-.085.084-.37 0-1.11-.002-1.304 0-.048.001-.06.03-.06.03l-.697 1.519s-.014.025-.008.036c.006.01.013.008.058.008 1.748.003 3.495.002 5.243.002.03-.001.034-.006.035-.033v-1.539zm4.177-3.43c0 .013-.007.023-.02.024-.346.006-.692.004-1.037.004-.014-.002-.022-.01-.022-.024-.005-.434-.007-.869-.01-1.303 0-.072-.006-.071.07-.07l.733-.003c.041 0 .081.002.12.015.093.025.16.107.165.204.006.431.002 1.153.001 1.153zm2.67.244a1.953 1.953 0 0 0-.883-.222h-.18c-.04-.001-.04-.003-.042-.04V10.21c0-.132-.007-.263-.025-.394a1.823 1.823 0 0 0-.153-.53 1.533 1.533 0 0 0-.677-.71 2.167 2.167 0 0 0-1-.258c-.153-.003-.567 0-.72 0-.07 0-.068.004-.068-.065V7.76c0-.031-.01-.041-.046-.039H17.93s-.016 0-.023.007c-.006.006-.008.012-.008.023v.546c-.008.036-.057.015-.082.022h-.95c-.022.002-.028.008-.03.032v1.481c0 .09-.004.082.082.082h.913c.082 0 .072.128.072.128V11.19s.003.117-.06.117h-1.482c-.068 0-.06.082-.06.082v1.445s-.01.068.064.068h1.457c.082 0 .076-.006.076.079v3.225c0 .088-.007.081.082.081h1.43c.09 0 .082.007.082-.08v-3.27c0-.029.006-.035.033-.035l2.323-.003c.098 0 .191.02.28.061a.46.46 0 0 1 .274.407c.008.395.003.79.003 1.185 0 .259-.107.367-.33.367h-1.218c-.023.002-.029.008-.028.033.184.437.374.871.57 1.303a.045.045 0 0 0 .04.026c.17.005.34.002.51.003.15-.002.517.004.666-.01a2.03 2.03 0 0 0 .408-.075c.59-.18.975-.698.976-1.313v-1.981c0-.128-.01-.254-.034-.38 0 .078-.029-.641-.724-.998z"/></svg> @重庆AI创享俱乐部</span>
             </div>
         </div>
     </section>
@@ -2897,74 +2586,69 @@
             <div class="footer-grid">
                 <div class="reveal">
                     <div class="footer-brand">
-                        <img src="images/logo-footer.png" alt="重庆AI创享俱乐部">
-                        重庆AI创享俱乐部
+                        <img src="images/logo-footer.png" alt="重庆AI创享俱乐部" data-i18n-alt="brand.name">
+                        <span data-i18n="brand.name">重庆AI创享俱乐部</span>
                     </div>
-                    <p>连接产业、学术与资本的高素质AI创研社群。在重庆，做AI，我们陪你从入门到顶尖。</p>
+                    <p data-i18n="footer.description">连接产业、学术与资本的高素质AI创研社群。在重庆，做AI，我们陪你从入门到顶尖。</p>
                 </div>
                 <div class="footer-col reveal">
-                    <h4>导航</h4>
+                    <h4 data-i18n="footer.navigation">导航</h4>
                     <ul>
-                        <li><a href="#about">关于我们</a></li>
-                        <li><a href="#ecosystem">生态模型</a></li>
-                        <li><a href="/events/">活动交流</a></li>
-                        <li><a href="/projects/">项目广场</a></li>
+                        <li><a data-i18n="nav.about" href="#about">关于我们</a></li>
+                        <li><a data-i18n="footer.ecosystem" href="#ecosystem">生态模型</a></li>
+                        <li><a data-i18n="nav.events" href="/events/">活动交流</a></li>
+                        <li><a data-i18n="nav.projects" href="/projects/">项目广场</a></li>
                     </ul>
                 </div>
                 <div class="footer-col reveal">
-                    <h4>联系</h4>
+                    <h4 data-i18n="footer.contact">联系</h4>
                     <ul>
                         <li><a href="mailto:781728683@qq.com">781728683@qq.com</a></li>
                         <li><span>@重庆AI创享俱乐部</span></li>
                     </ul>
                 </div>
                 <div class="footer-col reveal">
-                    <h4>据点</h4>
+                    <h4 data-i18n="footer.venue">据点</h4>
                     <ul>
-                        <li><span>嘉誉澜庭茶馆</span></li>
-                        <li><span>化龙桥瑞天路56-5号</span></li>
+                        <li><span data-i18n="footer.venueName">嘉誉澜庭茶馆</span></li>
+                        <li><span data-i18n="footer.venueAddress">化龙桥瑞天路56-5号</span></li>
                     </ul>
                 </div>
             </div>
         </div>
-        <div class="copyright">
+        <div data-i18n="footer.copyright" class="copyright">
             © 2026 重庆AI创享俱乐部 · 重庆义凡文化传媒有限公司 运营
         </div>
     </footer>
 
-    <a class="collection-fab" href="/collect/" aria-label="打开会员、企业与 AI 项目征集表格">
-        <svg class="fa-icon" viewBox="0 0 448 512" aria-hidden="true" focusable="false">
-            <path d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z"/>
-        </svg>
-        项目征集
-    </a>
 
     <!-- ========== 联系弹窗 ========== -->
     <div class="modal-overlay" id="contactModal">
         <div class="modal-box">
-            <h3 id="modalTitle">私信了解会员权益</h3>
-            <p class="modal-sub" id="modalSub">添加发起人微信，获取完整权益说明</p>
+            <h3 data-i18n="contact.title" id="modalTitle">私信了解会员权益</h3>
+            <p data-i18n="contact.subtitle" class="modal-sub" id="modalSub">添加发起人微信，获取完整权益说明</p>
             <div class="contact-detail">
-                <span class="label"><svg class="fa-icon" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><path d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4L236.8 313.6c11.4 8.5 27 8.5 38.4 0L492.8 150.4c12.1-9.1 19.2-23.3 19.2-38.4c0-26.5-21.5-48-48-48H48zM0 176V384c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V176L294.4 339.2c-22.8 17.1-54 17.1-76.8 0L0 176z"/></svg> 邮箱</span>
+                <span class="label"><svg class="fa-icon" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><path d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4L236.8 313.6c11.4 8.5 27 8.5 38.4 0L492.8 150.4c12.1-9.1 19.2-23.3 19.2-38.4c0-26.5-21.5-48-48-48H48zM0 176V384c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V176L294.4 339.2c-22.8 17.1-54 17.1-76.8 0L0 176z"/></svg> <span data-i18n="contact.email">邮箱</span></span>
                 <span class="value"><a href="mailto:781728683@qq.com">781728683@qq.com</a></span>
             </div>
             <div class="qr-box">
-                <img src="images/wechat-qr.png" alt="微信二维码">
-                <span class="qr-note">微信扫一扫，添加我为朋友</span>
+                <img src="images/wechat-qr.png" alt="微信二维码" data-i18n-alt="contact.qrAlt">
+                <span data-i18n="contact.qrNote" class="qr-note">微信扫一扫，添加我为朋友</span>
             </div>
-            <button class="btn-close-modal" id="closeModal">关闭</button>
+            <button data-i18n="contact.close" class="btn-close-modal" id="closeModal">关闭</button>
         </div>
     </div>
 
     <!-- ========== 项目开发中提示弹窗 ========== -->
     <div class="modal-overlay" id="developModal">
         <div class="modal-box">
-            <h3>项目正在开发中，敬请期待…</h3>
-            <button class="btn btn-primary" id="closeDevelop" style="width:100%;">知道了</button>
+            <h3 data-i18n="develop.title">项目正在开发中，敬请期待…</h3>
+            <button data-i18n="develop.close" class="btn btn-primary" id="closeDevelop" style="width:100%;">知道了</button>
         </div>
     </div>
 
     <!-- ========== 动效依赖（本地化 GSAP，仅做一次性揭示，无平滑阻尼） ========== -->
+    <script>window.CQAI_HOME_I18N?.apply();</script>
     <script>
 /*!
  * GSAP 3.15.0
@@ -2994,6 +2678,8 @@
 
     <script>
         // ========== 导航 ==========
+        const homeI18n = window.CQAI_HOME_I18N;
+        const t = (key, params) => homeI18n.t(key, params);
         const header = document.getElementById('header');
         const navToggle = document.getElementById('navToggle');
         const navLinks = document.getElementById('navLinks');
@@ -3024,19 +2710,20 @@
         // ========== 首页推荐项目 ==========
         const featuredProjectGrid = document.getElementById('featuredProjectGrid');
         const projectStageLabels = {
-            build: '开发中',
-            pilot: '试运行',
-            live: '正式上线'
+            build: 'projects.stage.build',
+            pilot: 'projects.stage.pilot',
+            live: 'projects.stage.live'
         };
+        const projectsView = { status: 'loading', items: [] };
 
         function appendProjectState(title, description, actions) {
             featuredProjectGrid.replaceChildren();
             const state = document.createElement('div');
             state.className = 'project-state';
             const heading = document.createElement('strong');
-            heading.textContent = title;
+            heading.textContent = t(title);
             const copy = document.createElement('p');
-            copy.textContent = description;
+            copy.textContent = t(description);
             state.append(heading, copy);
 
             if (actions && actions.length) {
@@ -3052,7 +2739,7 @@
             const action = document.createElement('a');
             action.className = 'btn btn-outline';
             action.href = href;
-            action.textContent = label;
+            action.textContent = t(label);
             return action;
         }
 
@@ -3060,7 +2747,7 @@
             container.replaceChildren();
             const fallback = document.createElement('div');
             fallback.className = 'project-img-fallback';
-            fallback.textContent = name || '重庆 AI 创享项目';
+            fallback.textContent = name || t('projects.fallback');
             container.appendChild(fallback);
         }
 
@@ -3075,7 +2762,7 @@
         }
 
         function createFeaturedProjectCard(project) {
-            const name = String(project.name || '未命名项目');
+            const name = String(project.name || t('projects.unnamed'));
             const slug = String(project.slug || '');
             const card = document.createElement('a');
             card.className = 'project-card';
@@ -3087,7 +2774,7 @@
             if (coverUrl) {
                 const image = document.createElement('img');
                 image.src = coverUrl;
-                image.alt = `${name}项目封面`;
+                image.alt = t('projects.coverAlt', { name });
                 image.loading = 'lazy';
                 image.decoding = 'async';
                 image.addEventListener('error', () => appendCoverFallback(imageWrap, name), { once: true });
@@ -3103,7 +2790,7 @@
 
             const meta = document.createElement('div');
             meta.className = 'project-meta';
-            const stage = projectStageLabels[project.stage] || project.stage;
+            const stage = projectStageLabels[project.stage] ? t(projectStageLabels[project.stage]) : project.stage;
             [stage, project.focus].filter(Boolean).forEach(value => {
                 const item = document.createElement('span');
                 item.textContent = String(value);
@@ -3111,12 +2798,12 @@
             });
 
             const summary = document.createElement('p');
-            summary.textContent = String(project.summary || '期待与你一起探索这个项目的更多可能。');
+            summary.textContent = String(project.summary || t('projects.summaryFallback'));
             const detail = document.createElement('span');
             detail.className = 'project-card-cta';
             detail.textContent = project.publicContact?.type === 'club'
-                ? '了解项目并联系俱乐部 →'
-                : '查看项目详情 →';
+                ? t('projects.contact')
+                : t('projects.detail');
 
             info.appendChild(title);
             if (meta.childElementCount) info.appendChild(meta);
@@ -3125,9 +2812,31 @@
             return card;
         }
 
+        function renderFeaturedProjects() {
+            featuredProjectGrid.setAttribute('aria-busy', String(projectsView.status === 'loading'));
+            if (projectsView.status === 'loading') {
+                appendProjectState('projects.loadingTitle', 'projects.loadingDescription');
+            } else if (projectsView.status === 'error') {
+                const retry = document.createElement('button');
+                retry.className = 'btn btn-outline';
+                retry.type = 'button';
+                retry.textContent = t('projects.retry');
+                retry.addEventListener('click', loadFeaturedProjects, { once: true });
+                appendProjectState('projects.errorTitle', 'projects.errorDescription', [
+                    createProjectAction('projects.browse', '/projects/'), retry
+                ]);
+            } else if (!projectsView.items.length) {
+                appendProjectState('projects.emptyTitle', 'projects.emptyDescription', [
+                    createProjectAction('projects.submit', '/member/dashboard/project-submission')
+                ]);
+            } else {
+                featuredProjectGrid.replaceChildren(...projectsView.items.map(createFeaturedProjectCard));
+            }
+        }
+
         async function loadFeaturedProjects() {
-            featuredProjectGrid.setAttribute('aria-busy', 'true');
-            appendProjectState('正在加载推荐项目', '请稍候，项目内容马上呈现。');
+            projectsView.status = 'loading';
+            renderFeaturedProjects();
             try {
                 const response = await fetch('/api/projects?featured=true&limit=6', {
                     headers: { Accept: 'application/json' },
@@ -3135,53 +2844,34 @@
                 });
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const result = await response.json();
-                const projects = Array.isArray(result.data) ? result.data.slice(0, 6) : [];
-                if (!projects.length) {
-                    appendProjectState(
-                        '项目正在集结中',
-                        '首批项目正在整理发布，也欢迎你提交自己的 AI 项目。',
-                        [createProjectAction('提交项目', '/collect/?type=project')]
-                    );
-                    return;
-                }
-                featuredProjectGrid.replaceChildren(...projects.map(createFeaturedProjectCard));
-                window.ScrollTrigger?.refresh();
+                projectsView.items = Array.isArray(result.data) ? result.data.slice(0, 6) : [];
+                projectsView.status = 'ready';
             } catch (error) {
                 console.error('Featured projects failed to load:', error);
-                const retry = document.createElement('button');
-                retry.className = 'btn btn-outline';
-                retry.type = 'button';
-                retry.textContent = '重新加载';
-                retry.addEventListener('click', loadFeaturedProjects, { once: true });
-                appendProjectState('推荐项目暂时无法加载', '你仍可前往项目广场浏览全部项目。', [
-                    createProjectAction('查看项目广场', '/projects/'),
-                    retry
-                ]);
+                projectsView.status = 'error';
             } finally {
-                featuredProjectGrid.setAttribute('aria-busy', 'false');
+                renderFeaturedProjects();
+                window.ScrollTrigger?.refresh();
             }
         }
 
         loadFeaturedProjects();
 
-        async function loadClubEvents() {
-            const grid = document.getElementById('clubEventsGrid');
-            if (!grid) return;
-            try {
-                const response = await fetch('/api/v1/activities?limit=30', { cache: 'no-store' });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const result = await response.json();
-                const now = Date.now();
-                const events = (Array.isArray(result.items) ? result.items : [])
-                    .filter(item => item.status === 'published' && Date.parse(item.startsAt) >= now)
-                    .slice(0, 3);
-                if (!events.length) {
-                    grid.replaceChildren(Object.assign(document.createElement('p'), {
-                        className: 'club-events-empty', textContent: '近期活动正在筹备中，欢迎稍后查看。'
-                    }));
-                    return;
-                }
-                grid.replaceChildren(...events.map(item => {
+        const clubEventsGrid = document.getElementById('clubEventsGrid');
+        const eventsView = { status: 'loading', items: [] };
+
+        function renderClubEvents() {
+            if (!clubEventsGrid) return;
+            clubEventsGrid.setAttribute('aria-busy', String(eventsView.status === 'loading'));
+            if (eventsView.status !== 'ready' || !eventsView.items.length) {
+                const key = eventsView.status === 'loading' ? 'events.loading'
+                    : eventsView.status === 'error' ? 'events.error' : 'events.empty';
+                clubEventsGrid.replaceChildren(Object.assign(document.createElement('p'), {
+                    className: 'club-events-empty', textContent: t(key)
+                }));
+                return;
+            }
+            clubEventsGrid.replaceChildren(...eventsView.items.map(item => {
                     const card = document.createElement('a');
                     card.className = 'club-event-card';
                     card.href = `/activities/${encodeURIComponent(item.id)}`;
@@ -3202,22 +2892,38 @@
                     body.className = 'club-event-body';
                     const date = document.createElement('span');
                     date.className = 'date';
-                    date.textContent = new Intl.DateTimeFormat('zh-CN', {
+                    date.textContent = new Intl.DateTimeFormat(homeI18n.getLanguage() === 'en' ? 'en-US' : 'zh-CN', {
                         timeZone: 'Asia/Shanghai', dateStyle: 'medium', timeStyle: 'short'
                     }).format(new Date(item.startsAt));
                     const title = document.createElement('h4');
-                    title.textContent = String(item.title || '俱乐部活动');
+                    title.textContent = String(item.title || t('events.untitled'));
                     const summary = document.createElement('p');
                     summary.textContent = String(item.summary || '');
                     body.append(date, title, summary);
                     card.appendChild(body);
                     return card;
-                }));
+            }));
+        }
+
+        async function loadClubEvents() {
+            if (!clubEventsGrid) return;
+            eventsView.status = 'loading';
+            renderClubEvents();
+            try {
+                const response = await fetch('/api/v1/activities?limit=30', { cache: 'no-store' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const result = await response.json();
+                const now = Date.now();
+                eventsView.items = (Array.isArray(result.items) ? result.items : [])
+                    .filter(item => item.status === 'published' && Date.parse(item.startsAt) >= now)
+                    .slice(0, 3);
+                eventsView.status = 'ready';
             } catch (error) {
                 console.error('Club activities failed to load:', error);
-                grid.replaceChildren(Object.assign(document.createElement('p'), {
-                    className: 'club-events-empty', textContent: '活动安排暂时无法加载，请前往活动页查看。'
-                }));
+                eventsView.status = 'error';
+            } finally {
+                renderClubEvents();
+                window.ScrollTrigger?.refresh();
             }
         }
 
@@ -3228,15 +2934,21 @@
         const modalTitle = document.getElementById('modalTitle');
         const modalSub = document.getElementById('modalSub');
         const closeModalBtn = document.getElementById('closeModal');
+        let contactContext = null;
 
-        function openContactModal(projectName, actionType) {
-            if (projectName) {
-                modalTitle.textContent = projectName;
-                modalSub.textContent = actionType + ' · 联系项目负责人';
+        function renderContactContext() {
+            if (contactContext) {
+                modalTitle.textContent = contactContext.projectName || t('contact.projectFallback');
+                modalSub.textContent = t('contact.projectSubtitle', { action: t('contact.more') });
             } else {
-                modalTitle.textContent = '私信了解会员权益';
-                modalSub.textContent = '添加发起人微信，获取完整权益说明';
+                modalTitle.textContent = t('contact.title');
+                modalSub.textContent = t('contact.subtitle');
             }
+        }
+
+        function openContactModal(projectName, projectConsult = false) {
+            contactContext = projectName || projectConsult ? { projectName } : null;
+            renderContactContext();
             modal.classList.add('active');
             document.body.style.overflow = 'hidden';
         }
@@ -3247,8 +2959,7 @@
                     openDevelopModal(); // 参与体验：项目开发中，敬请期待
                     return;
                 }
-                const project = btn.dataset.project || '俱乐部项目';
-                openContactModal(project, '了解更多');
+                openContactModal(btn.dataset.project, true);
             });
         });
 
@@ -3321,7 +3032,7 @@
             tlTrack.appendChild(clone);
         });
         const allCards = [...document.querySelectorAll('.tl-card')];
-        const halfWidth = tlTrack.scrollWidth / 2;
+        let halfWidth = tlTrack.scrollWidth / 2;
 
         function updateActiveDot() {
             const mid = tlViewport.scrollLeft + tlViewport.clientWidth / 2;
@@ -3386,6 +3097,17 @@
         });
         tlViewport.addEventListener('scroll', updateActiveDot);
         updateActiveDot();
+
+        window.addEventListener('cqai-home-language-changed', () => {
+            renderFeaturedProjects();
+            renderClubEvents();
+            if (modal.classList.contains('active')) renderContactContext();
+            requestAnimationFrame(() => {
+                halfWidth = tlTrack.scrollWidth / 2;
+                window.ScrollTrigger?.refresh();
+                updateActiveDot();
+            });
+        });
 
         // 左右箭头：打断自动播放，手动翻动，1 秒后恢复
         document.getElementById('tlPrev').addEventListener('click', () => {

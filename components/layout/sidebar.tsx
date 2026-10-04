@@ -5,23 +5,27 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   adminNavItems,
-  mainNavItems,
+  getVisibleMainNavItems,
   isNavItemActive,
   getNavLabel,
 } from "@/config/navigation";
 import { ArrowUpRight, Home, Sparkles } from "lucide-react";
 import { useTranslations } from "@/lib/i18n/client";
+import { ProfileDrawerButton, useProfileDrawer } from "@/components/member/profile-drawer";
 
 interface SidebarProps {
   canAccessAdmin?: boolean;
   canAccessMemberAdmin?: boolean;
   canAccessPluginAdmin?: boolean;
   canAccessActivityAdmin?: boolean;
+  canAccessInnovationMember?: boolean;
 }
 
-export function Sidebar({ canAccessAdmin = false, canAccessMemberAdmin = false, canAccessPluginAdmin = false, canAccessActivityAdmin = false }: SidebarProps) {
+export function Sidebar({ canAccessAdmin = false, canAccessMemberAdmin = false, canAccessPluginAdmin = false, canAccessActivityAdmin = false, canAccessInnovationMember = false }: SidebarProps) {
   const pathname = usePathname();
   const { t, language } = useTranslations();
+  const { open: profileOpen } = useProfileDrawer();
+  const visibleMainNavItems = getVisibleMainNavItems(canAccessInnovationMember);
   const visibleAdminNavItems = adminNavItems.filter(item =>
     item.titleKey === "nav.adminPlugins" ? canAccessPluginAdmin
       : item.titleKey === "nav.adminActivities" ? canAccessActivityAdmin
@@ -44,8 +48,14 @@ export function Sidebar({ canAccessAdmin = false, canAccessMemberAdmin = false, 
 
       <nav aria-label={t("nav.menu")} className="min-h-0 flex-1 overflow-y-auto px-3 py-5">
         <p className="px-3 pb-2 text-xs font-medium text-muted-foreground">{t("nav.accountSection")}</p>
-        {mainNavItems.map((item) => {
+        {visibleMainNavItems.map((item) => {
           const isActive = isNavItemActive(item.href, pathname);
+          if (item.href === "/member/dashboard/profile") return (
+            <ProfileDrawerButton key={item.href} aria-expanded={profileOpen} className="mb-1 flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring">
+              <item.icon aria-hidden="true" className="size-[18px] shrink-0" />
+              <span className="flex-1">{getNavLabel(item, language)}</span>
+            </ProfileDrawerButton>
+          );
           return (
             <Link
               key={item.href}
@@ -72,6 +82,8 @@ export function Sidebar({ canAccessAdmin = false, canAccessMemberAdmin = false, 
                 <Link
                   key={item.href}
                   href={item.href}
+                  target={item.external ? "_blank" : undefined}
+                  rel={item.external ? "noopener noreferrer" : undefined}
                   aria-current={isActive ? "page" : undefined}
                   className={cn(
                     "mb-1 flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
@@ -80,6 +92,7 @@ export function Sidebar({ canAccessAdmin = false, canAccessMemberAdmin = false, 
                 >
                   <item.icon aria-hidden="true" className="size-[18px] shrink-0" />
                   <span className="flex-1">{getNavLabel(item, language)}</span>
+                  {item.external && <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />}
                   {isActive && <span aria-hidden="true" className="size-1.5 rounded-full bg-primary" />}
                 </Link>
               );

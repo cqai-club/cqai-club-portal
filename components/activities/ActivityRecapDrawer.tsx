@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- recap photos are served by the validated same-origin image API */
 "use client";
 
+import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { FileText, ImagePlus, X } from "lucide-react";
@@ -218,7 +219,7 @@ export function ActivityRecapDrawer({
           {loading ? <p role="status" className="text-sm text-muted-foreground">正在读取已有回顾…</p> : <>
             <section className="space-y-4" aria-labelledby="recap-copy-title">
               <div><h3 id="recap-copy-title" className="text-sm font-semibold">回顾内容</h3><p className="mt-1 text-xs leading-5 text-muted-foreground">标题与摘要默认复用活动信息，也可以在这里修改。</p></div>
-              <div><label htmlFor="recap-title" className="text-sm font-medium">回顾标题</label><input id="recap-title" maxLength={120} value={form.title} onChange={event => setForm(current => ({ ...current, title: event.target.value }))} disabled={saving} className={inputClass} /></div>
+              <div><label htmlFor="recap-title" className="text-sm font-medium">回顾标题</label><Input id="recap-title" maxLength={120} value={form.title} onChange={event => setForm(current => ({ ...current, title: event.target.value }))} disabled={saving} className={inputClass} /></div>
               <div><label htmlFor="recap-summary" className="text-sm font-medium">回顾摘要 <span className="font-normal text-muted-foreground">· 可选</span></label><textarea id="recap-summary" rows={3} maxLength={300} value={form.summary} onChange={event => setForm(current => ({ ...current, summary: event.target.value }))} placeholder="留空则使用活动摘要" disabled={saving} className={inputClass + " resize-y"} /></div>
               <div>
                 <div className="flex justify-end"><button type="button" disabled={saving} onClick={() => textInputRef.current?.click()} className="inline-flex min-h-11 items-center gap-1.5 text-xs font-medium text-primary hover:underline disabled:opacity-50"><FileText aria-hidden="true" className="size-4" />导入 TXT 文字稿</button></div>

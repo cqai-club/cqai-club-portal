@@ -13,7 +13,7 @@ export default function ProjectNotFound() {
             <Link className={styles.primaryAction} href="/projects/">
               返回项目广场
             </Link>
-            <Link className={styles.secondaryAction} href="/collect/?type=project">
+            <Link className={styles.secondaryAction} href="/member/dashboard/project-submission">
               提交项目
             </Link>
           </div>

@@ -7,8 +7,45 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model MemberResource {
+  id              String   @id @default(uuid())
+  description     String
+  externalUrl     String
+  imageStorageKey String
+  published       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([published, createdAt])
+}
+
+model MemberOrganizationBinding {
+  id             String   @id @default(uuid())
+  name           String
+  organizationId String   @unique
+  organizationName String?
+  validatedAt    DateTime?
+  revision       Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model MemberOrganizationJoin {
+  id             String   @id @default(uuid())
+  organizationId String
+  userId         String
+  actorIssuer    String
+  actorSub       String
+  source         String
+  confirmedAt    DateTime @default(now())
+
+  @@unique([organizationId, userId])
+}
+
 model MemberApplication {
   id                      String   @id @default(uuid())
+  userIssuer              String?
+  userSub                 String?
   name                    String
   phone                   String   @unique
   wechat                  String
@@ -36,13 +73,27 @@ model MemberApplication {
   privacyPreference       String
 
   isHighValue             Boolean  @default(false)
+  reviewStatus            String   @default("pending")
+  reviewNote              String?
+  reviewedByIssuer        String?
+  reviewedBySub           String?
+  reviewedAt              DateTime?
+  membershipState         String   @default("none")
+  membershipOrganizationId String?
+  membershipAttemptId     String?
+  membershipStartedAt     DateTime?
+  membershipError         String?
 
   createdAt               DateTime @default(now())
   ipAddress               String?
+
+  @@unique([userIssuer, userSub])
 }
 
 model CollectionSubmission {
   id              String   @id @default(uuid())
+  userIssuer      String?
+  userSub         String?
   type            String
   status          String   @default("new")
   displayName     String
@@ -61,6 +112,7 @@ model CollectionSubmission {
   @@index([type])
   @@index([status])
   @@index([createdAt])
+  @@index([userIssuer, userSub, type, createdAt])
 }
 
 model SubmissionAsset {

@@ -1,5 +1,6 @@
 "use client";
 
+import { NativeSelect } from "@/components/ui/native-select";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ClipboardList, ExternalLink, Package, Pencil, Plus, RefreshCw, Search, Store } from "lucide-react";
@@ -400,7 +401,7 @@ export default function PluginMarketAdminPage() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-[180px_minmax(180px,1fr)_auto_auto] md:items-end">
-            <label className="grid gap-2 text-sm"><span className="text-muted-foreground">状态</span><select className="h-10 rounded-md border bg-background px-3" value={draftFilters.status} onChange={event => setDraftFilters({ ...draftFilters, status: event.target.value })}><option value="">全部状态</option><option value="draft">草稿</option><option value="published">已发布</option><option value="unpublished">已下架</option></select></label>
+            <label className="grid gap-2 text-sm"><span className="text-muted-foreground">状态</span><NativeSelect className="h-10 rounded-md border bg-background px-3" value={draftFilters.status} onChange={event => setDraftFilters({ ...draftFilters, status: event.target.value })}><option value="">全部状态</option><option value="draft">草稿</option><option value="published">已发布</option><option value="unpublished">已下架</option></NativeSelect></label>
             <label className="grid gap-2 text-sm"><span className="text-muted-foreground">关键词</span><Input placeholder="包名、名称或简介" value={draftFilters.search} onChange={event => setDraftFilters({ ...draftFilters, search: event.target.value })} /></label>
             <Button onClick={() => { setFilters(draftFilters); void loadPlugins(1, draftFilters); }}>搜索</Button>
             <Button variant="ghost" onClick={() => { setDraftFilters(emptyFilters); setFilters(emptyFilters); void loadPlugins(1, emptyFilters); }}>重置</Button>

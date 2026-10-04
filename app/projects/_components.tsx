@@ -18,7 +18,7 @@ export const projectStageLabel = (stage: string): string =>
 export function SiteHeader({ current }: { current: "events" | "projects" }) {
   const cta = current === "events"
     ? { href: "/member/dashboard/activities", label: "我的报名" }
-    : { href: "/collect/?type=project", label: "提交项目" };
+    : { href: "/member/dashboard/project-submission", label: "提交项目" };
   const links = [
     { href: "/", label: "俱乐部首页" },
     { href: "/events/", label: "活动交流", current: current === "events" },
@@ -67,7 +67,7 @@ export function SiteFooter() {
           <Link href="/">俱乐部首页</Link>
           <Link href="/events/">活动交流</Link>
           <Link href="/projects/">项目广场</Link>
-          <Link href="/collect/?type=project">提交项目</Link>
+          <Link href="/member/dashboard/project-submission">提交项目</Link>
         </nav>
       </div>
     </footer>
@@ -132,7 +132,7 @@ export function EmptyState({
               重新加载
             </Link>
           )}
-          <Link className={styles.primaryAction} href="/collect/?type=project">
+          <Link className={styles.primaryAction} href="/member/dashboard/project-submission">
             提交项目
           </Link>
         </div>
