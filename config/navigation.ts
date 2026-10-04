@@ -1,7 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
-  User,
   Shield,
   Users,
   Files,
@@ -29,12 +28,6 @@ export const mainNavItems: NavItem[] = [
     title: "概览",
     titleKey: "nav.dashboard",
     icon: LayoutDashboard,
-  },
-  {
-    href: "/member/dashboard/profile",
-    title: "个人资料",
-    titleKey: "nav.profile",
-    icon: User,
   },
   {
     href: "/member/dashboard/security",

@@ -176,7 +176,7 @@ export async function reviewMemberApplication(request: Request, applicationId: s
     const binding = await bindingFor("innovation", data.bindingRevision);
     if (binding.organizationId !== data.bindingOrganizationId) throw new MemberSessionError(409, "CONFIG_CHANGED", "组织配置已改变，请刷新并核对审核目标。");
     if (application.membershipOrganizationId && application.membershipOrganizationId !== binding.organizationId && !data.confirmOrganizationChange) {
-      throw new MemberSessionError(409, "ORGANIZATION_CHANGED", "创新会员组织配置已改变，请核对新组织后确认重试。");
+      throw new MemberSessionError(409, "ORGANIZATION_CHANGED", "创享会员组织配置已改变，请核对新组织后确认重试。");
     }
     if (application.membershipState === "processing" && application.membershipStartedAt && Date.now() - application.membershipStartedAt.getTime() < 120000) {
       throw new MemberSessionError(409, "PROCESSING", "正在加入组织，请稍后刷新或重试。");

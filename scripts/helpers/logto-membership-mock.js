@@ -15,7 +15,7 @@ async function startMembershipMock(memberIds = ['ci-member', 'ci-editor']) {
     if (request.headers.authorization !== 'Bearer membership-token') return send(401, {});
     if (!available) return send(503, {});
     const match = /^\/api\/users\/([^/]+)\/organizations$/.exec(request.url);
-    if (match && request.method === 'GET') return send(200, members.has(match[1]) ? [{ id: 'rar9vrcnuavh', name: '创新会员' }] : []);
+    if (match && request.method === 'GET') return send(200, members.has(match[1]) ? [{ id: 'rar9vrcnuavh', name: '创享会员' }] : []);
     return send(404, {});
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
