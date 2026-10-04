@@ -38,7 +38,6 @@ import { useTheme } from "next-themes";
 import { useTranslations } from "@/lib/i18n/client";
 import { t as translate } from "@/lib/i18n";
 import { useToast } from "@/hooks/use-toast";
-import { ProfileDrawerButton, useProfileDrawer } from "@/components/member/profile-drawer";
 
 interface NavbarProps {
   canAccessAdmin?: boolean;
@@ -61,7 +60,6 @@ export function Navbar({ user, onSignOut, canAccessAdmin = false, canAccessMembe
   const { resolvedTheme, setTheme } = useTheme();
   const { t, language, setLanguage } = useTranslations();
   const { toast } = useToast();
-  const { open: profileOpen } = useProfileDrawer();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isUpdatingLanguage, setIsUpdatingLanguage] = useState(false);
   const visibleMainNavItems = getVisibleMainNavItems(canAccessInnovationMember);
@@ -116,7 +114,7 @@ export function Navbar({ user, onSignOut, canAccessAdmin = false, canAccessMembe
                 <Menu aria-hidden="true" className="size-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" onCloseAutoFocus={event => { if (profileOpen) event.preventDefault(); }} className="member-center flex h-dvh w-[min(20rem,85vw)] flex-col gap-0 bg-sidebar p-0 text-sidebar-foreground [&>button]:flex [&>button]:size-11 [&>button]:items-center [&>button]:justify-center">
+            <SheetContent side="left" className="member-center flex h-dvh w-[min(20rem,85vw)] flex-col gap-0 bg-sidebar p-0 text-sidebar-foreground [&>button]:flex [&>button]:size-11 [&>button]:items-center [&>button]:justify-center">
               <SheetTitle className="sr-only">{t("nav.menu")}</SheetTitle>
               <div className="flex h-20 shrink-0 items-center gap-3 border-b border-sidebar-border px-5">
                 <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -131,12 +129,6 @@ export function Navbar({ user, onSignOut, canAccessAdmin = false, canAccessMembe
                 <p className="px-3 pb-2 text-xs font-medium text-muted-foreground">{t("nav.accountSection")}</p>
                 {visibleMainNavItems.map((item) => {
                   const isActive = isNavItemActive(item.href, pathname);
-                  if (item.href === "/member/dashboard/profile") return (
-                    <ProfileDrawerButton key={item.href} aria-expanded={profileOpen} onClick={() => setMobileMenuOpen(false)} className="mb-1 flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring">
-                      <item.icon aria-hidden="true" className="size-[18px] shrink-0" />
-                      <span className="flex-1">{getNavLabel(item, language)}</span>
-                    </ProfileDrawerButton>
-                  );
                   return (
                     <Link
                       key={item.href}

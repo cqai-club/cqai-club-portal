@@ -11,7 +11,6 @@ import {
 } from "@/config/navigation";
 import { ArrowUpRight, Home, Sparkles } from "lucide-react";
 import { useTranslations } from "@/lib/i18n/client";
-import { ProfileDrawerButton, useProfileDrawer } from "@/components/member/profile-drawer";
 
 interface SidebarProps {
   canAccessAdmin?: boolean;
@@ -24,7 +23,6 @@ interface SidebarProps {
 export function Sidebar({ canAccessAdmin = false, canAccessMemberAdmin = false, canAccessPluginAdmin = false, canAccessActivityAdmin = false, canAccessInnovationMember = false }: SidebarProps) {
   const pathname = usePathname();
   const { t, language } = useTranslations();
-  const { open: profileOpen } = useProfileDrawer();
   const visibleMainNavItems = getVisibleMainNavItems(canAccessInnovationMember);
   const visibleAdminNavItems = adminNavItems.filter(item =>
     item.titleKey === "nav.adminPlugins" ? canAccessPluginAdmin
@@ -50,12 +48,6 @@ export function Sidebar({ canAccessAdmin = false, canAccessMemberAdmin = false, 
         <p className="px-3 pb-2 text-xs font-medium text-muted-foreground">{t("nav.accountSection")}</p>
         {visibleMainNavItems.map((item) => {
           const isActive = isNavItemActive(item.href, pathname);
-          if (item.href === "/member/dashboard/profile") return (
-            <ProfileDrawerButton key={item.href} aria-expanded={profileOpen} className="mb-1 flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring">
-              <item.icon aria-hidden="true" className="size-[18px] shrink-0" />
-              <span className="flex-1">{getNavLabel(item, language)}</span>
-            </ProfileDrawerButton>
-          );
           return (
             <Link
               key={item.href}
