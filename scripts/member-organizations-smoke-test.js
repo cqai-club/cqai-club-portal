@@ -15,7 +15,7 @@ async function main() {
   const databaseUrl = `file:${path.join(directory, 'members.db')}`;
   fs.writeFileSync(path.join(directory, 'members.db'), '');
   const db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
-  const organizations = new Map([['rar9vrcnuavh', { id: 'rar9vrcnuavh', name: '创新会员' }], ['replacement', { id: 'replacement', name: '新创新会员组织' }], ['partners', { id: 'partners', name: '合作会员' }]]);
+  const organizations = new Map([['rar9vrcnuavh', { id: 'rar9vrcnuavh', name: '创享会员' }], ['replacement', { id: 'replacement', name: '新创享会员组织' }], ['partners', { id: 'partners', name: '合作会员' }]]);
   const users = ['ci-member', 'ci-editor', 'ci-super-admin', ...Array.from({ length: 25 }, (_, index) => `user-${index}`)].map(id => ({ id, name: `姓名 ${id}`, username: id, primaryEmail: `${id}@example.org`, primaryPhone: '13800000000', customData: { secret: 'must-not-leak' } }));
   const memberships = new Map([['rar9vrcnuavh', new Set(['user-0'])], ['replacement', new Set()], ['partners', new Set(['user-1'])]]);
   let mode = 'normal'; let unreadableUser = ''; let tokenRequests = 0; const writes = []; const removals = [];
@@ -129,12 +129,13 @@ async function main() {
     await check(`${prefix}/members`, 403, member, 'POST', {});
     await check(`${prefix}/verify`, 403, admin, 'POST', { organizationId: 'rar9vrcnuavh' }, { Origin: 'https://evil.example' });
     const seed = (await check(bindings)).data[0];
+    assert.equal(seed.name, '创享会员');
     assert.equal(seed.organizationId, 'rar9vrcnuavh'); assert.equal(seed.validatedAt, null);
     await check(members, 409); await check(`${prefix}/verify`, 404, admin, 'POST', { organizationId: 'missing' });
     await check(`${prefix}/verify`, 200, admin, 'POST', { organizationId: seed.organizationId });
     assert.equal((await check(bindings)).data[0].validatedAt, null, 'Verification alone must not save the binding');
-    await check(bindings, 200, admin, 'PATCH', { id: seed.id, name: seed.name, organizationId: seed.organizationId, revision: 0 });
-    await check(bindings, 409, admin, 'PATCH', { id: seed.id, name: seed.name, organizationId: seed.organizationId, revision: 0 });
+    await check(bindings, 200, admin, 'PATCH', { id: seed.id, name: seed.name, organizationId: seed.organizationId, revision: seed.revision });
+    await check(bindings, 409, admin, 'PATCH', { id: seed.id, name: seed.name, organizationId: seed.organizationId, revision: seed.revision });
     await check(bindings, 409, admin, 'POST', { name: '重复', organizationId: seed.organizationId });
     const partner = (await check(bindings, 201, admin, 'POST', { name: '合作会员', organizationId: 'partners' })).binding;
     let binding = (await check(bindings)).data.find(row => row.id === 'innovation');

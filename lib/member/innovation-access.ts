@@ -7,11 +7,11 @@ import { memberIdentity, MemberSessionError, type MemberIdentity } from "./sessi
 
 async function assertInnovationMembership(identity: Pick<MemberIdentity, "userSub">): Promise<void> {
   const binding = await prisma.memberOrganizationBinding.findUnique({ where: { id: "innovation" } });
-  if (!binding?.validatedAt) throw new MemberSessionError(503, "MEMBERSHIP_UNAVAILABLE", "创新会员组织配置尚未完成，请联系管理员。");
+  if (!binding?.validatedAt) throw new MemberSessionError(503, "MEMBERSHIP_UNAVAILABLE", "创享会员组织配置尚未完成，请联系管理员。");
   let member: boolean;
   try { member = await isOrganizationMember(binding.organizationId, identity.userSub); }
   catch { throw new MemberSessionError(503, "MEMBERSHIP_UNAVAILABLE", "会员身份暂时无法验证，请稍后重试。"); }
-  if (!member) throw new MemberSessionError(403, "INNOVATION_MEMBERSHIP_REQUIRED", "仅创新会员可使用此功能，请先申请加入。");
+  if (!member) throw new MemberSessionError(403, "INNOVATION_MEMBERSHIP_REQUIRED", "仅创享会员可使用此功能，请先申请加入。");
 }
 
 // Every API request rechecks Logto; no process/session cache can retain revoked access.
