@@ -1,12 +1,15 @@
 "use client";
 
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import { useCallback, useEffect, useState } from "react";
 import { Download, RefreshCw, Search, Users } from "lucide-react";
+import ApplicationReview, { reviewLabel, type ReviewableApplication } from "@/components/member/member-application-review";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-type MemberRecord = {
+type MemberRecord = ReviewableApplication & {
   id: string;
   name: string;
   phone: string;
@@ -46,6 +49,7 @@ function formatDate(value: string) {
 }
 
 export default function MemberApplicationsPage() {
+  const [reviewId, setReviewId] = useState<string | null>(null);
   const [draftFilters, setDraftFilters] = useState<Filters>(emptyFilters);
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [members, setMembers] = useState<MemberRecord[]>([]);
@@ -123,14 +127,14 @@ export default function MemberApplicationsPage() {
           <div className="grid gap-4 md:grid-cols-[180px_220px_minmax(180px,1fr)_auto_auto] md:items-end">
             <label className="grid gap-2 text-sm">
               <span className="text-muted-foreground">会员价值</span>
-              <select className="h-10 rounded-md border bg-background px-3" value={draftFilters.isHighValue} onChange={event => setDraftFilters({ ...draftFilters, isHighValue: event.target.value })}>
+              <NativeSelect className="h-10 rounded-md border bg-background px-3" value={draftFilters.isHighValue} onChange={event => setDraftFilters({ ...draftFilters, isHighValue: event.target.value })}>
                 <option value="">全部</option>
                 <option value="true">仅看高价值会员</option>
-              </select>
+              </NativeSelect>
             </label>
             <label className="grid gap-2 text-sm">
               <span className="text-muted-foreground">单位性质</span>
-              <select className="h-10 rounded-md border bg-background px-3" value={draftFilters.orgType} onChange={event => setDraftFilters({ ...draftFilters, orgType: event.target.value })}>
+              <NativeSelect className="h-10 rounded-md border bg-background px-3" value={draftFilters.orgType} onChange={event => setDraftFilters({ ...draftFilters, orgType: event.target.value })}>
                 <option value="">全部类别</option>
                 <option>高校/科研院所</option>
                 <option>国有企业</option>
@@ -140,11 +144,11 @@ export default function MemberApplicationsPage() {
                 <option>自由职业/创业者</option>
                 <option>在校学生</option>
                 <option>其他</option>
-              </select>
+              </NativeSelect>
             </label>
             <label className="grid gap-2 text-sm">
               <span className="text-muted-foreground">城市</span>
-              <input className="h-10 rounded-md border bg-background px-3" placeholder="输入城市搜索" value={draftFilters.city} onChange={event => setDraftFilters({ ...draftFilters, city: event.target.value })} />
+              <Input className="h-10 rounded-md border bg-background px-3" placeholder="输入城市搜索" value={draftFilters.city} onChange={event => setDraftFilters({ ...draftFilters, city: event.target.value })} />
             </label>
             <Button onClick={() => { setFilters(draftFilters); void loadMembers(1, draftFilters); }}>搜索</Button>
             <Button variant="ghost" onClick={() => { setDraftFilters(emptyFilters); setFilters(emptyFilters); void loadMembers(1, emptyFilters); }}>重置</Button>
@@ -167,11 +171,11 @@ export default function MemberApplicationsPage() {
             <table className="w-full min-w-[1000px] text-left text-sm">
               <thead className="bg-muted/50 text-muted-foreground">
                 <tr>
-                  <th className="p-3">标识</th><th className="p-3">姓名及联系方式</th><th className="p-3">工作单位与性质</th><th className="p-3">加入目的</th><th className="p-3">提供与需求</th><th className="p-3">申请时间</th>
+                  <th className="p-3">标识</th><th className="p-3">姓名及联系方式</th><th className="p-3">工作单位与性质</th><th className="p-3">加入目的</th><th className="p-3">提供与需求</th><th className="p-3">申请时间</th><th className="p-3">审核状态</th><th className="p-3">操作</th>
                 </tr>
               </thead>
               <tbody>
-                {loading ? <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">正在加载数据...</td></tr> : members.length === 0 ? <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">没有符合条件的申请记录。</td></tr> : members.map(member => (
+                {loading ? <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">正在加载数据...</td></tr> : members.length === 0 ? <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">没有符合条件的申请记录。</td></tr> : members.map(member => (
                   <tr key={member.id} className="border-t align-top hover:bg-muted/30">
                     <td className="p-3">{member.isHighValue ? <Badge>VIP</Badge> : <span className="text-muted-foreground">-</span>}</td>
                     <td className="p-3"><div className="font-medium">{member.name}</div><div className="text-muted-foreground">📞 {member.phone}</div><div className="text-muted-foreground">💬 {member.wechat}</div></td>
@@ -179,6 +183,8 @@ export default function MemberApplicationsPage() {
                     <td className="max-w-[220px] p-3"><div>{member.joinPurpose === "其他" ? member.joinPurposeOther : member.joinPurpose}</div><div className="text-xs text-muted-foreground">意向角色：{member.roleIntent}</div></td>
                     <td className="max-w-[260px] p-3 text-xs"><div><span className="font-medium text-green-600">提供：</span>{formatResources(member.provideResources, member.provideResourcesOther)}</div><div className="mt-1"><span className="font-medium text-red-500">需求：</span>{formatResources(member.needResources, member.needResourcesOther)}</div></td>
                     <td className="whitespace-nowrap p-3 text-muted-foreground">{formatDate(member.createdAt)}</td>
+                    <td className="p-3">{reviewLabel(member)}</td>
+                    <td className="p-3"><Button variant="outline" className="min-h-11" onClick={() => setReviewId(member.id)}>{member.reviewStatus === "pending" ? "审核" : "查看结果"}</Button></td>
                   </tr>
                 ))}
               </tbody>
@@ -187,6 +193,7 @@ export default function MemberApplicationsPage() {
           {totalPages > 0 && <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground"><span>第 {page} / {totalPages} 页</span><div className="flex gap-2"><Button variant="outline" size="sm" disabled={page <= 1 || loading} onClick={() => void loadMembers(page - 1)}>上一页</Button><Button variant="outline" size="sm" disabled={page >= totalPages || loading} onClick={() => void loadMembers(page + 1)}>下一页</Button></div></div>}
         </CardContent>
       </Card>
+      {reviewId && members.find(member => member.id === reviewId) && <ApplicationReview application={members.find(member => member.id === reviewId)!} onClose={() => setReviewId(null)} onDone={() => void loadMembers(page)} />}
     </div>
   );
 }

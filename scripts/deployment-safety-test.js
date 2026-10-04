@@ -19,6 +19,10 @@ assert.match(remoteDeploy, /docker pull "\$image_name"/, 'production must pull t
 assert.doesNotMatch(remoteDeploy, /docker build/, 'production must not build the image');
 assert.match(remoteDeploy, /storage\/uploads\/projects/, 'deployment must provision persistent project cover storage');
 assert.match(remoteDeploy, /Candidate database migration failed/, 'candidate database must migrate before smoke tests');
+assert.equal((remoteDeploy.match(/url_redirects_to[^\n]*\/apply\//g) || []).length, 2, 'candidate and production must check the authenticated application redirect');
+assert.equal((remoteDeploy.match(/url_redirects_to[^\n]*\/collect\//g) || []).length, 2, 'candidate and production must check the authenticated project redirect');
+assert.doesNotMatch(remoteDeploy, /url_contains[^\n]*\/apply\//, 'removed public application HTML must not block deployment');
+assert.match(workflow, /secrets\.LOGTO_M2M_CLIENT_SECRET/, 'production must consume GitHub management credentials');
 assert.match(remoteDeploy, /project_endpoints_are_healthy/, 'candidate and production checks must cover public project endpoints');
 assert.match(remoteDeploy, /\$storage_directory:\/app\/storage:ro/, 'candidate must read existing project covers without mutating storage');
 assert.equal(
@@ -109,4 +113,44 @@ assert.equal(failingGate.status, 10, 'insufficient memory must stop deployment w
 assert.match(failingGate.stdout, /available memory/, 'failed gate should explain the rejected resource');
 
 fs.rmSync(tempDirectory, { recursive: true, force: true });
+const managementSyncTest = spawnSync('python3', ['-c', String.raw`
+import io, json, pathlib, runpy, sys, tempfile, urllib.error
+from unittest.mock import patch
+module = runpy.run_path('deploy/sync-management-env.py')
+payload = {'LOGTO_M2M_CLIENT_ID':'test-client','LOGTO_M2M_CLIENT_SECRET':'test-secret'}
+with tempfile.TemporaryDirectory() as root:
+    env = pathlib.Path(root)/'app.env'
+    backup = pathlib.Path(root)/'backup.env'
+    original = '# keep comments\nLOGTO_ENDPOINT=https://auth.example\nOTHER_CONFIG=preserved\nLOGTO_M2M_CLIENT_ID=old-id\nLOGTO_M2M_CLIENT_SECRET=old-secret\n'
+    env.write_text(original)
+    env.chmod(0o660)
+    sys.argv = ['sync', str(env), str(backup)]
+    sys.stdin = io.StringIO(json.dumps(payload))
+    def response(request, timeout):
+        if request.full_url.endswith('/oidc/token'):
+            assert request.headers['Authorization'].startswith('Basic ')
+            return io.BytesIO(b'{"access_token":"mock-token"}')
+        assert request.headers['Authorization'] == 'Bearer mock-token'
+        return io.BytesIO(b'{"id":"rar9vrcnuavh"}')
+    with patch('urllib.request.urlopen', side_effect=response): module['main']()
+    assert backup.read_text() == original
+    assert backup.stat().st_mode & 0o777 == 0o600
+    assert env.stat().st_mode & 0o777 == 0o660
+    assert 'OTHER_CONFIG=preserved' in env.read_text()
+    assert env.read_text().count('LOGTO_M2M_CLIENT_SECRET=') == 1
+    assert 'LOGTO_M2M_CLIENT_SECRET=test-secret' in env.read_text()
+    current = env.read_text()
+    sys.stdin = io.StringIO(json.dumps(payload))
+    with patch('urllib.request.urlopen', side_effect=urllib.error.HTTPError('https://auth.example',401,'rejected',{},None)):
+        try: module['main']()
+        except urllib.error.HTTPError: pass
+        else: raise AssertionError('invalid credentials must fail')
+    assert env.read_text() == current
+    sys.stdin = io.StringIO(json.dumps({**payload, 'LOGTO_M2M_CLIENT_SECRET':'bad\ninjection=1'}))
+    try: module['main']()
+    except ValueError: pass
+    else: raise AssertionError('credential injection must fail')
+    assert env.read_text() == current
+`], { cwd: projectRoot, encoding: 'utf8' });
+assert.equal(managementSyncTest.status, 0, `management env synchronization should preserve configuration and reject unsafe credentials: ${managementSyncTest.stderr}`);
 console.log('Deployment safety checks passed.');

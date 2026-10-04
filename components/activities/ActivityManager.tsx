@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- covers use the validated same-origin activity image API */
 "use client";
 
+import { NativeSelect } from "@/components/ui/native-select";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ExternalLink, ImagePlus, MoreHorizontal, RefreshCw, Search } from "lucide-react";
@@ -609,9 +610,9 @@ export function ActivityManager({ previewData }: { previewData?: ActivityManager
           <form onSubmit={event => { event.preventDefault(); applyFilters(); }} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[180px_minmax(180px,1fr)_auto_auto] lg:items-end">
             <label className="grid gap-2 text-sm">
               <span className="text-muted-foreground">状态</span>
-              <select value={draftFilter} onChange={event => setDraftFilter(event.target.value as ActivityFilter)} className="min-h-11 rounded-md border bg-background px-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+              <NativeSelect clearValue="all" value={draftFilter} onChange={event => setDraftFilter(event.target.value as ActivityFilter)} className="min-h-11 rounded-md border bg-background px-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
                 {(Object.keys(filterLabels) as ActivityFilter[]).map(option => <option key={option} value={option}>{option === "all" ? "全部状态" : filterLabels[option]}</option>)}
-              </select>
+              </NativeSelect>
             </label>
             <label className="grid gap-2 text-sm">
               <span className="text-muted-foreground">关键词</span>
@@ -755,12 +756,12 @@ export function ActivityManager({ previewData }: { previewData?: ActivityManager
               <div><h3 id="activity-basic-title" className="text-sm font-semibold">基本信息</h3><p className="mt-1 text-xs text-muted-foreground">标题和摘要会显示在活动列表中。</p></div>
               <div>
                 <label htmlFor="activity-title" className="text-sm font-medium">标题 <span aria-hidden="true" className="text-destructive">*</span></label>
-                <input id="activity-title" maxLength={120} value={form.title} onChange={event => update("title", event.target.value)} aria-invalid={Boolean(formErrors.title)} aria-describedby={formErrors.title ? "activity-title-error" : undefined} className={controlClass} />
+                <Input id="activity-title" maxLength={120} value={form.title} onChange={event => update("title", event.target.value)} aria-invalid={Boolean(formErrors.title)} aria-describedby={formErrors.title ? "activity-title-error" : undefined} className={controlClass} />
                 <FieldError field="title" errors={formErrors} />
               </div>
               <div>
                 <label htmlFor="activity-summary" className="text-sm font-medium">摘要 <span aria-hidden="true" className="text-destructive">*</span></label>
-                <input id="activity-summary" maxLength={300} value={form.summary} onChange={event => update("summary", event.target.value)} aria-invalid={Boolean(formErrors.summary)} aria-describedby={formErrors.summary ? "activity-summary-error" : undefined} className={controlClass} />
+                <Input id="activity-summary" maxLength={300} value={form.summary} onChange={event => update("summary", event.target.value)} aria-invalid={Boolean(formErrors.summary)} aria-describedby={formErrors.summary ? "activity-summary-error" : undefined} className={controlClass} />
                 <FieldError field="summary" errors={formErrors} />
               </div>
               <MarkdownField id="activity-content" label="活动介绍" value={form.content}
@@ -770,17 +771,17 @@ export function ActivityManager({ previewData }: { previewData?: ActivityManager
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label htmlFor="activity-mode" className="text-sm font-medium">形式</label>
-                  <select id="activity-mode" value={form.mode} onChange={event => update("mode", event.target.value as FormState["mode"])} className={controlClass}><option value="offline">线下</option><option value="online">线上</option></select>
+                  <NativeSelect clearable={false} id="activity-mode" value={form.mode} onChange={event => update("mode", event.target.value as FormState["mode"])} className={controlClass}><option value="offline">线下</option><option value="online">线上</option></NativeSelect>
                 </div>
                 <div>
                   <label htmlFor="activity-capacity" className="text-sm font-medium">人数上限 <span aria-hidden="true" className="text-destructive">*</span></label>
-                  <input id="activity-capacity" type="number" min={1} max={100000} value={form.capacity} onChange={event => update("capacity", event.target.value === "" ? "" : Number(event.target.value))} aria-invalid={Boolean(formErrors.capacity)} aria-describedby={formErrors.capacity ? "activity-capacity-error" : undefined} className={controlClass} />
+                  <Input id="activity-capacity" type="number" min={1} max={100000} value={form.capacity} onChange={event => update("capacity", event.target.value === "" ? "" : Number(event.target.value))} aria-invalid={Boolean(formErrors.capacity)} aria-describedby={formErrors.capacity ? "activity-capacity-error" : undefined} className={controlClass} />
                   <FieldError field="capacity" errors={formErrors} />
                 </div>
               </div>
               <div>
                 <label htmlFor="activity-location" className="text-sm font-medium">地点或会议链接 <span aria-hidden="true" className="text-destructive">*</span></label>
-                <input id="activity-location" maxLength={300} value={form.location} onChange={event => update("location", event.target.value)} aria-invalid={Boolean(formErrors.location)} aria-describedby={formErrors.location ? "activity-location-error" : undefined} className={controlClass} />
+                <Input id="activity-location" maxLength={300} value={form.location} onChange={event => update("location", event.target.value)} aria-invalid={Boolean(formErrors.location)} aria-describedby={formErrors.location ? "activity-location-error" : undefined} className={controlClass} />
                 <FieldError field="location" errors={formErrors} />
               </div>
             </section>
@@ -789,7 +790,7 @@ export function ActivityManager({ previewData }: { previewData?: ActivityManager
               <div className="grid gap-4 sm:grid-cols-2">
                 {(["startsAt", "endsAt", "registrationOpensAt", "registrationClosesAt"] as const).map(key => <div key={key}>
                   <label htmlFor={"activity-" + key} className="text-sm font-medium">{fieldLabels[key]} <span aria-hidden="true" className="text-destructive">*</span></label>
-                  <input id={"activity-" + key} type="datetime-local" value={form[key]} onChange={event => update(key, event.target.value)} aria-invalid={Boolean(formErrors[key])} aria-describedby={formErrors[key] ? "activity-" + key + "-error" : undefined} className={controlClass} />
+                  <Input id={"activity-" + key} type="datetime-local" value={form[key]} onChange={event => update(key, event.target.value)} aria-invalid={Boolean(formErrors[key])} aria-describedby={formErrors[key] ? "activity-" + key + "-error" : undefined} className={controlClass} />
                   <FieldError field={key} errors={formErrors} />
                 </div>)}
               </div>

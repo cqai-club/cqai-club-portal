@@ -1,5 +1,6 @@
 "use client";
 
+import { NativeSelect } from "@/components/ui/native-select";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -218,7 +219,7 @@ export default function ProjectAdminPage() {
           <div className="grid gap-4 md:grid-cols-[160px_180px_minmax(180px,1fr)_auto_auto] md:items-end">
             <label className="grid gap-2 text-sm">
               <span className="text-muted-foreground">状态</span>
-              <select
+              <NativeSelect
                 className="h-9 rounded-md border bg-background px-3"
                 value={draftFilters.status}
                 onChange={event => setDraftFilters({ ...draftFilters, status: event.target.value })}
@@ -228,11 +229,11 @@ export default function ProjectAdminPage() {
                 <option value="pending_review">待终审</option>
                 <option value="published">已发布</option>
                 <option value="unpublished">已下架</option>
-              </select>
+              </NativeSelect>
             </label>
             <label className="grid gap-2 text-sm">
               <span className="text-muted-foreground">首页推荐</span>
-              <select
+              <NativeSelect
                 className="h-9 rounded-md border bg-background px-3"
                 value={draftFilters.featured}
                 onChange={event => setDraftFilters({ ...draftFilters, featured: event.target.value })}
@@ -240,7 +241,7 @@ export default function ProjectAdminPage() {
                 <option value="">全部项目</option>
                 <option value="true">仅推荐项目</option>
                 <option value="false">仅非推荐项目</option>
-              </select>
+              </NativeSelect>
             </label>
             <label className="grid gap-2 text-sm">
               <span className="text-muted-foreground">关键词</span>

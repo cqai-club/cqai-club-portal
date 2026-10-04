@@ -5,9 +5,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 import {
   ArrowRight, CalendarDays, KeyRound, Mail, ShieldCheck,
-  Smartphone, UserRound, type LucideIcon,
+  Smartphone, UserRound, Crown, BriefcaseBusiness, type LucideIcon,
 } from "lucide-react";
 import { normalizeLocale, t as translate } from "@/lib/i18n";
+import { ProfileDrawerButton } from "@/components/member/profile-drawer";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,8 @@ export default async function DashboardPage() {
   ];
 
   const quickActions: { href: string; title: string; description: string; icon: LucideIcon }[] = [
+    { href: "/member/dashboard/plans", title: tt("plans.title"), description: tt("plans.description"), icon: Crown },
+    { href: "/member/dashboard/project-submission", title: tt("projectSubmission.title"), description: tt("projectSubmission.description"), icon: BriefcaseBusiness },
     { href: "/member/dashboard/profile", title: tt("dashboard.quickActions.profile"), description: tt("dashboard.quickActions.profileDesc"), icon: UserRound },
     { href: "/member/dashboard/security", title: tt("dashboard.quickActions.security"), description: tt("dashboard.quickActions.securityDesc"), icon: ShieldCheck },
   ];
@@ -102,10 +105,10 @@ export default async function DashboardPage() {
               </div>
             </div>
             <Button asChild className="h-11 shrink-0 rounded-lg px-5 sm:self-center">
-              <Link href="/member/dashboard/profile">
+              <ProfileDrawerButton>
                 {tt("dashboard.viewProfile")}
                 <ArrowRight aria-hidden="true" className="size-4" />
-              </Link>
+              </ProfileDrawerButton>
             </Button>
           </div>
           <div className="grid gap-px border-t bg-border sm:grid-cols-2 xl:grid-cols-4">
@@ -132,8 +135,9 @@ export default async function DashboardPage() {
               <p className="mt-1 text-sm text-muted-foreground">{tt("dashboard.quickActions.description")}</p>
             </div>
             <div className="border-t">
-              {quickActions.map(({ href, title, description, icon: Icon }) => (
-                <Link key={href} href={href} className="group flex min-h-20 items-center gap-4 border-b px-5 py-4 transition-colors last:border-b-0 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-6">
+              {quickActions.map(({ href, title, description, icon: Icon }) => {
+                const className = "group flex min-h-20 w-full items-center gap-4 border-b px-5 py-4 text-left transition-colors last:border-b-0 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-6";
+                const content = <>
                   <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
                     <Icon aria-hidden="true" className="size-5" />
                   </span>
@@ -142,8 +146,11 @@ export default async function DashboardPage() {
                     <span className="mt-1 block text-sm leading-5 text-muted-foreground">{description}</span>
                   </span>
                   <ArrowRight aria-hidden="true" className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
-                </Link>
-              ))}
+                </>;
+                return href === "/member/dashboard/profile"
+                  ? <ProfileDrawerButton key={href} className={className}>{content}</ProfileDrawerButton>
+                  : <Link key={href} href={href} className={className}>{content}</Link>;
+              })}
             </div>
           </Card>
         </section>

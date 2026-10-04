@@ -42,6 +42,10 @@ jobs:
       - name: Run smoke tests
         run: |
           npm run test:deployment
+          node scripts/member-login-error-test.js
+          node scripts/member-return-to-test.js
           node scripts/ci-smoke-test.js
           npm run test:activities
           npm run test:plugin-submissions
+          npm run test:resources
+          npm run test:member-organizations

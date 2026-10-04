@@ -19,7 +19,7 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   adminNavItems,
-  mainNavItems,
+  getVisibleMainNavItems,
   isNavItemActive,
   getNavLabel,
 } from "@/config/navigation";
@@ -38,12 +38,14 @@ import { useTheme } from "next-themes";
 import { useTranslations } from "@/lib/i18n/client";
 import { t as translate } from "@/lib/i18n";
 import { useToast } from "@/hooks/use-toast";
+import { ProfileDrawerButton, useProfileDrawer } from "@/components/member/profile-drawer";
 
 interface NavbarProps {
   canAccessAdmin?: boolean;
   canAccessMemberAdmin?: boolean;
   canAccessPluginAdmin?: boolean;
   canAccessActivityAdmin?: boolean;
+  canAccessInnovationMember?: boolean;
   user?: {
     name?: string;
     username?: string;
@@ -53,20 +55,22 @@ interface NavbarProps {
   onSignOut?: () => void;
 }
 
-export function Navbar({ user, onSignOut, canAccessAdmin = false, canAccessMemberAdmin = false, canAccessPluginAdmin = false, canAccessActivityAdmin = false }: NavbarProps) {
+export function Navbar({ user, onSignOut, canAccessAdmin = false, canAccessMemberAdmin = false, canAccessPluginAdmin = false, canAccessActivityAdmin = false, canAccessInnovationMember = false }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
   const { t, language, setLanguage } = useTranslations();
   const { toast } = useToast();
+  const { open: profileOpen } = useProfileDrawer();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isUpdatingLanguage, setIsUpdatingLanguage] = useState(false);
+  const visibleMainNavItems = getVisibleMainNavItems(canAccessInnovationMember);
   const visibleAdminNavItems = adminNavItems.filter(item =>
     item.titleKey === "nav.adminPlugins" ? canAccessPluginAdmin
       : item.titleKey === "nav.adminActivities" ? canAccessActivityAdmin
         : canAccessMemberAdmin
   );
-  const currentNavItem = [...mainNavItems, ...visibleAdminNavItems].find(item => isNavItemActive(item.href, pathname));
+  const currentNavItem = [...visibleMainNavItems, ...visibleAdminNavItems].find(item => isNavItemActive(item.href, pathname));
 
   const handleLanguageChange = async (value: string) => {
     if (isUpdatingLanguage || (value !== "zh-CN" && value !== "en")) return;
@@ -112,7 +116,7 @@ export function Navbar({ user, onSignOut, canAccessAdmin = false, canAccessMembe
                 <Menu aria-hidden="true" className="size-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="member-center flex h-dvh w-[min(20rem,85vw)] flex-col gap-0 bg-sidebar p-0 text-sidebar-foreground [&>button]:flex [&>button]:size-11 [&>button]:items-center [&>button]:justify-center">
+            <SheetContent side="left" onCloseAutoFocus={event => { if (profileOpen) event.preventDefault(); }} className="member-center flex h-dvh w-[min(20rem,85vw)] flex-col gap-0 bg-sidebar p-0 text-sidebar-foreground [&>button]:flex [&>button]:size-11 [&>button]:items-center [&>button]:justify-center">
               <SheetTitle className="sr-only">{t("nav.menu")}</SheetTitle>
               <div className="flex h-20 shrink-0 items-center gap-3 border-b border-sidebar-border px-5">
                 <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -125,8 +129,14 @@ export function Navbar({ user, onSignOut, canAccessAdmin = false, canAccessMembe
               </div>
               <nav aria-label={t("nav.menu")} className="min-h-0 flex-1 overflow-y-auto px-3 py-5">
                 <p className="px-3 pb-2 text-xs font-medium text-muted-foreground">{t("nav.accountSection")}</p>
-                {mainNavItems.map((item) => {
+                {visibleMainNavItems.map((item) => {
                   const isActive = isNavItemActive(item.href, pathname);
+                  if (item.href === "/member/dashboard/profile") return (
+                    <ProfileDrawerButton key={item.href} aria-expanded={profileOpen} onClick={() => setMobileMenuOpen(false)} className="mb-1 flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring">
+                      <item.icon aria-hidden="true" className="size-[18px] shrink-0" />
+                      <span className="flex-1">{getNavLabel(item, language)}</span>
+                    </ProfileDrawerButton>
+                  );
                   return (
                     <Link
                       key={item.href}
@@ -154,6 +164,8 @@ export function Navbar({ user, onSignOut, canAccessAdmin = false, canAccessMembe
                         <Link
                           key={item.href}
                           href={item.href}
+                          target={item.external ? "_blank" : undefined}
+                          rel={item.external ? "noopener noreferrer" : undefined}
                           onClick={() => setMobileMenuOpen(false)}
                           aria-current={isActive ? "page" : undefined}
                           className={cn(
@@ -163,6 +175,7 @@ export function Navbar({ user, onSignOut, canAccessAdmin = false, canAccessMembe
                         >
                           <item.icon aria-hidden="true" className="size-[18px] shrink-0" />
                           <span className="flex-1">{getNavLabel(item, language)}</span>
+                          {item.external && <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />}
                           {isActive && <span aria-hidden="true" className="size-1.5 rounded-full bg-primary" />}
                         </Link>
                       );
@@ -221,7 +234,7 @@ export function Navbar({ user, onSignOut, canAccessAdmin = false, canAccessMembe
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-11 gap-2 rounded-xl pl-1.5 pr-2.5" aria-label={user?.name || user?.username || t("common.user")}>
+              <Button data-profile-focus-fallback variant="ghost" className="h-11 gap-2 rounded-xl pl-1.5 pr-2.5" aria-label={user?.name || user?.username || t("common.user")}>
                 <Avatar className="size-8">
                   {user?.avatar && (
                     <AvatarImage src={user.avatar} alt={user?.name || user?.username || t("common.user")} />
@@ -246,7 +259,7 @@ export function Navbar({ user, onSignOut, canAccessAdmin = false, canAccessMembe
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {mainNavItems.slice(1, 3).map((item) => (
+              {visibleMainNavItems.filter(item => item.titleKey === "nav.security").map((item) => (
                 <DropdownMenuItem key={item.href} asChild>
                   <Link href={item.href}>
                     <item.icon aria-hidden="true" className="mr-2 size-4" />

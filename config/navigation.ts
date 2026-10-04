@@ -9,6 +9,8 @@ import {
   BriefcaseBusiness,
   CalendarDays,
   ClipboardList,
+  Crown,
+  Settings2,
 } from "lucide-react";
 import { t, type Language } from "@/lib/i18n";
 
@@ -17,6 +19,8 @@ export interface NavItem {
   title: string;
   titleKey: string;
   icon: LucideIcon;
+  external?: boolean;
+  innovationMemberOnly?: boolean;
 }
 
 export const mainNavItems: NavItem[] = [
@@ -44,9 +48,39 @@ export const mainNavItems: NavItem[] = [
     titleKey: "nav.activities",
     icon: CalendarDays,
   },
+  {
+    href: "/member/dashboard/plans",
+    title: "会员类型",
+    titleKey: "nav.plans",
+    icon: Crown,
+  },
+  {
+    href: "/member/dashboard/resources",
+    title: "资料中心",
+    titleKey: "nav.resources",
+    icon: Files,
+  },
+  {
+    href: "/member/dashboard/project-submission",
+    title: "项目征集",
+    titleKey: "nav.projectSubmission",
+    icon: BriefcaseBusiness,
+  },
 ];
 
 export const adminNavItems: NavItem[] = [
+  {
+    href: "/member/dashboard/admin/member-settings",
+    title: "会员设置",
+    titleKey: "nav.adminMemberSettings",
+    icon: Settings2,
+  },
+  {
+    href: "/member/dashboard/admin/resources",
+    title: "资料管理",
+    titleKey: "nav.adminResources",
+    icon: Files,
+  },
   {
     href: "/member/dashboard/admin/activities",
     title: "活动管理",
@@ -61,7 +95,7 @@ export const adminNavItems: NavItem[] = [
   },
   {
     href: "/member/dashboard/admin/collections",
-    title: "资料征集",
+    title: "项目征集",
     titleKey: "nav.adminCollections",
     icon: Files,
   },
@@ -77,6 +111,13 @@ export const adminNavItems: NavItem[] = [
     titleKey: "nav.adminPlugins",
     icon: Store,
   },
+  {
+    href: "https://auth-admin.cqaiclub.asia/",
+    title: "Logto 管理后台",
+    titleKey: "nav.adminLogto",
+    icon: Shield,
+    external: true,
+  },
 ];
 
 export function getNavLabel(item: NavItem, language: Language): string {
@@ -89,4 +130,8 @@ export function isNavItemActive(href: string, pathname: string): boolean {
   }
 
   return pathname.startsWith(href);
+}
+
+export function getVisibleMainNavItems(canAccessInnovationMember: boolean): NavItem[] {
+  return mainNavItems.filter(item => !item.innovationMemberOnly || canAccessInnovationMember);
 }

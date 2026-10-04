@@ -14,6 +14,7 @@ import { Prompt } from "@logto/next";
 
 import { isLogtoConfigured, logtoConfig } from "./config";
 import { logger } from "@/lib/logger";
+import { normalizeMemberReturnTo } from "@/lib/member/return-to";
 
 type LogtoContext = Awaited<ReturnType<typeof _getLogtoContext>>;
 
@@ -79,9 +80,12 @@ export async function getLogtoContext(resource?: string): Promise<LogtoContext> 
  * 登录。`redirectUri` 不为空时作为显式回调地址传给 Logto（覆盖默认
  * `${baseUrl}/callback`），用于把回调固定在 /member 前缀下。
  */
-export const signIn = (redirectUri?: string) =>
+export const signIn = (redirectUri?: string, returnTo?: string) =>
   _signIn(logtoConfig, {
     redirectUri: redirectUri ?? `${logtoConfig.baseUrl}/callback`,
+    // Logto stores this alongside OAuth state in the encrypted sign-in session
+    // and navigates there only after the callback has been verified.
+    postRedirectUri: normalizeMemberReturnTo(returnTo),
     prompt: Prompt.Login,
     clearTokens: true,
   });

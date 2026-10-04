@@ -1,5 +1,7 @@
 "use client";
 
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -196,8 +198,8 @@ export default function CollectionSubmissionsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">资料征集</h1>
-          <p className="text-muted-foreground">查看、审核和导出会员、企业与项目资料。</p>
+          <h1 className="text-2xl font-bold tracking-tight">项目征集</h1>
+          <p className="text-muted-foreground">查看、审核和导出项目征集记录，支持查询历史资料。</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => void loadSubmissions(page, filters)} disabled={loading}><RefreshCw className="mr-2 h-4 w-4" />刷新</Button>
@@ -212,9 +214,9 @@ export default function CollectionSubmissionsPage() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-[180px_180px_minmax(180px,1fr)_auto_auto] md:items-end">
-            <label className="grid gap-2 text-sm"><span className="text-muted-foreground">资料类型</span><select className="h-10 rounded-md border bg-background px-3" value={draftFilters.type} onChange={event => setDraftFilters({ ...draftFilters, type: event.target.value })}><option value="">全部类型</option><option value="member">会员资料</option><option value="enterprise">企业资料</option><option value="project">AI 项目</option></select></label>
-            <label className="grid gap-2 text-sm"><span className="text-muted-foreground">审核状态</span><select className="h-10 rounded-md border bg-background px-3" value={draftFilters.status} onChange={event => setDraftFilters({ ...draftFilters, status: event.target.value })}><option value="">全部状态</option><option value="new">待审核</option><option value="reviewing">审核中</option><option value="approved">已通过</option><option value="rejected">已拒绝</option></select></label>
-            <label className="grid gap-2 text-sm"><span className="text-muted-foreground">关键词</span><input className="h-10 rounded-md border bg-background px-3" placeholder="姓名、公司或联系方式" value={draftFilters.search} onChange={event => setDraftFilters({ ...draftFilters, search: event.target.value })} /></label>
+            <label className="grid gap-2 text-sm"><span className="text-muted-foreground">资料类型</span><NativeSelect className="h-10 rounded-md border bg-background px-3" value={draftFilters.type} onChange={event => setDraftFilters({ ...draftFilters, type: event.target.value })}><option value="">全部类型</option><option value="member">会员资料</option><option value="enterprise">企业资料</option><option value="project">AI 项目</option></NativeSelect></label>
+            <label className="grid gap-2 text-sm"><span className="text-muted-foreground">审核状态</span><NativeSelect className="h-10 rounded-md border bg-background px-3" value={draftFilters.status} onChange={event => setDraftFilters({ ...draftFilters, status: event.target.value })}><option value="">全部状态</option><option value="new">待审核</option><option value="reviewing">审核中</option><option value="approved">已通过</option><option value="rejected">已拒绝</option></NativeSelect></label>
+            <label className="grid gap-2 text-sm"><span className="text-muted-foreground">关键词</span><Input className="h-10 rounded-md border bg-background px-3" placeholder="姓名、公司或联系方式" value={draftFilters.search} onChange={event => setDraftFilters({ ...draftFilters, search: event.target.value })} /></label>
             <Button onClick={() => { setFilters(draftFilters); void loadSubmissions(1, draftFilters); }}>搜索</Button>
             <Button variant="ghost" onClick={() => { setDraftFilters(emptyFilters); setFilters(emptyFilters); void loadSubmissions(1, emptyFilters); }}>重置</Button>
           </div>
@@ -235,9 +237,12 @@ export default function CollectionSubmissionsPage() {
                     <td className="p-3"><Badge variant="outline">{typeLabels[item.type] || item.type}</Badge></td>
                     <td className="p-3"><div className="font-medium">{item.displayName}</div><div className="text-xs text-muted-foreground">{item.id}</div>{item.importedProject && <Badge variant="outline" className="mt-1">已导入 · {projectStatusLabels[item.importedProject.status]}</Badge>}</td>
                     <td className="p-3"><div>{item.contact}</div><div className="text-muted-foreground">{item.email || item.phone || "-"}</div></td>
-                    <td className="p-3"><select aria-label={`更新“${item.displayName}”的审核状态`} className="h-9 rounded-md border bg-background px-2 text-sm" value={item.status} disabled={busyStatusIds.has(item.id)} onChange={event => void updateStatus(item.id, event.target.value)}><option value="new">待审核</option><option value="reviewing">审核中</option><option value="approved">已通过</option><option value="rejected">已拒绝</option></select><div className="mt-1"><Badge variant={statusVariants[item.status] || "secondary"}>{statusLabels[item.status] || item.status}</Badge></div></td>
+                    <td className="p-3"><Badge variant={statusVariants[item.status] || "secondary"}>{statusLabels[item.status] || item.status}</Badge></td>
                     <td className="whitespace-nowrap p-3 text-muted-foreground">{formatDate(item.createdAt)}</td>
-                    <td className="p-3"><Button variant="outline" size="sm" onClick={event => { detailTriggerRef.current = event.currentTarget; void openDetail(item.id); }}>查看详情</Button></td>
+                    <td className="p-3"><div className="flex flex-wrap items-center gap-2">
+                      <Button variant="outline" size="sm" className="min-h-11" onClick={event => { detailTriggerRef.current = event.currentTarget; void openDetail(item.id); }}>查看详情</Button>
+                      <NativeSelect clearable={false} aria-label={`更新“${item.displayName}”的审核状态`} className="h-11 rounded-md border bg-background px-2 text-sm" value={item.status} disabled={busyStatusIds.has(item.id)} onChange={event => void updateStatus(item.id, event.target.value)}><option value="new">待审核</option><option value="reviewing">审核中</option><option value="approved">已通过</option><option value="rejected">已拒绝</option></NativeSelect>
+                    </div></td>
                   </tr>
                 ))}
               </tbody>

@@ -1,5 +1,6 @@
 "use client";
 
+import { NativeSelect } from "@/components/ui/native-select";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -380,7 +381,7 @@ export default function ProjectEditorPage() {
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight">编辑项目</h1>
             <Badge variant={statusVariants[project.status]}>{projectStatusLabels[project.status]}</Badge>
-            {project.sourceSubmissionId && <Badge variant="outline">来自资料征集</Badge>}
+            {project.sourceSubmissionId && <Badge variant="outline">来自项目征集</Badge>}
           </div>
           <p className="text-sm text-muted-foreground">
             最近更新：{formatDate(project.updatedAt)}{project.publishedAt ? ` · 首次发布：${formatDate(project.publishedAt)}` : ""}
@@ -463,7 +464,7 @@ export default function ProjectEditorPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="project-stage">项目阶段</Label>
-                <select
+                <NativeSelect
                   id="project-stage"
                   className="h-9 rounded-md border bg-background px-3 text-sm"
                   value={form.stage}
@@ -471,7 +472,7 @@ export default function ProjectEditorPage() {
                 >
                   <option value="">暂不展示</option>
                   {Object.entries(projectStageLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                </select>
+                </NativeSelect>
                 <p className="text-xs text-muted-foreground">对外发布须选择开发中、试运行或正式上线；构想验证仅用于草稿。</p>
               </div>
               <div className="grid gap-2">
@@ -510,11 +511,12 @@ export default function ProjectEditorPage() {
               <div className="grid gap-2 md:col-span-2">
                 <Label htmlFor="project-internal-contact">内部联系方式</Label>
                 <Input id="project-internal-contact" value={form.internalContact} onChange={event => setField("internalContact", event.target.value)} placeholder="手机号、微信或内部备注" />
-                <p className="text-xs text-muted-foreground">从资料征集导入的手机号或微信仅保存在这里。</p>
+                <p className="text-xs text-muted-foreground">从项目征集导入的手机号或微信仅保存在这里。</p>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="public-contact-type">公开联系入口</Label>
-                <select
+                <NativeSelect
+                  clearValue="none"
                   id="public-contact-type"
                   className="h-9 rounded-md border bg-background px-3 text-sm"
                   value={form.publicContactType}
@@ -525,7 +527,7 @@ export default function ProjectEditorPage() {
                   <option value="email">公开邮箱</option>
                   <option value="url">HTTPS 联系链接</option>
                   <option value="none">不展示</option>
-                </select>
+                </NativeSelect>
                 {project.sourceSubmissionId && <p className="text-xs text-muted-foreground">会员提交项目统一由俱乐部对接，不公开提交人的联系方式。</p>}
               </div>
               <div className="grid gap-2">

@@ -1,7 +1,7 @@
 /**
  * Static official-site content routes.
  *
- * The club's official website and application form are static HTML files that
+ * The club's official website consists of static HTML files that
  * historically lived under the Express `web/` + `public/` directories. They
  * now live under `site/` in this Next app and are returned here as raw file
  * bytes so the HTML (and its own `<head>`, fonts, inline styles) is served
@@ -11,6 +11,7 @@
 import { NextResponse } from "next/server";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { MEMBER_PROJECT_SUBMISSION_PATH } from "@/lib/member/return-to";
 
 const CONTENT_TYPE: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -27,7 +28,7 @@ const CONTENT_TYPE: Record<string, string> = {
   ".avif": "image/avif",
 };
 
-// Directory-style URLs (/ , /apply/) resolve to site/<path>/index.html
+// Directory-style URLs (for example /) resolve to site/<path>/index.html
 // and must be served as HTML even though the resolved path carries no ".html"
 // extension in the request URL.
 const HTML_FALLBACK = "text/html; charset=utf-8";
@@ -42,6 +43,13 @@ const LEGACY_ADMIN_REDIRECTS: Record<string, string> = {
   "/admin/collections/": "/member/dashboard/admin/collections",
   "/collection-admin.html": "/member/dashboard/admin/collections",
 };
+
+const LEGACY_APPLICATION_PATHS = new Set([
+  "/apply",
+  "/apply/",
+  "/apply/index.html",
+  "/apply.html",
+]);
 
 async function readIfExists(path: string): Promise<Buffer | null> {
   try {
@@ -71,6 +79,20 @@ export async function GET(
   // Guard: this route group must never intercept the member surface.
   if (pathname.startsWith("/member")) {
     return new NextResponse("Not found", { status: 404 });
+  }
+
+  if (["/collect", "/collect/", "/collect/index.html", "/collect.html"].includes(pathname)) {
+    return new NextResponse(null, {
+      status: 307,
+      headers: { Location: MEMBER_PROJECT_SUBMISSION_PATH, "Cache-Control": "no-store" },
+    });
+  }
+
+  if (LEGACY_APPLICATION_PATHS.has(pathname)) {
+    return new NextResponse(null, {
+      status: 307,
+      headers: { Location: "/member/dashboard/application", "Cache-Control": "no-store" },
+    });
   }
 
   const legacyAdminTarget = LEGACY_ADMIN_REDIRECTS[pathname];

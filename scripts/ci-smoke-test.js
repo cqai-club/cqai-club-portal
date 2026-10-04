@@ -3,10 +3,12 @@ const fs = require('node:fs');
 const net = require('node:net');
 const os = require('node:os');
 const path = require('node:path');
+const vm = require('node:vm');
 const { randomBytes } = require('node:crypto');
 const { spawn, spawnSync } = require('node:child_process');
 const { PrismaClient } = require('@prisma/client');
 const sharp = require('sharp');
+const { startMembershipMock } = require('./helpers/logto-membership-mock');
 
 const projectRoot = path.resolve(__dirname, '..');
 const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'cqai-club-ci-'));
@@ -17,6 +19,16 @@ const ciAdminToken = randomBytes(32).toString('hex');
 const ciEditorToken = randomBytes(32).toString('hex');
 const ciAuthenticatedToken = randomBytes(32).toString('hex');
 let applicationProcess;
+let membershipMock;
+
+const assertNavigationLink = (html, href, label, message) => {
+  const links = Array.from(html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g));
+  assert.ok(links.some(([, attributes, content]) => {
+    const target = attributes.match(/(?:^|\s)href=["']([^"']+)["']/)?.[1];
+    const text = content.replace(/<[^>]*>/g, '').trim();
+    return target === href && text === label;
+  }), message);
+};
 
 const checkWebsiteAssets = () => {
   const websiteRoot = path.join(projectRoot, 'site');
@@ -24,15 +36,47 @@ const checkWebsiteAssets = () => {
   assert.ok(fs.existsSync(entryFile), 'official website entry should exist');
 
   const html = fs.readFileSync(entryFile, 'utf8');
-  assert.match(html, /<title>重庆AI创享俱乐部/, 'official website should have the expected title');
+  assert.match(html, /<title\b[^>]*>重庆AI创享俱乐部/, 'official website should have the expected title');
   assert.match(html, /rel=["']icon["'][^>]+href=["']\/images\/logo-nav\.png["']/, 'official website should use the club favicon');
-  assert.match(html, /href=["']\/apply\/["']/, 'official website should link to the local application route');
+  assert.match(html, /href=["']\/member\/dashboard\/application["']/, 'official website should link to the authenticated application route');
+  assert.doesNotMatch(html, /href=["']\/apply\/?["']/, 'homepage should use the canonical member-center application route');
   assert.match(html, /href=["']\/projects\/["']/, 'official website should link to the public project square');
-  const headerNavigation = html.match(/<ul id=["']navLinks["']>([\s\S]*?)<\/ul>/)?.[1] || '';
-  const footerNavigation = html.match(/<h4>导航<\/h4>\s*<ul>([\s\S]*?)<\/ul>/)?.[1] || '';
-  assert.match(headerNavigation, /href=["']\/projects\/["']>项目广场<\//, 'header should link to the project square');
-  assert.match(footerNavigation, /href=["']\/projects\/["']>项目广场<\//, 'footer should link to the project square');
+  const headerNavigation = html.match(/<ul\b[^>]*\bid=["']navLinks["'][^>]*>([\s\S]*?)<\/ul>/)?.[1] || '';
+  const footerNavigation = html.match(/<h4\b[^>]*>导航<\/h4>\s*<ul>([\s\S]*?)<\/ul>/)?.[1] || '';
+  assertNavigationLink(headerNavigation, '/projects/', '项目广场', 'header should link to the project square');
+  assertNavigationLink(footerNavigation, '/projects/', '项目广场', 'footer should link to the project square');
   assert.match(html, /\/api\/projects\?featured=true&limit=6/, 'homepage projects should come from the public API');
+
+  const messagesPath = path.join(websiteRoot, 'home-i18n.js');
+  assert.ok(fs.existsSync(messagesPath), 'homepage translations should exist');
+  const messagesContext = { window: {} };
+  vm.runInNewContext(fs.readFileSync(messagesPath, 'utf8'), messagesContext, {
+    filename: messagesPath,
+    timeout: 1000
+  });
+  const messages = messagesContext.window.CQAI_HOME_MESSAGES;
+  assert.ok(messages?.zh && messages?.en, 'homepage should provide Chinese and English dictionaries');
+  const translationKeys = Object.keys(messages.zh).sort();
+  assert.ok(translationKeys.length > 0, 'homepage translations should contain interface copy');
+  assert.deepEqual(Object.keys(messages.en).sort(), translationKeys,
+    'homepage Chinese and English dictionaries should have matching keys');
+
+  for (const language of ['zh', 'en']) {
+    for (const key of translationKeys) {
+      assert.equal(typeof messages[language][key], 'string', `homepage translation should be text: ${language}.${key}`);
+      assert.ok(messages[language][key].trim(), `homepage translation should not be empty: ${language}.${key}`);
+    }
+  }
+
+  const translationReferences = Array.from(
+    html.matchAll(/\bdata-i18n(?:-alt|-aria-label)?=["']([^"']+)["']/g), match => match[1]
+  );
+  assert.ok(translationReferences.length > 0, 'homepage should reference its translations');
+  for (const key of new Set(translationReferences)) {
+    assert.ok(Object.hasOwn(messages.zh, key) && Object.hasOwn(messages.en, key),
+      `homepage translation reference should exist in both languages: ${key}`);
+  }
+
   assert.doesNotMatch(
     html,
     /https?:\/\/(?:localhost|127\.0\.0\.1|8\.137\.71\.156)(?=[:/]|$)/,
@@ -60,14 +104,42 @@ const checkWebsiteAssets = () => {
     assert.ok(fs.existsSync(assetPath), `website asset should exist: ${reference}`);
   }
 
-  const collectionHtml = fs.readFileSync(path.join(websiteRoot, 'collect', 'index.html'), 'utf8');
-  assert.match(collectionHtml, /name:\s*["']projectCover["']/, 'project collection should accept one cover image');
-  assert.match(collectionHtml, /URLSearchParams\(window\.location\.search\)/, 'project collection should honor the type query parameter');
+  assert.doesNotMatch(html, /collection-fab/, 'homepage must not expose the collection floating button');
+  assert.match(html, /\/member\/dashboard\/project-submission/, 'homepage submission links must enter the member center');
 };
 
 const prepareDatabase = async databaseUrl => {
   const prismaCli = path.join(projectRoot, 'node_modules', 'prisma', 'build', 'index.js');
   assert.ok(fs.existsSync(prismaCli), 'Prisma CLI should be installed');
+
+  // First create the previous schema and a real unbound historical row. The
+  // new migration must preserve it while adding nullable account columns.
+  const legacyPrismaRoot = path.join(tempDirectory, 'legacy-prisma');
+  const accountMigrations = new Set(['20261003000000_bind_member_application_accounts', '20261004000000_bind_project_submission_accounts']);
+  fs.mkdirSync(path.join(legacyPrismaRoot, 'migrations'), { recursive: true });
+  fs.copyFileSync(path.join(projectRoot, 'prisma', 'schema.prisma'), path.join(legacyPrismaRoot, 'schema.prisma'));
+  for (const entry of fs.readdirSync(path.join(projectRoot, 'prisma', 'migrations'))) {
+    if (accountMigrations.has(entry)) continue;
+    fs.cpSync(path.join(projectRoot, 'prisma', 'migrations', entry), path.join(legacyPrismaRoot, 'migrations', entry), { recursive: true });
+  }
+  const legacyMigration = spawnSync(process.execPath, [prismaCli, 'migrate', 'deploy', '--schema', path.join(legacyPrismaRoot, 'schema.prisma')], {
+    cwd: projectRoot, encoding: 'utf8', env: { ...process.env, DATABASE_URL: databaseUrl }
+  });
+  assert.equal(legacyMigration.status, 0, legacyMigration.stderr || legacyMigration.stdout);
+  const legacyClient = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+  try {
+    await legacyClient.$executeRawUnsafe(`INSERT INTO "MemberApplication" (
+      "id", "name", "phone", "wechat", "organization", "title", "orgType", "provideResources", "needResources",
+      "joinPurpose", "expectEvents", "timePreference", "city", "roleIntent", "privacyPreference", "createdAt"
+    ) VALUES ('legacy-member-application', '旧申请', '19900000002', 'legacy-member', '旧单位', '成员', '民营企业',
+      '["AI技术/算法能力"]', '["潜在客户"]', '拓展人脉/寻找合作机会', '["AI技术沙龙/讲座"]', '周六下午', '重庆主城', '暂时不考虑', '暂不公开', 1790985600000)`);
+    await legacyClient.$executeRawUnsafe(`INSERT INTO "CollectionSubmission" (
+      "id", "type", "status", "displayName", "contact", "payloadJson", "consent", "createdAt", "updatedAt"
+    ) VALUES ('legacy-project-submission', 'project', 'new', '旧匿名项目', 'legacy-contact',
+      '{"projectName":"旧匿名项目","userIssuer":"ci","userSub":"ci-member"}', 1, 1790985600000, 1790985600000)`);
+  } finally {
+    await legacyClient.$disconnect();
+  }
 
   const result = spawnSync(process.execPath, [
     prismaCli,
@@ -91,6 +163,17 @@ const prepareDatabase = async databaseUrl => {
     datasources: { db: { url: databaseUrl } }
   });
   try {
+    const preservedApplication = await inspectionClient.memberApplication.findUnique({ where: { id: 'legacy-member-application' } });
+    assert.equal(preservedApplication.phone, '19900000002');
+    assert.equal(preservedApplication.name, '旧申请');
+    assert.equal(preservedApplication.provideResources, '["AI技术/算法能力"]');
+    assert.equal(preservedApplication.createdAt.getTime(), 1790985600000);
+    assert.equal(preservedApplication.userIssuer, null);
+    assert.equal(preservedApplication.userSub, null, 'account migration must preserve unbound legacy application data');
+    const preservedProject = await inspectionClient.collectionSubmission.findUniqueOrThrow({ where: { id: 'legacy-project-submission' } });
+    assert.equal(preservedProject.displayName, '旧匿名项目');
+    assert.equal(preservedProject.userIssuer, null);
+    assert.equal(preservedProject.userSub, null, 'client identity inside legacy payloads must not claim anonymous projects');
     const timestampTypes = await inspectionClient.$queryRawUnsafe(
       `SELECT typeof("createdAt") AS createdType, typeof("updatedAt") AS updatedType, typeof("publishedAt") AS publishedType FROM "Project" WHERE "id" = 'seed-project-logic-garden'`
     );
@@ -185,11 +268,13 @@ const stopApplication = async () => {
 
 const main = async () => {
   checkWebsiteAssets();
+  membershipMock = await startMembershipMock();
 
   const port = await reservePort();
   const baseUrl = `http://127.0.0.1:${port}`;
   const env = {
     ...process.env,
+    ...membershipMock.env,
     DATABASE_URL: `file:${databasePath}`,
     PORT: String(port),
     HOSTNAME: '127.0.0.1',
@@ -202,13 +287,19 @@ const main = async () => {
     CQAI_CI_AUTHENTICATED_TOKEN: ciAuthenticatedToken,
     ADMIN_USERNAME: adminUsername,
     ADMIN_PASSWORD: adminPassword,
-    BASE_URL_PROD: 'https://plugins.example.invalid'
+    BASE_URL_PROD: 'https://plugins.example.invalid',
+    // Next's standalone Request.url may use its canonical internal host.
+    // Explicitly configure this test server's public origin for CSRF checks.
+    BASE_URL_DEV: `${baseUrl}/member`
   };
 
   // Prisma 5's SQLite schema engine does not reliably create a missing file
   // when DATABASE_URL is an absolute path on every supported host.
   fs.closeSync(fs.openSync(databasePath, 'w'));
   await prepareDatabase(env.DATABASE_URL);
+  const membershipDb = new PrismaClient({ datasources: { db: { url: env.DATABASE_URL } } });
+  try { await membershipDb.memberOrganizationBinding.update({ where: { id: 'innovation' }, data: { validatedAt: new Date() } }); }
+  finally { await membershipDb.$disconnect(); }
 
   // The application is a Next.js `output: 'standalone'` build. The CI runner
   // produces that build in a prior step; the server is the standalone
@@ -277,25 +368,63 @@ const main = async () => {
   const portalPage = await request(baseUrl, '/');
   assert.equal(portalPage.response.status, 200, 'official portal should load');
   assert.match(portalPage.body, /重庆AI创享俱乐部 \| 在重庆，做AI/);
-  assert.match(portalPage.body, /href=["']\/member["'][^>]*>会员中心</);
+  assertNavigationLink(portalPage.body, '/member', '会员中心', 'homepage should retain its member center link');
   assert.equal(portalPage.response.headers.get('x-powered-by'), null, 'server signature should be hidden');
+
+  for (const asset of ['/home-i18n.js', '/home-language.js']) {
+    const result = await request(baseUrl, asset);
+    assert.equal(result.response.status, 200, `homepage language asset should load: ${asset}`);
+    assert.match(result.response.headers.get('content-type') || '', /^text\/javascript\b/,
+      `homepage language asset should use a JavaScript content type: ${asset}`);
+  }
 
   const portalImage = await request(baseUrl, '/images/logo-nav.png');
   assert.equal(portalImage.response.status, 200, 'official portal assets should load');
   assert.match(portalImage.response.headers.get('content-type') || '', /image\/png/);
 
-  const applicationPage = await request(baseUrl, '/apply/');
-  assert.equal(applicationPage.response.status, 200, 'member application page should load');
-  assert.match(applicationPage.body, /重庆AI创享俱乐部 入会申请/);
-  assert.match(applicationPage.body, /rel=["']icon["'][^>]+href=["']\/images\/logo-nav\.png["']/);
-  assert.match(applicationPage.body, /href=["']\/["']>← 返回俱乐部官网/);
+  for (const legacyPath of ['/apply', '/apply/', '/apply/index.html', '/apply.html']) {
+    const applicationPage = await request(baseUrl, legacyPath, { redirect: 'manual' });
+    assert.equal(applicationPage.response.status, 307, `legacy application should redirect: ${legacyPath}`);
+    assert.equal(applicationPage.response.headers.get('location'), '/member/dashboard/application');
+    assert.doesNotMatch(applicationPage.body, /aiClubForm/, 'legacy application form must not be served');
+  }
+  for (const pathname of ['/member/dashboard/application', '/member/dashboard/application/']) {
+    const applicationPage = await request(baseUrl, pathname, { redirect: 'manual' });
+    assert.equal(applicationPage.response.status, 307, 'anonymous application access should enter the login flow');
+    const location = new URL(applicationPage.response.headers.get('location'), baseUrl);
+    assert.equal(location.pathname, '/member/login');
+    assert.equal(location.searchParams.get('returnTo'), '/member/dashboard/application');
+  }
+  const forgedApplicationReturn = await request(baseUrl, '/member/dashboard/profile', {
+    redirect: 'manual',
+    headers: { 'x-cqai-member-return-to': '/member/dashboard/application' }
+  });
+  assert.equal(forgedApplicationReturn.response.status, 307);
+  assert.equal(new URL(forgedApplicationReturn.response.headers.get('location'), baseUrl).pathname, '/member/sign-in',
+    'a browser-supplied return header must not affect other member pages');
 
-  const collectionPage = await request(baseUrl, '/collect/?type=project');
-  assert.equal(collectionPage.response.status, 200, 'project collection page should load');
-  assert.match(collectionPage.body, /name:\s*["']projectCover["']/);
-  assert.match(collectionPage.body, /markdown-it\.min\.js/);
-  assert.match(collectionPage.body, /easymde\.min\.js/);
-  assert.match(collectionPage.body, /new window\.EasyMDE/);
+  for (const pathname of ['/collect', '/collect/', '/collect/index.html', '/collect.html', '/collect/?type=project']) {
+    const legacyCollection = await request(baseUrl, pathname, { redirect: 'manual' });
+    assert.equal(legacyCollection.response.status, 307, 'legacy collection links should redirect to the member center');
+    assert.equal(legacyCollection.response.headers.get('location'), '/member/dashboard/project-submission');
+  }
+  for (const pathname of ['/member/dashboard/project-submission', '/member/dashboard/project-submission/']) {
+    const collectionPage = await request(baseUrl, pathname, { redirect: 'manual' });
+    assert.equal(collectionPage.response.status, 307, 'anonymous project submission access must enter login');
+    const location = new URL(collectionPage.response.headers.get('location'), baseUrl);
+    assert.equal(location.pathname, '/member/login');
+    assert.equal(location.searchParams.get('returnTo'), '/member/dashboard/project-submission');
+  }
+  for (const endpoint of ['/api/collection-submissions', '/member/api/project-submissions']) {
+    const anonymousSubmission = await request(baseUrl, endpoint, {
+      method: 'POST', headers: { 'content-type': 'application/json', origin: baseUrl },
+      body: JSON.stringify({ type: 'project' }),
+    });
+    assert.equal(anonymousSubmission.response.status, 401, 'anonymous users cannot submit projects through either endpoint');
+  }
+  const anonymousProjectList = await request(baseUrl, '/member/api/project-submissions');
+  assert.equal(anonymousProjectList.response.status, 401, 'project status lists require login');
+  assert.match(anonymousProjectList.response.headers.get('cache-control'), /no-store/);
   const markdownEditorAsset = await request(baseUrl, '/collect/assets/easymde.min.js');
   assert.equal(markdownEditorAsset.response.status, 200, 'project Markdown editor asset should load');
   const markdownEditorStyles = await request(baseUrl, '/collect/assets/easymde.min.css');
@@ -542,48 +671,169 @@ const main = async () => {
     title: '测试工程师',
     orgType: '其他',
     orgTypeOther: '自动化测试',
-    provideRes: ['技术能力'],
+    provideRes: ['AI技术/算法能力'],
     provideResOther: '',
-    needRes: ['行业交流'],
+    needRes: ['技术合伙人/开发团队'],
     needResOther: '',
-    purpose: '资源链接',
+    purpose: '拓展人脉/寻找合作机会',
     purposeOther: '',
-    events: ['技术分享'],
+    events: ['AI技术沙龙/讲座'],
     eventsOther: '',
-    timePref: '周末',
-    city: '重庆',
+    timePref: '周六下午',
+    city: '重庆主城',
     cityOther: '',
-    roleIntent: '普通会员',
+    roleIntent: '暂时不考虑',
     bio: '仅用于自动化测试',
-    privacy: '同意俱乐部内部使用'
+    privacy: '暂不公开'
   };
 
-  const incompleteSubmission = await request(baseUrl, '/api/apply', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ ...application, events: [] })
+  const memberAuthorization = { authorization: `Bearer ${ciAuthenticatedToken}` };
+  let applicationRequestIndex = 1;
+  const applicationHeaders = (identity = memberAuthorization) => ({
+    ...identity,
+    origin: baseUrl,
+    'content-type': 'application/json',
+    // Independent validation scenarios use separate simulated client IPs.
+    'x-real-ip': `192.0.2.${applicationRequestIndex++}`
   });
-  assert.equal(incompleteSubmission.response.status, 400, 'incomplete application should be rejected');
+  for (const pathname of ['/member/api/application', '/api/apply']) {
+    const anonymousSubmission = await request(baseUrl, pathname, {
+      method: 'POST', headers: applicationHeaders({}), body: JSON.stringify(application)
+    });
+    assert.equal(anonymousSubmission.response.status, 401, 'both application intake paths require login');
+    assert.equal(JSON.parse(anonymousSubmission.body).code, 'UNAUTHORIZED');
+  }
+  const anonymousApplication = await request(baseUrl, '/member/api/application');
+  assert.equal(anonymousApplication.response.status, 401);
+  const forgedApplicationToken = await request(baseUrl, '/member/api/application', {
+    headers: { authorization: `Bearer ${randomBytes(32).toString('hex')}` }
+  });
+  assert.equal(forgedApplicationToken.response.status, 401, 'arbitrary bearer tokens cannot establish a member session');
+  const emptyApplication = await request(baseUrl, '/member/api/application', { headers: memberAuthorization });
+  assert.equal(emptyApplication.response.status, 200);
+  assert.deepEqual(JSON.parse(emptyApplication.body), { application: null });
+  assert.equal(emptyApplication.response.headers.get('cache-control'), 'no-store');
 
-  const submission = await request(baseUrl, '/api/apply', {
+  const missingOriginHeaders = applicationHeaders();
+  delete missingOriginHeaders.origin;
+  for (const headers of [missingOriginHeaders, { ...applicationHeaders(), origin: 'https://untrusted.example.invalid' }]) {
+    const rejected = await request(baseUrl, '/member/api/application', {
+      method: 'POST', headers, body: JSON.stringify(application)
+    });
+    assert.equal(rejected.response.status, 403, 'cookie-authenticated writes must require a trusted origin');
+    assert.equal(JSON.parse(rejected.body).code, 'INVALID_ORIGIN');
+  }
+  const plainTextApplication = await request(baseUrl, '/api/apply', {
+    method: 'POST', headers: { ...applicationHeaders(), 'content-type': 'text/plain' }, body: JSON.stringify(application)
+  });
+  assert.equal(plainTextApplication.response.status, 415, 'legacy intake must reject form-compatible content types');
+  for (const [changes, field] of [
+    [{ events: [] }, 'events'],
+    [{ needRes: ['潜在客户', '技术合伙人/开发团队', '投资人/融资渠道', '行业专家/导师'] }, 'needRes'],
+    [{ orgTypeOther: '' }, 'orgTypeOther'],
+    [{ roleIntent: '普通会员' }, 'roleIntent'],
+    [{ bio: '字'.repeat(101) }, 'bio'],
+    [{ phone: '123456' }, 'phone'],
+    [{ email: 'invalid-email' }, 'email'],
+    [{ provideRes: ['资金/投资', '资金/投资'] }, 'provideRes'],
+  ]) {
+    const incompleteSubmission = await request(baseUrl, '/member/api/application', {
+      method: 'POST', headers: applicationHeaders(), body: JSON.stringify({ ...application, ...changes })
+    });
+    assert.equal(incompleteSubmission.response.status, 400, `invalid application should be rejected: ${field}`);
+    assert.equal(JSON.parse(incompleteSubmission.body).code, 'VALIDATION_ERROR');
+    assert.equal(JSON.parse(incompleteSubmission.body).field, field);
+  }
+
+  const submission = await request(baseUrl, '/member/api/application', {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(application)
+    headers: applicationHeaders(),
+    body: JSON.stringify({ ...application, userIssuer: 'forged-issuer', userSub: 'ci-editor', isHighValue: true })
   });
   assert.equal(submission.response.status, 201, `application should be accepted: ${submission.body}`);
+  assert.equal(submission.response.headers.get('cache-control'), 'no-store');
+  const savedApplication = JSON.parse(submission.body).application;
+  assert.ok(savedApplication.id);
+  assert.match(savedApplication.createdAt, /^\d{4}-\d{2}-\d{2}T/);
+  for (const [key, value] of Object.entries(application)) assert.deepEqual(savedApplication[key], value);
+  assert.deepEqual(Object.keys(savedApplication).sort(), [...Object.keys(application), 'id', 'createdAt', 'reviewStatus', 'reviewNote', 'membershipState', 'membershipActive'].sort(),
+    'member DTO must contain only the submitted fields and public application metadata');
+  assert.equal(savedApplication.reviewStatus, 'pending');
+  assert.equal(savedApplication.membershipState, 'none');
+  assert.equal(savedApplication.membershipActive, null);
+  assert.equal(Object.hasOwn(JSON.parse(submission.body), 'isHighValue'), false, 'intake must not expose internal scoring');
+  const ownApplication = await request(baseUrl, '/member/api/application', { headers: memberAuthorization });
+  assert.equal(ownApplication.response.headers.get('cache-control'), 'no-store');
+  assert.deepEqual(JSON.parse(ownApplication.body), { application: savedApplication });
+  for (const privateField of ['ipAddress', 'isHighValue', 'userIssuer', 'userSub']) {
+    assert.equal(Object.hasOwn(JSON.parse(ownApplication.body).application, privateField), false, `private member metadata must stay server-side: ${privateField}`);
+  }
+  const otherApplication = await request(baseUrl, '/member/api/application?userSub=ci-member', { headers: editorAuthorization });
+  assert.deepEqual(JSON.parse(otherApplication.body), { application: null }, 'identity parameters cannot read another account application');
 
   const duplicateSubmission = await request(baseUrl, '/api/apply', {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(application)
+    headers: applicationHeaders(),
+    body: JSON.stringify({ ...application, phone: '19900000001' })
   });
-  assert.equal(duplicateSubmission.response.status, 400, 'duplicate phone should be rejected');
+  assert.equal(duplicateSubmission.response.status, 409, 'an account must not submit again with a different phone');
+  assert.equal(JSON.parse(duplicateSubmission.body).code, 'ALREADY_SUBMITTED');
+  const reusedPhone = await request(baseUrl, '/member/api/application', {
+    method: 'POST', headers: applicationHeaders(editorAuthorization), body: JSON.stringify(application)
+  });
+  assert.equal(reusedPhone.response.status, 409, 'a different account cannot reuse a submitted phone');
+  assert.equal(JSON.parse(reusedPhone.body).code, 'PHONE_ALREADY_USED');
+  assert.deepEqual(JSON.parse((await request(baseUrl, '/member/api/application', { headers: editorAuthorization })).body),
+    { application: null }, 'phone conflicts must not bind another account to the existing row');
+
+  const inspectionClient = new PrismaClient({ datasources: { db: { url: env.DATABASE_URL } } });
+  try {
+    const stored = await inspectionClient.memberApplication.findUnique({ where: { id: savedApplication.id } });
+    assert.equal(stored.userIssuer, 'ci');
+    assert.equal(stored.userSub, 'ci-member', 'server session identity must override all user-supplied identity fields');
+    assert.equal(stored.isHighValue, false, 'internal scoring must still be computed from validated resource choices');
+    const legacy = await inspectionClient.memberApplication.findUnique({ where: { id: 'legacy-member-application' } });
+    assert.ok(legacy, 'the pre-migration historical application must still exist');
+    const legacyConflict = await request(baseUrl, '/member/api/application', {
+      method: 'POST', headers: applicationHeaders(editorAuthorization), body: JSON.stringify({ ...application, phone: legacy.phone })
+    });
+    assert.equal(legacyConflict.response.status, 409);
+    assert.equal(JSON.parse(legacyConflict.body).code, 'PHONE_ALREADY_USED');
+    const unchangedLegacy = await inspectionClient.memberApplication.findUnique({ where: { id: legacy.id } });
+    assert.equal(unchangedLegacy.userIssuer, null);
+    assert.equal(unchangedLegacy.userSub, null, 'unbound legacy rows must not be claimed by entering their phone');
+    await inspectionClient.memberApplication.delete({ where: { id: legacy.id } });
+  } finally {
+    await inspectionClient.$disconnect();
+  }
+
+  const secondApplicationPayload = { ...application, name: 'CI 第二个账号', phone: '19900000003', provideRes: ['资金/投资'] };
+  const concurrentSubmissions = await Promise.all([
+    request(baseUrl, '/api/apply', { method: 'POST', headers: applicationHeaders(editorAuthorization), body: JSON.stringify(secondApplicationPayload) }),
+    request(baseUrl, '/member/api/application', { method: 'POST', headers: applicationHeaders(editorAuthorization), body: JSON.stringify(secondApplicationPayload) }),
+  ]);
+  assert.deepEqual(concurrentSubmissions.map(result => result.response.status).sort(), [201, 409],
+    'concurrent legacy and canonical submissions must create exactly one account application');
+  assert.equal(JSON.parse(concurrentSubmissions.find(result => result.response.status === 409).body).code, 'ALREADY_SUBMITTED');
+  const secondApplication = JSON.parse((await request(baseUrl, '/member/api/application', { headers: editorAuthorization })).body).application;
+  assert.equal(secondApplication.phone, secondApplicationPayload.phone);
+  assert.notEqual(secondApplication.id, savedApplication.id);
+  assert.equal(JSON.parse((await request(baseUrl, '/member/api/application', { headers: memberAuthorization })).body).application.id, savedApplication.id,
+    'other-account writes must not change the current account application');
+  const scoringClient = new PrismaClient({ datasources: { db: { url: env.DATABASE_URL } } });
+  try {
+    const secondStored = await scoringClient.memberApplication.findUnique({ where: { id: secondApplication.id } });
+    assert.equal(secondStored.isHighValue, true, 'validated funding/investment resources should retain the original internal high-value rule');
+    assert.equal(secondStored.userSub, 'ci-editor');
+  } finally {
+    await scoringClient.$disconnect();
+  }
 
   const members = await request(baseUrl, '/api/admin/members?limit=10', { headers: authorization });
   assert.equal(members.response.status, 200, `member query should succeed: ${members.body}`);
   const membersPayload = JSON.parse(members.body);
-  assert.equal(membersPayload.total, 1, 'member query should return the submitted application');
-  assert.equal(membersPayload.data[0].phone, application.phone);
+  assert.equal(membersPayload.total, 2, 'member query should return both account-bound applications');
+  assert.ok(membersPayload.data.some(item => item.phone === application.phone));
 
   const boundedMembers = await request(baseUrl, '/api/admin/members?page=-1&limit=1000', {
     headers: authorization
@@ -629,9 +879,29 @@ const main = async () => {
   `)).png().toBuffer();
   assert.ok(coverBytes.length <= 5 * 1024 * 1024, 'real project cover fixture should fit the upload limit');
   collectionForm.append('projectCover', new Blob([coverBytes], { type: 'image/png' }), 'ci-project-cover.unexpected');
-  const collectionSubmission = await request(baseUrl, '/api/collection-submissions', {
+  for (const endpoint of ['/api/collection-submissions', '/member/api/project-submissions']) {
+    for (const origin of [null, 'https://untrusted.example.invalid']) {
+      const rejectedOrigin = await request(baseUrl, endpoint, {
+        method: 'POST',
+        headers: { ...memberAuthorization, ...(origin ? { origin } : {}), 'content-type': 'application/json' },
+        body: JSON.stringify(collectionApplication),
+      });
+      assert.equal(rejectedOrigin.response.status, 403, 'project submissions require a trusted origin on both endpoints');
+    }
+    for (const type of ['member', 'enterprise']) {
+      const rejectedType = await request(baseUrl, endpoint, {
+        method: 'POST', headers: { ...memberAuthorization, origin: baseUrl, 'content-type': 'application/json' },
+        body: JSON.stringify({ type }),
+      });
+      assert.equal(rejectedType.response.status, 400, 'member collection only accepts AI projects');
+    }
+  }
+  collectionForm.append('userSub', 'forged-owner');
+  collectionForm.append('userIssuer', 'forged-issuer');
+  const collectionSubmission = await request(baseUrl, '/member/api/project-submissions', {
     method: 'POST',
     headers: {
+      ...memberAuthorization, origin: baseUrl,
       'x-forwarded-for': '203.0.113.66',
       'x-real-ip': '198.51.100.42'
     },
@@ -639,6 +909,17 @@ const main = async () => {
   });
   assert.equal(collectionSubmission.response.status, 201, `collection submission should be accepted: ${collectionSubmission.body}`);
   const collectionId = JSON.parse(collectionSubmission.body).id;
+  const projectInspectionClient = new PrismaClient({ datasources: { db: { url: env.DATABASE_URL } } });
+  try {
+    const storedProjectSubmission = await projectInspectionClient.collectionSubmission.findUniqueOrThrow({ where: { id: collectionId } });
+    const storedIdentity = JSON.parse(storedProjectSubmission.payloadJson);
+    assert.equal(storedIdentity.userSub, 'ci-member', 'project submission owner must come from the server session');
+    assert.equal(storedIdentity.userIssuer, 'ci', 'submitted identity cannot override the authenticated issuer');
+    assert.equal(storedProjectSubmission.userSub, 'ci-member');
+    assert.equal(storedProjectSubmission.userIssuer, 'ci', 'account ownership must be persisted independently of the client payload');
+  } finally {
+    await projectInspectionClient.$disconnect();
+  }
   assert.ok(collectionId, 'collection submission should return an id');
 
   const collectionList = await request(baseUrl, '/api/admin/collection-submissions?limit=10', {
@@ -646,8 +927,143 @@ const main = async () => {
   });
   assert.equal(collectionList.response.status, 200, `collection query should succeed: ${collectionList.body}`);
   const collectionListPayload = JSON.parse(collectionList.body);
-  assert.equal(collectionListPayload.total, 1, 'collection query should return the submitted project');
+  assert.equal(collectionListPayload.total, 2, 'collection query should preserve legacy and new projects');
   assert.equal(collectionListPayload.data[0].id, collectionId);
+
+  const getOwnProjects = async () => {
+    const result = await request(baseUrl, '/member/api/project-submissions', { headers: memberAuthorization });
+    assert.equal(result.response.status, 200, `member project list should load: ${result.body}`);
+    assert.match(result.response.headers.get('cache-control'), /private.*no-store/);
+    return JSON.parse(result.body).data;
+  };
+  assert.deepEqual((await getOwnProjects()).map(item => item.id), [collectionId], 'legacy client identity must not grant ownership');
+  const immediateSubmission = JSON.parse(collectionSubmission.body).submission;
+  assert.equal(immediateSubmission.name, collectionApplication.projectName);
+  assert.equal(immediateSubmission.reviewStatus, 'new', 'successful submissions must immediately provide their status');
+  assert.equal(immediateSubmission.publicUrl, null);
+  assert.equal(immediateSubmission.editable, true, 'pending submissions must offer editing');
+  assert.ok(immediateSubmission.coverUrl, 'uploaded covers must appear immediately on project cards');
+  assert.equal((await getOwnProjects())[0].coverUrl, immediateSubmission.coverUrl, 'persisted project cards must include the private cover URL');
+
+  const secondSubmission = await request(baseUrl, '/member/api/project-submissions', {
+    method: 'POST', headers: { ...memberAuthorization, origin: baseUrl, 'content-type': 'application/json' },
+    body: JSON.stringify({ ...collectionApplication, projectName: 'CI Second Member Project' }),
+  });
+  assert.equal(secondSubmission.response.status, 201, 'one member must be able to submit multiple projects');
+  const secondCollectionId = JSON.parse(secondSubmission.body).id;
+  assert.equal(JSON.parse(secondSubmission.body).submission.coverUrl, null, 'projects without images must not get a cover placeholder');
+  const ownProjects = await getOwnProjects();
+  assert.deepEqual(ownProjects.map(item => item.id), [secondCollectionId, collectionId], 'member lists must persist all projects with newest first');
+  assert.equal('payloadJson' in ownProjects[0], false);
+  assert.equal('contact' in ownProjects[0], false, 'list responses should expose only the project summary and statuses');
+
+  const otherMemberList = await request(baseUrl, '/member/api/project-submissions?userIssuer=ci&userSub=ci-member', { headers: editorAuthorization });
+  assert.deepEqual(JSON.parse(otherMemberList.body).data, [], 'query parameters must not let another member read these projects');
+  const isolationClient = new PrismaClient({ datasources: { db: { url: env.DATABASE_URL } } });
+  try {
+    await isolationClient.collectionSubmission.create({ data: {
+      type: 'project', displayName: 'Other issuer project', contact: 'private', payloadJson: '{}',
+      userIssuer: 'other-issuer', userSub: 'ci-member',
+    } });
+  } finally { await isolationClient.$disconnect(); }
+  assert.equal((await getOwnProjects()).length, 2, 'matching subjects from different issuers must remain isolated');
+  const getEditDetail = async id => {
+    const result = await request(baseUrl, `/member/api/project-submissions/${id}`, { headers: memberAuthorization });
+    assert.equal(result.response.status, 200, `pending project details should load: ${result.body}`);
+    assert.match(result.response.headers.get('cache-control'), /private.*no-store/);
+    return JSON.parse(result.body);
+  };
+  const editDetail = await getEditDetail(secondCollectionId);
+  assert.equal(editDetail.fields.projectBio, collectionApplication.projectBio, 'editing must prefill Markdown exactly');
+  assert.equal(editDetail.fields.projectContact, collectionApplication.projectContact);
+  assert.equal(editDetail.consent, true);
+  const coveredDetail = await getEditDetail(collectionId);
+  assert.ok(coveredDetail.coverUrl, 'editing must preview the original private cover');
+  assert.equal((await requestBuffer(baseUrl, coveredDetail.coverUrl, { headers: memberAuthorization })).response.status, 200);
+  for (const pathname of [`/member/api/project-submissions/${collectionId}`, coveredDetail.coverUrl]) {
+    assert.equal((await request(baseUrl, pathname)).response.status, 401, 'anonymous users cannot read private project details or covers');
+    assert.equal((await request(baseUrl, pathname, { headers: editorAuthorization })).response.status, 404, 'other accounts cannot read private project details or covers');
+  }
+  const editBody = { ...collectionApplication, projectName: 'CI Edited Member Project', expectedUpdatedAt: editDetail.updatedAt };
+  for (const [headers, expectedStatus] of [
+    [{ origin: baseUrl }, 401],
+    [{ ...memberAuthorization, origin: 'https://untrusted.example.invalid' }, 403],
+    [editorAuthorization, 403],
+    [{ ...editorAuthorization, origin: baseUrl }, 404],
+  ]) {
+    const deniedEdit = await request(baseUrl, `/member/api/project-submissions/${secondCollectionId}`, {
+      method: 'PATCH', headers: { ...headers, 'content-type': 'application/json' }, body: JSON.stringify(editBody),
+    });
+    assert.equal(deniedEdit.response.status, expectedStatus, 'project editing must enforce login, trusted origin and account ownership');
+  }
+  const invalidEdit = await request(baseUrl, `/member/api/project-submissions/${secondCollectionId}`, {
+    method: 'PATCH', headers: { ...memberAuthorization, origin: baseUrl, 'content-type': 'application/json' },
+    body: JSON.stringify({ ...editBody, projectBio: '' }),
+  });
+  assert.equal(invalidEdit.response.status, 400, 'invalid edits must preserve the original project');
+  const edited = await request(baseUrl, `/member/api/project-submissions/${secondCollectionId}`, {
+    method: 'PATCH', headers: { ...memberAuthorization, origin: baseUrl, 'content-type': 'application/json' }, body: JSON.stringify(editBody),
+  });
+  assert.equal(edited.response.status, 200, `pending project edits should save: ${edited.body}`);
+  assert.equal(JSON.parse(edited.body).submission.id, secondCollectionId, 'saving an edit must update the original submission');
+  assert.equal(JSON.parse(edited.body).submission.reviewStatus, 'new', 'editing must keep the project pending review');
+  assert.equal((await getOwnProjects()).length, 2, 'editing must not create a duplicate project');
+  assert.equal((await getEditDetail(secondCollectionId)).fields.projectName, editBody.projectName);
+  const staleEdit = await request(baseUrl, `/member/api/project-submissions/${secondCollectionId}`, {
+    method: 'PATCH', headers: { ...memberAuthorization, origin: baseUrl, 'content-type': 'application/json' }, body: JSON.stringify(editBody),
+  });
+  assert.equal(staleEdit.response.status, 409, 'a stale editor must not overwrite a newer revision');
+  const latestDetail = await getEditDetail(secondCollectionId);
+  const concurrentEdits = await Promise.all(['First writer', 'Second writer'].map(oneLine => request(baseUrl, `/member/api/project-submissions/${secondCollectionId}`, {
+    method: 'PATCH', headers: { ...memberAuthorization, origin: baseUrl, 'content-type': 'application/json' },
+    body: JSON.stringify({ ...editBody, oneLine, expectedUpdatedAt: latestDetail.updatedAt }),
+  })));
+  assert.deepEqual(concurrentEdits.map(result => result.response.status).sort(), [200, 409], 'exactly one concurrent edit may commit against the same revision');
+
+  const coverEdit = new FormData();
+  for (const [key, value] of Object.entries({ ...editBody, expectedUpdatedAt: (await getEditDetail(secondCollectionId)).updatedAt })) coverEdit.append(key, value);
+  coverEdit.append('projectCover', new Blob([coverBytes], { type: 'image/png' }), 'edited-cover.png');
+  const addedCover = await request(baseUrl, `/member/api/project-submissions/${secondCollectionId}`, { method: 'PATCH', headers: { ...memberAuthorization, origin: baseUrl }, body: coverEdit });
+  assert.equal(addedCover.response.status, 200, 'editing can add a cover');
+  const detailWithCover = await getEditDetail(secondCollectionId);
+  assert.ok(detailWithCover.coverUrl);
+  await assertNormalizedProjectCover(await requestBuffer(baseUrl, detailWithCover.coverUrl, { headers: memberAuthorization }), 'edited member cover');
+  const textOnlyEdit = await request(baseUrl, `/member/api/project-submissions/${secondCollectionId}`, {
+    method: 'PATCH', headers: { ...memberAuthorization, origin: baseUrl, 'content-type': 'application/json' },
+    body: JSON.stringify({ ...editBody, expectedUpdatedAt: detailWithCover.updatedAt }),
+  });
+  assert.equal(textOnlyEdit.response.status, 200);
+  assert.ok((await getEditDetail(secondCollectionId)).coverUrl, 'text-only edits must preserve the stored cover');
+  const replacementForm = new FormData();
+  for (const [key, value] of Object.entries({ ...editBody, expectedUpdatedAt: (await getEditDetail(secondCollectionId)).updatedAt })) replacementForm.append(key, value);
+  replacementForm.append('projectCover', new Blob([coverBytes], { type: 'image/png' }), 'replacement-cover.png');
+  const replacedCover = await request(baseUrl, `/member/api/project-submissions/${secondCollectionId}`, { method: 'PATCH', headers: { ...memberAuthorization, origin: baseUrl }, body: replacementForm });
+  assert.equal(replacedCover.response.status, 200);
+  const replacedDetail = await getEditDetail(secondCollectionId);
+  assert.equal(replacedDetail.coverName, 'replacement-cover.png');
+  const removeCover = await request(baseUrl, `/member/api/project-submissions/${secondCollectionId}`, {
+    method: 'PATCH', headers: { ...memberAuthorization, origin: baseUrl, 'content-type': 'application/json' },
+    body: JSON.stringify({ ...editBody, expectedUpdatedAt: replacedDetail.updatedAt, removeCover: 'true' }),
+  });
+  assert.equal(removeCover.response.status, 200);
+  assert.equal((await getEditDetail(secondCollectionId)).coverUrl, null, 'editing can explicitly remove the cover');
+  assert.equal(JSON.parse(removeCover.body).submission.coverUrl, null, 'removing a cover must also update the project card');
+  assert.equal((await requestBuffer(baseUrl, replacedDetail.coverUrl, { headers: memberAuthorization })).response.status, 404);
+
+  for (const status of ['reviewing', 'rejected']) {
+    const updated = await request(baseUrl, `/api/admin/collection-submissions/${secondCollectionId}/status`, {
+      method: 'PATCH', headers: { ...authorization, 'content-type': 'application/json' }, body: JSON.stringify({ status }),
+    });
+    assert.equal(updated.response.status, 200);
+    assert.equal((await getOwnProjects()).find(item => item.id === secondCollectionId).reviewStatus, status, 'refreshed member status must reflect administrator review decisions');
+    assert.equal((await getOwnProjects()).find(item => item.id === secondCollectionId).editable, false);
+    assert.equal((await request(baseUrl, `/member/api/project-submissions/${secondCollectionId}`, { headers: memberAuthorization })).response.status, 409, 'projects that have entered review cannot open an editor');
+    const lockedEdit = await request(baseUrl, `/member/api/project-submissions/${secondCollectionId}`, {
+      method: 'PATCH', headers: { ...memberAuthorization, origin: baseUrl, 'content-type': 'application/json' },
+      body: JSON.stringify({ ...editBody, expectedUpdatedAt: JSON.parse(removeCover.body).submission.updatedAt }),
+    });
+    assert.equal(lockedEdit.response.status, 409, 'an editor opened before review must be refused at save time');
+  }
 
   const collectionDetail = await request(baseUrl, `/api/admin/collection-submissions/${collectionId}`, {
     headers: authorization
@@ -688,6 +1104,7 @@ const main = async () => {
   });
   assert.equal(collectionStatus.response.status, 200, 'collection status should update');
   assert.equal(JSON.parse(collectionStatus.body).status, 'approved');
+  assert.equal((await getOwnProjects()).find(item => item.id === collectionId).reviewStatus, 'approved');
 
   const concurrentImports = await Promise.all([
     request(
@@ -724,6 +1141,9 @@ const main = async () => {
   assert.ok(importedPayload.project.coverSize <= 5 * 1024 * 1024);
   const importedProjectId = importedPayload.project.id;
   const importedProjectSlug = importedPayload.project.slug;
+  const memberDraft = (await getOwnProjects()).find(item => item.id === collectionId);
+  assert.equal(memberDraft.publicationStatus, 'draft');
+  assert.equal(memberDraft.publicUrl, null, 'private drafts must not offer a public project link');
   const importedAdminCover = await requestBuffer(
     baseUrl,
     `/api/admin/projects/${importedProjectId}/cover`,
@@ -786,6 +1206,7 @@ const main = async () => {
   });
   assert.equal(submittedForReview.response.status, 200, 'editor should submit a complete project for review');
   assert.equal(JSON.parse(submittedForReview.body).status, 'pending_review');
+  assert.equal((await getOwnProjects()).find(item => item.id === collectionId).publicationStatus, 'pending_review');
   assert.equal((await request(baseUrl, `/api/projects/${importedProjectSlug}`)).response.status, 404);
   const editorPublishImported = await request(baseUrl, `/api/admin/projects/${importedProjectId}/status`, {
     method: 'PATCH',
@@ -801,6 +1222,10 @@ const main = async () => {
   });
   assert.equal(publishProject.response.status, 200, `complete project should publish: ${publishProject.body}`);
   assert.equal(JSON.parse(publishProject.body).reviewedBy, 'ci-super-admin');
+  const memberPublished = (await getOwnProjects()).find(item => item.id === collectionId);
+  assert.equal(memberPublished.reviewStatus, 'approved');
+  assert.equal(memberPublished.publicationStatus, 'published');
+  assert.equal(memberPublished.publicUrl, `/projects/${importedProjectSlug}/`);
 
   const visibleProject = await request(baseUrl, `/api/projects/${importedProjectSlug}`);
   assert.equal(visibleProject.response.status, 200, 'published project should become public');
@@ -940,6 +1365,9 @@ const main = async () => {
     body: JSON.stringify({ status: 'unpublished' })
   });
   assert.equal(unpublishProject.response.status, 200, 'published project should be removable from public view');
+  const memberUnpublished = (await getOwnProjects()).find(item => item.id === collectionId);
+  assert.equal(memberUnpublished.publicationStatus, 'unpublished');
+  assert.equal(memberUnpublished.publicUrl, null, 'unlisted projects must lose their public link in the member center');
   assert.equal(JSON.parse(unpublishProject.body).reviewedAt, null, 'unpublished content must require another final review');
   assert.equal((await request(baseUrl, `/api/projects/${importedProjectSlug}`)).response.status, 404, 'unpublished detail must be hidden');
   assert.equal((await request(baseUrl, `/api/projects/${importedProjectSlug}/cover`)).response.status, 404, 'unpublished cover must be hidden');
@@ -965,5 +1393,6 @@ main()
   })
   .finally(async () => {
     await stopApplication();
+    if (membershipMock) await membershipMock.close();
     fs.rmSync(tempDirectory, { recursive: true, force: true });
   });

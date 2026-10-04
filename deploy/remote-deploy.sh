@@ -176,7 +176,8 @@ candidate_ready=false
 for _ in $(seq 1 60); do
   if curl -fsS "http://127.0.0.1:$candidate_port/api/health" >/dev/null \
     && url_contains "http://127.0.0.1:$candidate_port/" '重庆AI创享俱乐部' \
-    && url_contains "http://127.0.0.1:$candidate_port/apply/" '入会申请' \
+    && url_redirects_to "http://127.0.0.1:$candidate_port/apply/" '/member/dashboard/application' \
+    && url_redirects_to "http://127.0.0.1:$candidate_port/collect/" '/member/dashboard/project-submission' \
     && url_contains "http://127.0.0.1:$candidate_port/projects/" '项目广场' \
     && project_endpoints_are_healthy "http://127.0.0.1:$candidate_port" \
     && url_redirects_to "http://127.0.0.1:$candidate_port/admin/" '/member/dashboard/admin/members' \
@@ -281,7 +282,8 @@ production_ready=false
 for _ in $(seq 1 60); do
   if curl -fsS http://127.0.0.1:3000/api/health >/dev/null \
     && url_contains http://127.0.0.1:3000/ '重庆AI创享俱乐部' \
-    && url_contains http://127.0.0.1:3000/apply/ '入会申请' \
+    && url_redirects_to http://127.0.0.1:3000/apply/ '/member/dashboard/application' \
+    && url_redirects_to http://127.0.0.1:3000/collect/ '/member/dashboard/project-submission' \
     && url_contains http://127.0.0.1:3000/projects/ '项目广场' \
     && project_endpoints_are_healthy http://127.0.0.1:3000 \
     && url_redirects_to http://127.0.0.1:3000/admin/ '/member/dashboard/admin/members' \

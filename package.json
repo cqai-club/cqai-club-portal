@@ -15,7 +15,9 @@
     "test:deployment": "node scripts/deployment-safety-test.js",
     "test:activities": "node scripts/activity-smoke-test.js",
     "test:plugin-submissions": "node scripts/plugin-submission-smoke-test.js",
-    "test": "npm run build && npm run test:deployment && node scripts/ci-smoke-test.js && npm run test:activities && npm run test:plugin-submissions"
+    "test:resources": "node scripts/member-resources-smoke-test.js",
+    "test": "npm run build && npm run test:deployment && node scripts/ci-smoke-test.js && npm run test:activities && npm run test:plugin-submissions && npm run test:resources && npm run test:member-organizations",
+    "test:member-organizations": "node scripts/member-organizations-smoke-test.js"
   },
   "dependencies": {
     "@logto/api": "^1.43.0",
