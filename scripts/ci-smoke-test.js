@@ -638,12 +638,19 @@ const main = async () => {
   const publishedPayload = JSON.parse(publishedCatalog.body);
   assert.equal(publishedPayload.items.length, 1, 'published plugin should be discoverable');
   assert.equal(publishedPayload.items[0].package.name, pluginPayload.packageName);
+  assert.equal(publishedPayload.items[0].description, '## Plugin detail - Markdown list item');
+  assert.doesNotMatch(publishedPayload.items[0].description,
+    /[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/u,
+    'public catalog descriptions must satisfy the market plain-text contract');
   assert.match(publishedPayload.items[0].media.icon.url, /\/v1\/plugins\/[^/]+\/icon$/);
   assert.equal(publishedPayload.items[0].repository.url, pluginPayload.repositoryUrl);
 
   const pluginList = await request(baseUrl, '/api/admin/plugins?status=published', { headers: authorization });
   assert.equal(pluginList.response.status, 200, 'published plugin admin list should load');
-  assert.equal(JSON.parse(pluginList.body).total, 1);
+  const adminPluginList = JSON.parse(pluginList.body);
+  assert.equal(adminPluginList.total, 1);
+  assert.equal(adminPluginList.data[0].description, pluginPayload.description,
+    'admin descriptions must retain the original Markdown');
 
   const updatedPlugin = await request(baseUrl, `/api/admin/plugins/${draftPluginId}`, {
     method: 'PATCH',
