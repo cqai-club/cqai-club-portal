@@ -125,13 +125,18 @@ export function toCatalogItem(plugin: Plugin, origin: string) {
   const categories = parseJsonArray(plugin.categoriesJson);
   const keywords = parseJsonArray(plugin.keywordsJson);
   const hosts = parseJsonArray(plugin.compatibilityHostsJson);
+  // Catalog v1 requires plain text; keep the original Markdown in admin storage.
+  const description = plugin.description
+    ?.replace(/[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]+/gu, " ")
+    .replace(/ {2,}/gu, " ")
+    .trim();
   const item: Record<string, unknown> = {
     id: plugin.id,
     name: plugin.packageName,
     displayName: plugin.displayName,
     summary: plugin.summary,
     package: { registry: "npm", name: plugin.packageName },
-    ...(plugin.description ? { description: plugin.description } : {}),
+    ...(description ? { description } : {}),
     ...(categories.length ? { categories } : {}),
     ...(keywords.length ? { keywords } : {}),
     ...(plugin.repositoryUrl ? { repository: { url: plugin.repositoryUrl } } : {}),
