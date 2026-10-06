@@ -125,10 +125,13 @@ export function toCatalogItem(plugin: Plugin, origin: string) {
   const categories = parseJsonArray(plugin.categoriesJson);
   const keywords = parseJsonArray(plugin.keywordsJson);
   const hosts = parseJsonArray(plugin.compatibilityHostsJson);
-  // Catalog v1 requires plain text; keep the original Markdown in admin storage.
+  // Catalog v1 forbids ASCII line controls. Preserve Markdown structure with
+  // Unicode line separators; clients restore these to LF before rendering.
+  // Keep indentation and hard-break spaces, and leave admin storage unchanged.
   const description = plugin.description
-    ?.replace(/[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]+/gu, " ")
-    .replace(/ {2,}/gu, " ")
+    ?.replace(/\r\n?|\n/gu, "\u2028")
+    .replace(/\t/gu, "    ")
+    .replace(/[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]+/gu, " ")
     .trim();
   const item: Record<string, unknown> = {
     id: plugin.id,

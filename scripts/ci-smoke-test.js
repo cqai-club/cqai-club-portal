@@ -579,7 +579,7 @@ const main = async () => {
     packageName: 'dsh-plugin-ci-market',
     displayName: 'CI Market Plugin',
     summary: 'A plugin used by the catalog smoke test.',
-    description: '## Plugin detail\n\n- Markdown list item',
+    description: '## Plugin detail\n\n- Markdown `list item`\n  - Nested item\n\nRead [documentation](https://example.invalid/docs).\n\nFirst line  \nSecond line',
     categories: ['testing', 'automation'],
     keywords: ['ci', 'catalog'],
     repositoryUrl: 'https://github.com/example/dsh-plugin-ci-market',
@@ -594,6 +594,14 @@ const main = async () => {
     body: JSON.stringify({ ...pluginPayload, packageName: 'not a package name' })
   });
   assert.equal(invalidPlugin.response.status, 400, 'invalid plugin data should be rejected');
+
+  const invalidPluginDescription = await request(baseUrl, '/api/admin/plugins', {
+    method: 'POST',
+    headers: { ...authorization, 'content-type': 'application/json' },
+    body: JSON.stringify({ ...pluginPayload, description: 'Unsafe\u0000\u0085\u202e\u2066text' })
+  });
+  assert.equal(invalidPluginDescription.response.status, 400,
+    'admin Markdown must reject unsupported control and bidirectional characters');
 
   const draftPlugin = await request(baseUrl, '/api/admin/plugins', {
     method: 'POST',
@@ -638,7 +646,11 @@ const main = async () => {
   const publishedPayload = JSON.parse(publishedCatalog.body);
   assert.equal(publishedPayload.items.length, 1, 'published plugin should be discoverable');
   assert.equal(publishedPayload.items[0].package.name, pluginPayload.packageName);
-  assert.equal(publishedPayload.items[0].description, '## Plugin detail - Markdown list item');
+  const expectedCatalogDescription = '## Plugin detail\u2028\u2028- Markdown `list item`\u2028  - Nested item\u2028\u2028Read [documentation](https://example.invalid/docs).\u2028\u2028First line  \u2028Second line';
+  assert.equal(publishedPayload.items[0].description, expectedCatalogDescription,
+    'public descriptions must preserve Markdown syntax, indentation, blank lines, and hard breaks');
+  assert.equal(publishedPayload.items[0].description.replace(/\u2028/gu, '\n'), pluginPayload.description,
+    'market clients must be able to restore the original Markdown line structure');
   assert.doesNotMatch(publishedPayload.items[0].description,
     /[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/u,
     'public catalog descriptions must satisfy the market plain-text contract');
@@ -651,6 +663,27 @@ const main = async () => {
   assert.equal(adminPluginList.total, 1);
   assert.equal(adminPluginList.data[0].description, pluginPayload.description,
     'admin descriptions must retain the original Markdown');
+
+  // Historical rows may predate input validation. Catalog serialization must
+  // normalize every newline convention while filtering forbidden controls,
+  // without rewriting the stored Markdown itself.
+  const legacyDescription = '## Legacy detail\r\n\r- Item\n\t- Nested\u0000\u0085\u202e\u2066 item';
+  const pluginDb = new PrismaClient({ datasources: { db: { url: env.DATABASE_URL } } });
+  try {
+    await pluginDb.plugin.update({ where: { id: draftPluginId }, data: { description: legacyDescription } });
+  } finally { await pluginDb.$disconnect(); }
+  const legacyCatalog = await request(baseUrl, '/v1/plugins?q=CI%20Market');
+  assert.equal(legacyCatalog.response.status, 200, 'legacy plugin descriptions should remain discoverable');
+  const legacyCatalogDescription = JSON.parse(legacyCatalog.body).items[0].description;
+  assert.equal(legacyCatalogDescription, '## Legacy detail\u2028\u2028- Item\u2028    - Nested  item',
+    'CRLF, CR, LF, and tab indentation must retain their Markdown structure');
+  assert.doesNotMatch(legacyCatalogDescription,
+    /[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/u,
+    'catalog serialization must filter unsupported characters in historical records');
+  const legacyAdminPlugin = await request(baseUrl, `/api/admin/plugins/${draftPluginId}`, { headers: authorization });
+  assert.equal(legacyAdminPlugin.response.status, 200);
+  assert.equal(JSON.parse(legacyAdminPlugin.body).description, legacyDescription,
+    'catalog serialization must not mutate stored admin Markdown');
 
   const updatedPlugin = await request(baseUrl, `/api/admin/plugins/${draftPluginId}`, {
     method: 'PATCH',
