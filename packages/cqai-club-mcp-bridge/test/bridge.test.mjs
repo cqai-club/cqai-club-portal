@@ -109,6 +109,7 @@ test('OAuth uses discovery, PKCE S256, a bound public client and a checked state
   assert.equal(url.searchParams.get('code_challenge_method'), 'S256');
   assert.equal(url.searchParams.get('resource'), f.config.serverUrl);
   assert.equal(url.searchParams.get('state'), oauth.state);
+  assert.deepEqual(url.searchParams.getAll('prompt'), ['consent']);
   const callback = new URL(f.config.redirectUrl);
   callback.searchParams.set('state', oauth.state);
   callback.searchParams.set('code', 'valid-code');
@@ -159,6 +160,7 @@ test('interactive login requests new scopes through PKCE without reusing an old 
   }), 'REDIRECT');
   assert.equal(f.stats.refresh, 0);
   assert.equal(f.state.authorizationUrl.searchParams.get('scope'), 'openid offline_access activity:publish');
+  assert.deepEqual(f.state.authorizationUrl.searchParams.getAll('prompt'), ['consent']);
   assert.equal(await readFile(f.store.path, 'utf8'), originalFile, 'old credentials survive an incomplete login');
   f.state.omitRefreshToken = true;
   await auth(oauth.provider, { serverUrl: f.config.serverUrl, authorizationCode: 'valid-code', fetchFn: oauth.secureFetch });

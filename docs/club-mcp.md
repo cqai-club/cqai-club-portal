@@ -30,6 +30,8 @@ npm run build
 
 创建或选用支持 Authorization Code + PKCE 的 **Native/public application**，记录 client ID。注册一个固定 loopback 回调，例如 `http://127.0.0.1:41887/callback`，它必须与桥接配置逐字一致。桥接不需要 client secret，不做动态客户端注册。登录请求包含 `openid offline_access`，Logto 应允许 refresh token，并启用所需 API resource 权限；权限或 scope 变更后再次运行 `login` 重新授权。
 
+桥接使用的固定版本 MCP SDK 在请求 `offline_access` 时自动追加 `prompt=consent`，满足 [Logto 对刷新令牌的授权要求](https://docs.logto.io/customization/live-preview#refresh-token-grant)。
+
 服务在以下地址公布 OAuth Protected Resource Metadata：
 
 - `/.well-known/oauth-protected-resource/mcp`
