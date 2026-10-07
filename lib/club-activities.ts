@@ -23,7 +23,7 @@ export class ActivityError extends Error {
   }
 }
 
-const activityInputSchema = z.object({
+export const activityInputSchema = z.object({
   title: z.string().trim().min(2).max(120),
   summary: z.string().trim().min(2).max(300),
   content: z.string().trim().max(20_000).default(""),
@@ -45,6 +45,11 @@ const activityInputSchema = z.object({
 });
 
 export type ActivityInput = z.infer<typeof activityInputSchema>;
+
+/** Join a caller's transaction so MCP deduplication and business audits are atomic. */
+function activityTransaction<T>(operation: (tx: Prisma.TransactionClient) => Promise<T>, tx?: Prisma.TransactionClient): Promise<T> {
+  return tx ? operation(tx) : prisma.$transaction(operation);
+}
 
 export function parseActivityInput(value: unknown): ActivityInput {
   const parsed = activityInputSchema.safeParse(value);
@@ -325,8 +330,8 @@ export async function getManagedActivity(id: string) {
   return serializeActivity(activity);
 }
 
-export async function createActivity(input: ActivityInput, actor: ActivityActor) {
-  const activity = await prisma.$transaction(async (tx) => {
+export async function createActivity(input: ActivityInput, actor: ActivityActor, transaction?: Prisma.TransactionClient) {
+  const activity = await activityTransaction(async (tx) => {
     const created = await tx.clubActivity.create({
       data: {
         ...inputData(input),
@@ -336,12 +341,12 @@ export async function createActivity(input: ActivityInput, actor: ActivityActor)
     });
     await tx.clubActivityAudit.create({ data: audit(created.id, actor, "create") });
     return created;
-  });
+  }, transaction);
   return serializeActivity(activity);
 }
 
-export async function updateActivity(id: string, input: ActivityInput, actor: ActivityActor) {
-  const activity = await prisma.$transaction(async (tx) => {
+export async function updateActivity(id: string, input: ActivityInput, actor: ActivityActor, transaction?: Prisma.TransactionClient) {
+  const activity = await activityTransaction(async (tx) => {
     const current = await tx.clubActivity.findFirst({ where: { id, deletedAt: null } });
     if (!current) notFound();
     if (current.status === "cancelled") {
@@ -366,7 +371,7 @@ export async function updateActivity(id: string, input: ActivityInput, actor: Ac
       data: audit(id, actor, "update", Object.keys(input)),
     });
     return updated;
-  });
+  }, transaction);
   return serializeActivity(activity);
 }
 
@@ -391,8 +396,8 @@ export async function updateActivityCover(id: string, cover: StoredActivityCover
   return serializeActivity(activity);
 }
 
-export async function publishActivity(id: string, actor: ActivityActor) {
-  const activity = await prisma.$transaction(async (tx) => {
+export async function publishActivity(id: string, actor: ActivityActor, transaction?: Prisma.TransactionClient) {
+  const activity = await activityTransaction(async (tx) => {
     const current = await tx.clubActivity.findFirst({ where: { id, deletedAt: null } });
     if (!current) notFound();
     assertCanPublish(current);
@@ -402,7 +407,7 @@ export async function publishActivity(id: string, actor: ActivityActor) {
     });
     await tx.clubActivityAudit.create({ data: audit(id, actor, "publish") });
     return updated;
-  });
+  }, transaction);
   return serializeActivity(activity);
 }
 
@@ -492,9 +497,9 @@ async function withWriteRetry<T>(operation: () => Promise<T>): Promise<T> {
   throw new ActivityError(503, "REGISTRATION_BUSY", "报名暂时繁忙，请稍后重试。");
 }
 
-export async function registerForActivity(id: string, actor: ActivityActor) {
+export async function registerForActivity(id: string, actor: ActivityActor, transaction?: Prisma.TransactionClient) {
   try {
-    return await withWriteRetry(() => prisma.$transaction(async (tx) => {
+    const operation = () => activityTransaction(async (tx) => {
     const activity = await tx.clubActivity.findUnique({ where: { id } });
     if (!activity) notFound();
     const existing = await tx.clubActivityRegistration.findUnique({
@@ -533,10 +538,11 @@ export async function registerForActivity(id: string, actor: ActivityActor) {
       });
     }
     return { registered: true, alreadyRegistered: false };
-    }));
+    }, transaction);
+    return await (transaction ? operation() : withWriteRetry(operation));
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      const existing = await prisma.clubActivityRegistration.findUnique({
+      const existing = await (transaction ?? prisma).clubActivityRegistration.findUnique({
         where: { activityId_userIssuer_userSub: { activityId: id, userIssuer: actor.issuer, userSub: actor.sub } },
       });
       if (existing?.status === "confirmed") return { registered: true, alreadyRegistered: true };
@@ -545,8 +551,8 @@ export async function registerForActivity(id: string, actor: ActivityActor) {
   }
 }
 
-export async function cancelActivityRegistration(id: string, actor: ActivityActor) {
-  return withWriteRetry(() => prisma.$transaction(async (tx) => {
+export async function cancelActivityRegistration(id: string, actor: ActivityActor, transaction?: Prisma.TransactionClient) {
+  const operation = () => activityTransaction(async (tx) => {
     const existing = await tx.clubActivityRegistration.findUnique({
       where: { activityId_userIssuer_userSub: { activityId: id, userIssuer: actor.issuer, userSub: actor.sub } },
     });
@@ -557,5 +563,6 @@ export async function cancelActivityRegistration(id: string, actor: ActivityActo
     });
     await tx.clubActivity.update({ where: { id }, data: { registeredCount: { decrement: 1 } } });
     return { registered: false };
-  }));
+  }, transaction);
+  return transaction ? operation() : withWriteRetry(operation);
 }

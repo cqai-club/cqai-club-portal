@@ -22,6 +22,15 @@ The project is built with Next.js 16 (App Router), and the frontend UI uses shad
 - Keyword search
 - Service health checking
 
+### CQAI Club MCP and Skills
+
+- Remote `/mcp` tools for activity drafts, publishing, registration, plugin submissions and review status
+- A separate Logto OAuth resource with permission checks, transactional write deduplication and article source tracking
+- A local stdio OAuth bridge with token refresh and four installable workflow Skills
+- Optional administrator tools for reviewing, editing and publishing market entries
+
+See the [MCP connection guide](docs/club-mcp.md) for configuration, migrations, ebao Studio integration and validation.
+
 ## 2. UI Preview
 
 Dashboard (Dark Mode):

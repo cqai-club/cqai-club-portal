@@ -1,59 +1,16 @@
-import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from "jose";
-
 import { ActivityError, type ActivityActor } from "@/lib/club-activities";
+import { identityDisplayName, logtoIssuer, tokenScopes, verifyPortalBearer } from "@/lib/club-portal-auth";
 import { getLogtoContext } from "@/lib/logto";
 import { CQAI_API_RESOURCE } from "@/lib/logto/config";
 
 export const ACTIVITY_PUBLISH_PERMISSION = "activity:publish";
 
-let remoteKeys: JWTVerifyGetKey | undefined;
-
-function issuer(): string {
-  const endpoint = process.env.LOGTO_ENDPOINT?.trim().replace(/\/+$/, "");
-  if (!endpoint) throw new ActivityError(503, "AUTH_NOT_CONFIGURED", "登录服务尚未配置。");
-  // @logto/next takes the service root; ID tokens and JWKS use its /oidc issuer.
-  return endpoint.endsWith("/oidc") ? endpoint : `${endpoint}/oidc`;
-}
-
-function keys(): JWTVerifyGetKey {
-  remoteKeys ??= createRemoteJWKSet(new URL(`${issuer()}/jwks`));
-  return remoteKeys;
-}
-
-function scopes(value: unknown): string[] {
-  if (typeof value === "string") return value.split(/\s+/).filter(Boolean);
-  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === "string");
-  return [];
-}
-
-function displayName(claims: Record<string, unknown>): string | undefined {
-  for (const key of ["name", "username", "preferred_username"]) {
-    const value = claims[key];
-    if (typeof value === "string" && value.trim()) return value.trim().slice(0, 100);
-  }
-  return undefined;
-}
-
 async function bearerActor(token: string, manage: boolean): Promise<ActivityActor> {
-  const verifier = keys();
-  let payload;
-  try {
-    const verified = await jwtVerify(token, verifier, {
-      issuer: issuer(),
-      audience: CQAI_API_RESOURCE,
-      clockTolerance: 5,
-    });
-    payload = verified.payload;
-  } catch {
-    throw new ActivityError(401, "INVALID_TOKEN", "登录已失效，请重新登录。");
-  }
-  if (typeof payload.exp !== "number" || !Number.isFinite(payload.exp) || typeof payload.sub !== "string" || !payload.sub) {
-    throw new ActivityError(401, "INVALID_TOKEN", "登录令牌缺少必要身份信息。");
-  }
-  if (manage && !scopes(payload.scope).includes(ACTIVITY_PUBLISH_PERMISSION)) {
+  const actor = await verifyPortalBearer(token, CQAI_API_RESOURCE);
+  if (manage && !actor.scopes.includes(ACTIVITY_PUBLISH_PERMISSION)) {
     throw new ActivityError(403, "ACTIVITY_PERMISSION_REQUIRED", "没有活动管理权限。");
   }
-  return { issuer: issuer(), sub: payload.sub, displayName: displayName(payload) };
+  return { issuer: actor.issuer, sub: actor.sub, displayName: actor.displayName };
 }
 
 export function assertSameOrigin(request: Request): void {
@@ -89,20 +46,20 @@ export async function activityActor(
   if (!session.isAuthenticated || typeof session.claims?.sub !== "string" || !session.claims.sub) {
     throw new ActivityError(401, "LOGIN_REQUIRED", "请先登录会员中心。");
   }
-  if (options.manage && !scopes(session.scopes).includes(ACTIVITY_PUBLISH_PERMISSION)) {
+  if (options.manage && !tokenScopes(session.scopes).includes(ACTIVITY_PUBLISH_PERMISSION)) {
     throw new ActivityError(403, "ACTIVITY_PERMISSION_REQUIRED", "没有活动管理权限。");
   }
   return {
-    issuer: issuer(),
+    issuer: logtoIssuer(),
     sub: session.claims.sub,
-    displayName: displayName(session.claims as Record<string, unknown>),
+    displayName: identityDisplayName(session.claims as Record<string, unknown>),
   };
 }
 
 export async function canManageActivities(): Promise<boolean> {
   try {
     const session = await getLogtoContext(CQAI_API_RESOURCE);
-    return session.isAuthenticated && scopes(session.scopes).includes(ACTIVITY_PUBLISH_PERMISSION);
+    return session.isAuthenticated && tokenScopes(session.scopes).includes(ACTIVITY_PUBLISH_PERMISSION);
   } catch {
     return false;
   }

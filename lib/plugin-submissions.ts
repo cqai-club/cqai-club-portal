@@ -37,12 +37,12 @@ export function serializePluginSubmission(submission: PluginSubmission) {
   };
 }
 
-export async function createPluginSubmission(input: PluginInput, actor: ActivityActor) {
-  const existing = await prisma.plugin.findUnique({ where: { packageName: input.packageName }, select: { id: true } });
+export async function createPluginSubmission(input: PluginInput, actor: ActivityActor, database: Prisma.TransactionClient = prisma) {
+  const existing = await database.plugin.findUnique({ where: { packageName: input.packageName }, select: { id: true } });
   if (existing) throw new PluginSubmissionError(409, "PLUGIN_EXISTS", "该 npm 包已在插件市场中。");
 
   try {
-    const submission = await prisma.pluginSubmission.create({
+    const submission = await database.pluginSubmission.create({
       data: {
         packageName: input.packageName,
         payloadJson: JSON.stringify(input),
@@ -88,10 +88,11 @@ export async function reviewPluginSubmission(
   decision: "approve" | "reject",
   note: string,
   reviewer: ActivityActor,
+  transaction?: Prisma.TransactionClient,
 ) {
   const reviewedAt = new Date();
   try {
-    return await prisma.$transaction(async tx => {
+    const review = async (tx: Prisma.TransactionClient) => {
       const current = await tx.pluginSubmission.findUnique({ where: { id } });
       if (!current) throw new PluginSubmissionError(404, "SUBMISSION_NOT_FOUND", "投稿不存在。");
       if (current.status !== "pending") throw new PluginSubmissionError(409, "ALREADY_REVIEWED", "该投稿已审核。");
@@ -118,7 +119,8 @@ export async function reviewPluginSubmission(
       if (result.count !== 1) throw new PluginSubmissionError(409, "ALREADY_REVIEWED", "该投稿已审核。");
       const updated = await tx.pluginSubmission.findUniqueOrThrow({ where: { id } });
       return serializePluginSubmission(updated);
-    });
+    };
+    return await (transaction ? review(transaction) : prisma.$transaction(review));
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       throw new PluginSubmissionError(409, "PLUGIN_EXISTS", "该 npm 包已在插件市场中。");

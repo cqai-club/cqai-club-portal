@@ -96,6 +96,10 @@ jobs:
             -o ServerAliveInterval=30 -o ServerAliveCountMax=20 \
             -P "$DEPLOY_PORT" deploy/sync-management-env.py \
             "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_BASE/incoming/sync-management-env-$DEPLOY_SHA.py"
+          scp -i "$HOME/.ssh/id_ed25519" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -o ServerAliveInterval=30 -o ServerAliveCountMax=20 \
+            -P "$DEPLOY_PORT" deploy/check-mcp-endpoints.py \
+            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_BASE/incoming/check-mcp-endpoints-$DEPLOY_SHA.py"
 
       - name: Preflight public proxy upload capacity
         run: |
@@ -142,7 +146,17 @@ jobs:
             -o BatchMode=yes -o StrictHostKeyChecking=yes \
             -o ServerAliveInterval=30 -o ServerAliveCountMax=20 \
             -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
-            "bash '$DEPLOY_BASE/incoming/remote-deploy-$DEPLOY_SHA.sh' '$DEPLOY_SHA' '$IMAGE_REF' '${{ github.actor }}' '$DEPLOY_BASE/incoming/check-resource-gates-$DEPLOY_SHA.sh'"
+            "bash '$DEPLOY_BASE/incoming/remote-deploy-$DEPLOY_SHA.sh' '$DEPLOY_SHA' '$IMAGE_REF' '${{ github.actor }}' '$DEPLOY_BASE/incoming/check-resource-gates-$DEPLOY_SHA.sh' '$DEPLOY_BASE/incoming/check-mcp-endpoints-$DEPLOY_SHA.py'"
+
+      - name: Verify public MCP discovery and authentication
+        run: |
+          ssh -i "$HOME/.ssh/id_ed25519" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -o ServerAliveInterval=30 -o ServerAliveCountMax=20 \
+            -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "python3 '$DEPLOY_BASE/incoming/check-mcp-endpoints-$DEPLOY_SHA.py' --env-file '/data/informationCollection/.env' --export-expectations" \
+            > "$RUNNER_TEMP/mcp-public-expectations.json"
+          python3 deploy/check-mcp-endpoints.py https://cqaiclub.asia \
+            --expected-file "$RUNNER_TEMP/mcp-public-expectations.json"
 
       - name: Verify production
         run: |

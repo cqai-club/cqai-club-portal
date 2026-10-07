@@ -47,5 +47,7 @@ jobs:
           node scripts/ci-smoke-test.js
           npm run test:activities
           npm run test:plugin-submissions
+          npm run test:mcp
+          npm run test:mcp-bridge
           npm run test:resources
           npm run test:member-organizations

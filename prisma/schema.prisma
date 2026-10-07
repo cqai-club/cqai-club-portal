@@ -243,6 +243,7 @@ model ClubActivity {
   registrations         ClubActivityRegistration[]
   audits                ClubActivityAudit[]
   recapImages           ClubActivityRecapImage[]
+  mcpSources            ClubMcpSource[]
 
   @@index([status, startsAt])
   @@index([deletedAt])
@@ -290,4 +291,35 @@ model ClubActivityAudit {
   activity    ClubActivity @relation(fields: [activityId], references: [id], onDelete: Restrict)
 
   @@index([activityId, createdAt])
+}
+
+// The operation and its business changes commit in one transaction. A failed
+// request leaves neither a pending operation nor a partially completed write.
+model ClubMcpOperation {
+  id          String   @id @default(uuid())
+  actorIssuer String
+  actorSub    String
+  tool        String
+  requestKey  String
+  requestHash String
+  resultJson  String   @default("")
+  createdAt   DateTime @default(now())
+
+  @@unique([actorIssuer, actorSub, tool, requestKey])
+  @@index([createdAt])
+}
+
+model ClubMcpSource {
+  id          String       @id @default(uuid())
+  actorIssuer String
+  actorSub    String
+  sourceKey   String
+  sourceUrl   String?
+  title       String?
+  activityId  String
+  createdAt   DateTime     @default(now())
+  activity    ClubActivity @relation(fields: [activityId], references: [id], onDelete: Restrict)
+
+  @@unique([actorIssuer, actorSub, sourceKey])
+  @@index([activityId])
 }

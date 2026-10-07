@@ -29,3 +29,6 @@ web/index_TED.html
 .next/
 scripts/dist/
 *.tsbuildinfo
+
+# Local Skill operation keys and result snapshots
+.cqai-club/

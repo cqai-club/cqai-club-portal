@@ -1,0 +1,11 @@
+{
+  "name": "@cqai-club/mcp-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local OAuth and stdio bridge for the CQAI Club MCP service",
+  "engines": { "node": ">=20" },
+  "bin": { "cqai-club-mcp": "./cli.mjs" },
+  "scripts": { "test": "node --test test/*.test.mjs" },
+  "dependencies": { "@modelcontextprotocol/sdk": "1.31.0" }
+}
