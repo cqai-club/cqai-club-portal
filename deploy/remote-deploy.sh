@@ -5,6 +5,7 @@ release_sha="${1:-}"
 image_name="${2:-}"
 registry_username="${3:-}"
 resource_gate_script="${4:-}"
+mcp_gate_script="${5:-}"
 if [[ ! "$release_sha" =~ ^[0-9a-f]{40}$ ]]; then
   echo "Invalid release SHA."
   exit 2
@@ -16,6 +17,10 @@ fi
 if [[ -z "$registry_username" ]]; then
   echo "Registry username is required."
   exit 2
+fi
+if [[ -z "$mcp_gate_script" ]]; then
+  echo "MCP verifier path is required; no deployment changes were made."
+  exit 4
 fi
 
 deploy_base="${CQAI_DEPLOY_BASE:-/data/cqai-club-portal}"
@@ -44,7 +49,7 @@ if ! flock -n 9; then
   exit 3
 fi
 
-for required_file in "$environment_file" "$database_file" "$resource_gate_script"; do
+for required_file in "$environment_file" "$database_file" "$resource_gate_script" "$mcp_gate_script"; do
   if [[ ! -f "$required_file" ]]; then
     echo "Required deployment file is missing: $required_file"
     exit 4
@@ -194,6 +199,11 @@ if [[ "$candidate_ready" != "true" ]]; then
   exit 7
 fi
 
+if ! python3 "$mcp_gate_script" "http://127.0.0.1:$candidate_port" --env-file "$environment_file"; then
+  echo "Candidate MCP verification failed; keeping the current release."
+  exit 7
+fi
+
 cleanup_candidate
 trap - EXIT
 
@@ -296,6 +306,11 @@ done
 
 if [[ "$production_ready" != "true" ]]; then
   docker logs "$production_container" --tail 100 || true
+  exit 9
+fi
+
+if ! python3 "$mcp_gate_script" http://127.0.0.1:3000 --env-file "$environment_file"; then
+  echo "Production MCP verification failed; restoring the previous release."
   exit 9
 fi
 

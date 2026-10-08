@@ -45,6 +45,14 @@ assert.match(dockerIgnore, /^\.next$/m, 'Docker builds must exclude local Next.j
 assert.match(dockerIgnore, /^storage$/m, 'Docker builds must exclude local uploaded content');
 assert.match(dockerIgnore, /^\*\.tsbuildinfo$/m, 'Docker builds must exclude local TypeScript caches');
 assert.match(workflow, /project-cover-proxy-probe\.bin/, 'production verification must probe the public proxy upload limit');
+assert.match(workflow, /deploy\/check-mcp-endpoints\.py[^]*incoming\/check-mcp-endpoints-\$DEPLOY_SHA\.py/, 'deployment must upload the MCP verifier');
+assert.match(workflow, /remote-deploy-\$DEPLOY_SHA\.sh[^\n]*check-mcp-endpoints-\$DEPLOY_SHA\.py/, 'remote deployment must receive the uploaded MCP verifier');
+assert.match(workflow, /--export-expectations[^]*--expected-file "\$RUNNER_TEMP\/mcp-public-expectations\.json"/, 'the public verifier must compare discovery against runtime public configuration');
+assert.match(workflow, /python3 deploy\/check-mcp-endpoints\.py https:\/\/cqaiclub\.asia/, 'Actions must exercise the public MCP endpoint with the shared verifier');
+assert.equal((remoteDeploy.match(/python3 "\$mcp_gate_script"[^\n]*--env-file "\$environment_file"/g) || []).length, 2, 'candidate and production must verify MCP discovery and anonymous authentication');
+assert.ok(remoteDeploy.indexOf('Candidate MCP verification failed') < remoteDeploy.indexOf('cutover_started=true'), 'MCP candidate checks must precede cutover');
+assert.ok(remoteDeploy.indexOf('Production MCP verification failed') < remoteDeploy.indexOf('cutover_started=false\ntrap - EXIT'), 'production MCP checks must remain within rollback protection');
+assert.match(remoteDeploy, /for required_file in[^\n]*"\$mcp_gate_script"/, 'missing verifier must stop deployment before changing the current release');
 assert.equal(
   (workflow.match(/bs=1048576 count=5/g) || []).length,
   2,
@@ -88,6 +96,16 @@ assert.equal(
 );
 
 const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'cqai-deploy-safety-'));
+const legacyDeployBase = path.join(tempDirectory, 'old-call-deploy-base');
+const probeSha = 'a'.repeat(40);
+const oldDeployCall = spawnSync('bash', [path.join(projectRoot, 'deploy/remote-deploy.sh'), probeSha, `ghcr.io/cqai-club/portal:${probeSha}`, 'test-user', resourceGate], {
+  cwd: projectRoot,
+  encoding: 'utf8',
+  env: { ...process.env, CQAI_DEPLOY_BASE: legacyDeployBase }
+});
+assert.equal(oldDeployCall.status, 4, 'an old four-argument call must fail before running deployment commands');
+assert.match(oldDeployCall.stdout, /MCP verifier path is required/, 'old callers must receive an actionable migration error');
+assert.equal(fs.existsSync(legacyDeployBase), false, 'old callers must not create deployment directories or change the current release');
 const meminfoFile = path.join(tempDirectory, 'meminfo');
 fs.writeFileSync(meminfoFile, 'MemAvailable: 2097152 kB\n', { mode: 0o600 });
 
@@ -153,4 +171,6 @@ with tempfile.TemporaryDirectory() as root:
     assert env.read_text() == current
 `], { cwd: projectRoot, encoding: 'utf8' });
 assert.equal(managementSyncTest.status, 0, `management env synchronization should preserve configuration and reject unsafe credentials: ${managementSyncTest.stderr}`);
+const mcpDeploymentTest = spawnSync('python3', ['scripts/mcp-deployment-test.py'], { cwd: projectRoot, encoding: 'utf8' });
+assert.equal(mcpDeploymentTest.status, 0, `MCP endpoint gate must pass valid HTTP and reject invalid metadata/authentication: ${mcpDeploymentTest.stderr}${mcpDeploymentTest.stdout}`);
 console.log('Deployment safety checks passed.');

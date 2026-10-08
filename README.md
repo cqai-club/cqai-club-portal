@@ -24,6 +24,15 @@ Logto Account Portal 是一个对接 [Logto](https://logto.io/) 的账户中心�
 - 关键词搜索
 - 服务可用性探测
 
+### CQAI Club MCP 与 Skills
+
+- 远程 `/mcp` 服务：活动草稿、发布、报名、插件投稿与审核状态查询
+- 独立 Logto OAuth 资源与权限校验，数据库事务保证写操作幂等并保留文章来源
+- 本地 stdio 授权桥接自动续期 Token，配套四个可安装 Skills
+- 管理员市场审核、编辑与正式上架工具按开关启用
+
+配置、迁移、e宝工坊接入与验证见 [MCP 连接说明](docs/club-mcp.md)。
+
 
 ## 二、UI界面预览
 

@@ -15,13 +15,16 @@
     "test:deployment": "node scripts/deployment-safety-test.js",
     "test:activities": "node scripts/activity-smoke-test.js",
     "test:plugin-submissions": "node scripts/plugin-submission-smoke-test.js",
+    "test:mcp": "node scripts/mcp-smoke-test.js",
+    "test:mcp-bridge": "node --test packages/cqai-club-mcp-bridge/test/*.test.mjs",
     "test:resources": "node scripts/member-resources-smoke-test.js",
-    "test": "npm run build && npm run test:deployment && node scripts/ci-smoke-test.js && npm run test:activities && npm run test:plugin-submissions && npm run test:resources && npm run test:member-organizations",
+    "test": "npm run build && npm run test:deployment && node scripts/ci-smoke-test.js && npm run test:activities && npm run test:plugin-submissions && npm run test:mcp && npm run test:mcp-bridge && npm run test:resources && npm run test:member-organizations",
     "test:member-organizations": "node scripts/member-organizations-smoke-test.js"
   },
   "dependencies": {
     "@logto/api": "^1.43.0",
     "@logto/next": "^4.2.10",
+    "@modelcontextprotocol/sdk": "1.31.0",
     "@prisma/client": "^5.22.0",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-dialog": "^1.1.17",
