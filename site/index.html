@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="连接产业、学术与资本的本地化 AI 技术共创社群。在重庆，做 AI，我们陪你从入门到顶尖。">
     <title>重庆AI创享俱乐部 | 在重庆，做AI</title>
-    <script src="/home-i18n.js?v=c96f1c0f4a46"></script>
+    <script src="/home-i18n.js?v=8b11e44fdcfd"></script>
     <script src="/home-language.js"></script>
     <script src="/home-membership.js?v=dbd908d2f22e" defer></script>
     <link rel="icon" type="image/png" sizes="256x256" href="/images/logo-nav.png">
@@ -209,7 +209,7 @@
 
         nav ul {
             display: flex;
-            gap: clamp(12px, 1.5vw, 24px);
+            gap: clamp(24px, 2vw, 32px);
         }
 
         nav ul li a {
@@ -1380,7 +1380,7 @@
         }
 
         /* ============ 响应式 ============ */
-        @media (min-width: 769px) and (max-width: 1100px) {
+        @media (min-width: 769px) and (max-width: 1280px) {
             nav ul {
                 position: fixed;
                 top: 0;
@@ -1393,11 +1393,13 @@
                 flex-direction: column;
                 justify-content: flex-start;
                 gap: 10px;
+                visibility: hidden;
                 transform: translateX(100%);
                 transition: transform 0.35s ease;
             }
 
             nav ul.open {
+                visibility: visible;
                 transform: translateX(0);
             }
 
@@ -1478,12 +1480,14 @@
                 justify-content: center;
                 gap: 28px;
                 padding: 40px 48px;
+                visibility: hidden;
                 transform: translateX(100%);
                 transition: transform 0.35s ease;
                 box-shadow: -10px 0 40px rgba(0, 0, 0, 0.2);
             }
 
             nav ul.open {
+                visibility: visible;
                 transform: translateX(0);
             }
 
@@ -2107,17 +2111,15 @@
         header:has(#navLinks.open) .nav-toggle span { background: var(--primary-deep); }
         .logo { min-width: 0; }
         .logo img { flex-shrink: 0; }
-        html[lang="en"] nav ul { gap: 16px; }
+        html[lang="en"] nav ul { gap: clamp(16px, calc(5vw - 48px), 32px); }
         html[lang="en"] .hero h1 { font-size: clamp(2.3rem, 5vw, 3.7rem); }
         html[lang="en"] .hero p { letter-spacing: .5px; }
         html[lang="en"] .section-header { gap: 24px; }
         html[lang="en"] .section-header > div { min-width: 0; }
         html[lang="en"] .section-header .btn { flex-shrink: 0; }
         html[lang="en"] .ring-name { min-width: 108px; }
-        @media (min-width: 1101px) and (max-width: 1200px) {
-            html[lang="en"] .nav-cta { display: none; }
-        }
-        @media (max-width: 1100px) {
+        @media (max-width: 1280px) {
+            nav ul { height: 100dvh; overflow-y: auto; }
             .header-actions { gap: 8px; }
             .nav-toggle { min-width: 44px; min-height: 44px; }
             html[lang="en"] nav ul { gap: 10px; }
@@ -2154,6 +2156,7 @@
                 <li><a data-i18n="nav.partners" href="#partners">合作伙伴</a></li>
                 <li><a data-i18n="nav.events" href="/events/">活动交流</a></li>
                 <li><a data-i18n="nav.projects" href="/projects/">项目广场</a></li>
+                <li><a data-i18n="nav.ebao" href="/ebao-studio/">e宝工坊</a></li>
                 <li><a data-i18n="nav.member" href="/member">会员中心</a></li>
             </ul>
         </nav>
@@ -2598,6 +2601,7 @@
                         <li><a data-i18n="footer.ecosystem" href="#ecosystem">生态模型</a></li>
                         <li><a data-i18n="nav.events" href="/events/">活动交流</a></li>
                         <li><a data-i18n="nav.projects" href="/projects/">项目广场</a></li>
+                        <li><a data-i18n="nav.ebao" href="/ebao-studio/">e宝工坊</a></li>
                     </ul>
                 </div>
                 <div class="footer-col reveal">
