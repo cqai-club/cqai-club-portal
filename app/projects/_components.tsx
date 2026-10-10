@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 
 import type { PublicContact, PublicProjectView } from "./_types";
+import { MobileMenu } from "./_mobile-menu";
 import styles from "./projects.module.css";
 
 const STAGE_LABELS: Record<string, string> = {
@@ -15,14 +16,17 @@ const STAGE_LABELS: Record<string, string> = {
 export const projectStageLabel = (stage: string): string =>
   STAGE_LABELS[stage] ?? stage;
 
-export function SiteHeader({ current }: { current: "events" | "projects" }) {
-  const cta = current === "events"
-    ? { href: "/member/dashboard/activities", label: "我的报名" }
-    : { href: "/member/dashboard/project-submission", label: "提交项目" };
+export function SiteHeader({ current }: { current: "events" | "projects" | "ebao" }) {
+  const cta = current === "ebao"
+    ? { href: "/ebao-studio/#download", label: "下载体验" }
+    : current === "events"
+      ? { href: "/member/dashboard/activities", label: "我的报名" }
+      : { href: "/member/dashboard/project-submission", label: "提交项目" };
   const links = [
     { href: "/", label: "俱乐部首页" },
     { href: "/events/", label: "活动交流", current: current === "events" },
     { href: "/projects/", label: "项目广场", current: current === "projects" },
+    { href: "/ebao-studio/", label: "e宝工坊", current: current === "ebao" },
     { href: "/member", label: "会员中心" },
   ];
 
@@ -40,8 +44,8 @@ export function SiteHeader({ current }: { current: "events" | "projects" }) {
           {links.map(link => <Link key={link.href} className={`${styles.navLink} ${link.href === "/member" ? styles.memberNavLink : ""}`} href={link.href} aria-current={link.current ? "page" : undefined}>{link.label}</Link>)}
           <Link className={styles.navCta} href={cta.href}>{cta.label}</Link>
         </nav>
-        <details className={styles.mobileMenu}>
-          <summary className={styles.mobileMenuToggle}>
+        <MobileMenu className={styles.mobileMenu}>
+          <summary className={styles.mobileMenuToggle} aria-label="切换导航菜单">
             <Menu className={styles.menuIcon} aria-hidden="true" size={20} />
             <X className={styles.closeIcon} aria-hidden="true" size={20} />
           </summary>
@@ -49,7 +53,7 @@ export function SiteHeader({ current }: { current: "events" | "projects" }) {
             {links.map(link => <Link key={link.href} className={styles.mobileNavLink} href={link.href} aria-label={link.label} aria-current={link.current ? "page" : undefined}>{link.label}</Link>)}
             <Link className={styles.mobileNavCta} href={cta.href} aria-label={cta.label}>{cta.label}</Link>
           </nav>
-        </details>
+        </MobileMenu>
       </div>
     </header>
   );
@@ -67,6 +71,7 @@ export function SiteFooter() {
           <Link href="/">俱乐部首页</Link>
           <Link href="/events/">活动交流</Link>
           <Link href="/projects/">项目广场</Link>
+          <Link href="/ebao-studio/">e宝工坊</Link>
           <Link href="/member/dashboard/project-submission">提交项目</Link>
         </nav>
       </div>

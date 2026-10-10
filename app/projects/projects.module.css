@@ -102,7 +102,7 @@
 .nav {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: clamp(24px, 2vw, 32px);
 }
 
 .mobileMenu {
@@ -216,6 +216,13 @@
   font-weight: 600;
   text-decoration: none;
   transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.navLink,
+.navCta,
+.mobileNavLink,
+.mobileNavCta {
+  font-weight: 400;
 }
 
 .navLink {
