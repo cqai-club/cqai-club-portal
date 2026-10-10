@@ -21,7 +21,7 @@ import MemberApplicationDrawer from "@/components/member/member-application-draw
 import type { InitialIdentity } from "@/components/member/member-application-form";
 
 const basicBenefits = ["activities", "community", "venue"] as const;
-const innovationBenefits = ["resources", "projects"] as const;
+const innovationBenefits = ["resources", "projects", "aiGateway"] as const;
 
 const contactEmail = "781728683@qq.com";
 

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useTranslations } from "@/lib/i18n/client";
 
-export default function InnovationMembershipPrompt({ section }: { section: "resources" | "projectSubmission" }) {
+export default function InnovationMembershipPrompt({ section }: { section: "resources" | "projectSubmission" | "aiGateway" }) {
   const { t } = useTranslations();
   return (
     <div className="space-y-7">

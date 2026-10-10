@@ -53,6 +53,7 @@ export const en = {
     resources: "Resource Center",
     adminResources: "Resource Management",
     projectSubmission: "Project Submission",
+    aiGateway: "AI Gateway Platform",
     application: "Chuangxiang Membership Application",
     adminActivities: "Activity Management",
     adminMemberSettings: "Member Settings",
@@ -62,6 +63,14 @@ export const en = {
     adminPlugins: "Plugin Market",
     adminLogto: "Logto Admin Console",
     signOut: "Sign out",
+  },
+
+  aiGateway: {
+    title: "AI Gateway Platform",
+    description: "An AI gateway platform for Chuangxiang members. Your membership is verified before access.",
+    membershipRequired: "Chuangxiang membership is required",
+    membershipHint: "Once your application is approved and your Chuangxiang membership is active, you can access the AI gateway platform.",
+    applyMembership: "Apply for Chuangxiang membership",
   },
 
   resources: {
@@ -324,6 +333,7 @@ export const en = {
       venue: "Exclusive member venue discounts",
       resources: "Access AI learning materials in the resource center",
       projects: "Submit AI projects and view your submission history",
+      aiGateway: "Access the AI gateway platform",
     },
     ordinary: {
       name: "Standard Membership",
@@ -337,7 +347,7 @@ export const en = {
       price: "Free",
       period: "",
       description: "Free access to a wide range of AI learning materials. Membership requires application approval.",
-      currentDescription: "Your Chuangxiang benefits are active. Access learning materials, submit AI projects and enjoy all standard membership benefits.",
+      currentDescription: "Your Chuangxiang benefits are active. Access learning materials and the AI gateway platform, submit AI projects and enjoy all standard membership benefits.",
       apply: "Apply for Membership",
     },
     enterprise: {

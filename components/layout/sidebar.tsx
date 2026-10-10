@@ -52,6 +52,9 @@ export function Sidebar({ canAccessAdmin = false, canAccessMemberAdmin = false, 
             <Link
               key={item.href}
               href={item.href}
+              target={item.external ? "_blank" : undefined}
+              rel={item.external ? "noopener noreferrer" : undefined}
+              prefetch={item.external ? false : undefined}
               aria-current={isActive ? "page" : undefined}
               className={cn(
                 "mb-1 flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
@@ -60,6 +63,7 @@ export function Sidebar({ canAccessAdmin = false, canAccessMemberAdmin = false, 
             >
               <item.icon aria-hidden="true" className="size-[18px] shrink-0" />
               <span className="flex-1">{getNavLabel(item, language)}</span>
+              {item.external && <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />}
               {isActive && <span aria-hidden="true" className="size-1.5 rounded-full bg-primary" />}
             </Link>
           );

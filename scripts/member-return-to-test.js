@@ -26,12 +26,14 @@ function loadModule(relativePath, dependencies = {}) {
 
 const targets = loadModule('lib/member/return-to.ts');
 const { normalizeMemberReturnTo, memberLoginPath, MEMBER_APPLICATION_PATH, MEMBER_PROJECT_SUBMISSION_PATH, MEMBER_RETURN_TO_HEADER } = targets;
+const AI_GATEWAY_PATH = '/member/dashboard/ai-gateway';
 
 for (const value of [
   '/member/dashboard',
   '/member/dashboard/',
   MEMBER_APPLICATION_PATH,
   MEMBER_PROJECT_SUBMISSION_PATH,
+  AI_GATEWAY_PATH,
   `${MEMBER_APPLICATION_PATH}/`,
   '/member/dashboard/profile',
   '/member/dashboard/admin/projects/abc-123',
@@ -67,7 +69,7 @@ const { proxy } = loadModule('proxy.ts', {
   'next/server': { NextResponse: { next: value => value } },
 });
 
-for (const pathname of [MEMBER_APPLICATION_PATH, `${MEMBER_APPLICATION_PATH}/`, MEMBER_PROJECT_SUBMISSION_PATH, `${MEMBER_PROJECT_SUBMISSION_PATH}/`, '/member/dashboard/resources', '/member/dashboard/resources/', '/member/dashboard/admin/resources']) {
+for (const pathname of [MEMBER_APPLICATION_PATH, `${MEMBER_APPLICATION_PATH}/`, MEMBER_PROJECT_SUBMISSION_PATH, `${MEMBER_PROJECT_SUBMISSION_PATH}/`, '/member/dashboard/resources', '/member/dashboard/resources/', '/member/dashboard/admin/resources', AI_GATEWAY_PATH, `${AI_GATEWAY_PATH}/`]) {
   const response = proxy({
     headers: new Headers({ [MEMBER_RETURN_TO_HEADER]: '//example.com', 'x-test': 'preserved' }),
     nextUrl: { pathname },
@@ -76,7 +78,7 @@ for (const pathname of [MEMBER_APPLICATION_PATH, `${MEMBER_APPLICATION_PATH}/`, 
   assert.equal(response.request.headers.get('x-test'), 'preserved');
 }
 
-for (const pathname of ['/member/dashboard', '/member/dashboard/profile', `${MEMBER_APPLICATION_PATH}/other`]) {
+for (const pathname of ['/member/dashboard', '/member/dashboard/profile', `${MEMBER_APPLICATION_PATH}/other`, `${AI_GATEWAY_PATH}/other`]) {
   const response = proxy({
     headers: new Headers({ [MEMBER_RETURN_TO_HEADER]: MEMBER_APPLICATION_PATH }),
     nextUrl: { pathname },
@@ -122,8 +124,62 @@ async function testApplicationReturn() {
   }
 }
 
-testApplicationReturn().then(() => {
-  console.log('Member login return-target tests passed: canonical paths, malicious targets, proxy header isolation, reauthentication, membership-aware application returns, and stale drawer links.');
+async function testAiGatewayAccess() {
+  const React = require('react');
+  const jsxRuntime = require('react/jsx-runtime');
+  const { renderToStaticMarkup } = require('react-dom/server');
+  const container = ({ children }) => React.createElement(React.Fragment, null, children);
+  const prompt = loadModule('components/member/innovation-membership-prompt.tsx', {
+    'react/jsx-runtime': jsxRuntime,
+    'next/link': { __esModule: true, default: ({ children, ...props }) => React.createElement('a', props, children) },
+    'lucide-react': require('lucide-react'),
+    '@/components/ui/button': { Button: container },
+    '@/components/ui/card': { Card: container },
+    '@/lib/i18n/client': { useTranslations: () => ({ t: key => key }) },
+  });
+
+  // Keep the real page and membership-denial component; replace only membership I/O and Next redirects.
+  for (const access of ['allowed', 'denied', 'unauthorized', 'unavailable']) {
+    const redirects = [];
+    const navigation = { redirect(location) { redirects.push(location); throw new Error(location); } };
+    const gate = loadModule('components/member/innovation-page-access.tsx', {
+      'react/jsx-runtime': jsxRuntime,
+      'next/navigation': navigation,
+      '@/lib/member/innovation-access': { innovationMemberPageAccess: async () => access },
+      '@/lib/member/return-to': targets,
+    });
+    const page = loadModule('app/member/dashboard/ai-gateway/page.tsx', {
+      'react/jsx-runtime': jsxRuntime,
+      'next/navigation': navigation,
+      '@/components/member/innovation-page-access': gate,
+      '@/components/member/innovation-membership-prompt': prompt,
+    });
+
+    if (access === 'allowed' || access === 'unauthorized') {
+      const destination = access === 'allowed' ? 'https://relay.cqaiclub.asia/' : memberLoginPath(AI_GATEWAY_PATH);
+      await assert.rejects(page.default(), error => error.message === destination, `AI gateway redirect for ${access}`);
+      assert.deepEqual(redirects, [destination]);
+      continue;
+    }
+
+    const result = await page.default();
+    const html = renderToStaticMarkup(result);
+    assert.deepEqual(redirects, [], `AI gateway must not redirect for ${access}`);
+    assert.ok(!html.includes('relay.cqaiclub.asia'), `AI gateway URL must not be exposed for ${access}`);
+    if (access === 'denied') {
+      assert.equal(result.props.section, 'aiGateway');
+      assert.match(html, /aiGateway\.membershipRequired/);
+      assert.match(html, /href="\/member\/dashboard\/plans\?application=open"/);
+    } else {
+      assert.match(html, /role="alert"/);
+      assert.match(html, /href="\/member\/dashboard\/ai-gateway"/);
+      assert.ok(!html.includes('application=open'), 'Unavailable identity must not be treated as a non-member');
+    }
+  }
+}
+
+testApplicationReturn().then(testAiGatewayAccess).then(() => {
+  console.log('Member login return-target tests passed: canonical paths, malicious targets, proxy header isolation, reauthentication, membership-aware application returns, stale drawer links, and AI gateway access states.');
 }).catch(error => {
   console.error(error);
   process.exitCode = 1;

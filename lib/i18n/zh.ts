@@ -55,6 +55,7 @@ export const zh = {
     resources: "资料中心",
     adminResources: "资料管理",
     projectSubmission: "项目征集",
+    aiGateway: "AI 网关平台",
     application: "创享会员申请",
     adminActivities: "活动管理",
     adminMemberSettings: "会员设置",
@@ -64,6 +65,14 @@ export const zh = {
     adminPlugins: "插件市场",
     adminLogto: "Logto 管理后台",
     signOut: "退出登录",
+  },
+
+  aiGateway: {
+    title: "AI 网关平台",
+    description: "创享会员专属的 AI 网关平台，验证会员身份后即可访问。",
+    membershipRequired: "需要创享会员权限才能访问",
+    membershipHint: "申请审核通过、成为创享会员后，即可访问 AI 网关平台。",
+    applyMembership: "申请创享会员",
   },
 
   resources: {
@@ -326,6 +335,7 @@ export const zh = {
       venue: "会员据点专属优惠",
       resources: "查看资料中心的 AI 学习资料",
       projects: "提交 AI 项目并查看征集记录",
+      aiGateway: "访问 AI 网关平台",
     },
     ordinary: {
       name: "普通会员",
@@ -339,7 +349,7 @@ export const zh = {
       price: "免费",
       period: "",
       description: "免费提供丰富的 AI 学习资料，申请审核通过后即可成为创享会员。",
-      currentDescription: "你已开通创享会员权益，可查看学习资料、提交 AI 项目，并享有普通会员的基础权益。",
+      currentDescription: "你已开通创享会员权益，可查看学习资料、提交 AI 项目、访问 AI 网关平台，并享有普通会员的基础权益。",
       apply: "申请创享会员",
     },
     enterprise: {
