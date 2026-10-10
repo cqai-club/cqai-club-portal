@@ -10,6 +10,7 @@ import {
   ClipboardList,
   Crown,
   Settings2,
+  Network,
 } from "lucide-react";
 import { t, type Language } from "@/lib/i18n";
 
@@ -58,6 +59,13 @@ export const mainNavItems: NavItem[] = [
     title: "项目征集",
     titleKey: "nav.projectSubmission",
     icon: BriefcaseBusiness,
+  },
+  {
+    href: "/member/dashboard/ai-gateway",
+    title: "AI 网关平台",
+    titleKey: "nav.aiGateway",
+    icon: Network,
+    external: true,
   },
 ];
 

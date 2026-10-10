@@ -133,6 +133,9 @@ export function Navbar({ user, onSignOut, canAccessAdmin = false, canAccessMembe
                     <Link
                       key={item.href}
                       href={item.href}
+                      target={item.external ? "_blank" : undefined}
+                      rel={item.external ? "noopener noreferrer" : undefined}
+                      prefetch={item.external ? false : undefined}
                       onClick={() => setMobileMenuOpen(false)}
                       aria-current={isActive ? "page" : undefined}
                       className={cn(
@@ -142,6 +145,7 @@ export function Navbar({ user, onSignOut, canAccessAdmin = false, canAccessMembe
                     >
                       <item.icon aria-hidden="true" className="size-[18px] shrink-0" />
                       <span className="flex-1">{getNavLabel(item, language)}</span>
+                      {item.external && <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />}
                       {isActive && <span aria-hidden="true" className="size-1.5 rounded-full bg-primary" />}
                     </Link>
                   );
