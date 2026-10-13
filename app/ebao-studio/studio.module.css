@@ -99,6 +99,7 @@
 .downloadCard h3 { margin: 20px 0 6px; font-size: 24px; font-weight: 700; }
 .downloadCard p { margin: 0 0 26px; color: var(--studio-muted); font-size: 14px; }
 .downloadCard small { display: block; color: var(--studio-muted); font-size: 12px; line-height: 1.8; margin-top: 16px; }
+.downloadCard small a, .releaseNote a { color: var(--studio-accent); text-decoration: underline; text-underline-offset: 3px; }
 .releaseNote { margin-top: 24px; padding: 20px 24px; border-left: 3px solid var(--studio-accent); background: var(--studio-soft); font-size: 13px; }
 .releaseNote strong { font-weight: 650; }
 .releaseNote p { margin: 6px 0 0; color: var(--studio-muted); line-height: 1.8; }

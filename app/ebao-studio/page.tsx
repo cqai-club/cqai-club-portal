@@ -11,7 +11,7 @@ import siteStyles from "@/app/projects/projects.module.css";
 import styles from "./studio.module.css";
 
 const repository = "https://github.com/cqai-club/ebao-studio";
-const releases = `${repository}/releases`;
+const download = "/api/ebao-studio/download";
 const guide = `${repository}/blob/master/docs/user-guide.md`;
 
 export const metadata: Metadata = {
@@ -165,16 +165,16 @@ export default function EbaoStudioPage() {
           <div className={styles.downloadGrid}>
             <article className={styles.downloadCard}>
               <Monitor size={28} aria-hidden="true" /><h3>Windows</h3><p>x64 安装包 · Portable ZIP</p>
-              <a className={styles.primaryButton} href={releases} target="_blank" rel="noopener noreferrer">查看 Windows 下载<ArrowUpRight size={18} aria-hidden="true" /></a>
-              <small>在发行版本的 Assets 中选择 .exe 或 Windows .zip 文件。</small>
+              <a className={styles.primaryButton} href={`${download}?platform=windows`} target="_blank" rel="noopener noreferrer">下载 Windows 最新版<ArrowUpRight size={18} aria-hidden="true" /></a>
+              <small>默认下载 x64 安装包。手动选择：<a href={`${download}?platform=windows&source=gitcode`} target="_blank" rel="noopener noreferrer">GitCode</a> · <a href={`${download}?platform=windows&source=github`} target="_blank" rel="noopener noreferrer">GitHub</a></small>
             </article>
             <article className={styles.downloadCard}>
               <Monitor size={28} aria-hidden="true" /><h3>macOS</h3><p>Universal · Intel 与 Apple Silicon</p>
-              <a className={styles.secondaryButton} href={releases} target="_blank" rel="noopener noreferrer">查看 macOS 下载<ArrowUpRight size={18} aria-hidden="true" /></a>
-              <small>在发行版本的 Assets 中选择 .dmg 或 macOS .zip 文件。</small>
+              <a className={styles.secondaryButton} href={`${download}?platform=macos`} target="_blank" rel="noopener noreferrer">下载 macOS 最新版<ArrowUpRight size={18} aria-hidden="true" /></a>
+              <small>默认下载 Universal DMG。手动选择：<a href={`${download}?platform=macos&source=gitcode`} target="_blank" rel="noopener noreferrer">GitCode</a> · <a href={`${download}?platform=macos&source=github`} target="_blank" rel="noopener noreferrer">GitHub</a></small>
             </article>
           </div>
-          <div className={styles.releaseNote}><strong>当前提供测试预发布版本</strong><p>安装包暂未签名。平台支持、安装提示与更新说明，请以对应 Release 为准；安装版自带核心运行环境。</p></div>
+          <div className={styles.releaseNote}><strong>当前提供测试预发布版本</strong><p>按访问 IP 自动选择下载源：中国大陆使用 GitCode，其他地区使用 GitHub；也可手动切换。安装包暂未签名。平台支持、安装提示与更新说明，请以对应 Release 为准；安装版自带核心运行环境。</p><p>便携版、ZIP 与历史版本：<a href="https://gitcode.com/g-dxw/ebao-studio/releases" target="_blank" rel="noopener noreferrer">GitCode 发行版本</a> · <a href={`${repository}/releases`} target="_blank" rel="noopener noreferrer">GitHub 发行版本</a></p></div>
           <div className={styles.resourceLinks}>
             <a href={guide} target="_blank" rel="noopener noreferrer">阅读使用指南<ArrowUpRight size={15} aria-hidden="true" /></a>
             <a href={`${repository}/issues`} target="_blank" rel="noopener noreferrer">反馈与交流<ArrowUpRight size={15} aria-hidden="true" /></a>
