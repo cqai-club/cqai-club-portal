@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  ArrowDown, ArrowUpRight, BadgeCheck, Bot, Check, Download, FolderOpen,
-  ImagePlus, Layers3, LogIn, Monitor, Puzzle, Send, Sparkles, Video,
+  ArrowDown, ArrowUpRight, BadgeCheck, BookOpen, Bot, Check, Download, FileText, FolderOpen,
+  GraduationCap, Heart, House, ImagePlus, Layers3, LogIn, MessagesSquare, Monitor, Presentation, Puzzle, Send, Sparkles, Video,
 } from "lucide-react";
 
 import { SiteFooter, SiteHeader } from "@/app/projects/_components";
@@ -13,6 +13,7 @@ import styles from "./studio.module.css";
 const repository = "https://github.com/cqai-club/ebao-studio";
 const download = "/api/ebao-studio/download";
 const guide = `${repository}/blob/master/docs/user-guide.md`;
+const employeeArtworkVersion = "20261014";
 
 export const metadata: Metadata = {
   title: "e宝工坊 · 能帮你干活的私人助理 | 重庆 AI 创享俱乐部",
@@ -31,12 +32,56 @@ const tools = [
   { icon: Send, name: "多平台发布", label: "帮你整理和发布内容", description: "管理平台账号，整理文章、图文与视频草稿，预览内容，确认后提交到所选账号。", image: "publisher.webp", className: "publishTool" },
 ] as const;
 
+const pluginTools = [
+  { icon: MessagesSquare, name: "e销宝", label: "帮你准备销售沟通", description: "结合客户原话和产品知识，辅助准备销售话术、应对异议，并复盘沟通过程。", image: "employee-sales.webp", className: "purpleTool" },
+  { icon: GraduationCap, name: "e研宝", label: "帮你推进学术研究", description: "提供文献研究、论文写作、同行评审与研究流程四套学术技能，辅助推进研究任务。", image: "employee-research.webp", className: "blueTool" },
+  { icon: BookOpen, name: "知识库", label: "帮你整理和检索知识", description: "导入资料、整理知识，通过带来源引用的问答找到依据，也让 e宝按需检索项目资料。", image: "employee-knowledge.webp", className: "blueTool" },
+] as const;
+
+// Follow desktop-presentation's roster: installed employees replace same-name planned cards.
+const employeeGroups = [
+  {
+    id: "upcoming", icon: Puzzle, title: "正在建设的数字员工", status: "建设中",
+    description: "写作、客户服务、白板共创、关系沟通与家庭智能设备管理，是团队接下来探索的工作方向。",
+    employees: [
+      { icon: FileText, name: "e文宝", label: "帮你写作和整理内容", description: "把零散想法整理成清晰的文字，辅助文章、文案与日常内容创作。", image: "employee-writing.webp", className: "goldTool" },
+      { icon: MessagesSquare, name: "e客宝", label: "帮你处理客户沟通", description: "围绕客户咨询与服务沟通，帮助梳理问题、组织表达，推进沟通。", image: "employee-customer.webp", className: "blueTool" },
+      { icon: Presentation, name: "创作白板", label: "帮你共创想法与画面", description: "在同一块白板上梳理灵感、组织想法和画面，让共创过程更直观。", image: "employee-whiteboard.webp", className: "purpleTool" },
+      { icon: Heart, name: "e恋爱宝", label: "帮你寻找沟通灵感", description: "围绕日常对话与关系表达，提供沟通灵感，帮助把想法说清楚。", image: "employee-relationship.webp", className: "goldTool" },
+      { icon: House, name: "e家宝", label: "帮你管理家庭智能设备", description: "围绕灯光、空调和传感器，整理设备状态与控制入口，辅助管理家庭里的智能设备。", image: "employee-home.webp", className: "blueTool" },
+    ],
+  },
+] as const;
+
 const features = [
   { icon: Bot, title: "交代任务", description: "告诉 e宝你想做什么，围绕当前任务与私人助理沟通，把需求说清楚。" },
   { icon: Layers3, title: "调度帮手", description: "让私人助理调度合适的数字员工，由各有专长的帮手参与具体工作。" },
   { icon: FolderOpen, title: "围绕项目工作", description: "带上自己的文件与素材，在工作区中处理任务，接着已有的工作往下做。" },
   { icon: Puzzle, title: "团队持续扩充", description: "更多数字员工正在开发中，团队的专长会逐步丰富，帮你处理更多工作场景。" },
 ];
+
+function EmployeeCard({ employee, status, headingLevel = 3 }: {
+  employee: (typeof tools)[number] | (typeof pluginTools)[number] | (typeof employeeGroups)[number]["employees"][number];
+  status?: "插件可用" | "建设中";
+  headingLevel?: 3 | 4;
+}) {
+  const Heading = headingLevel === 4 ? "h4" : "h3";
+  const imageSource = `/images/ebao-studio/${employee.image}${status ? `?v=${employeeArtworkVersion}` : ""}`;
+
+  return (
+    <article className={`${styles.toolCard} ${styles[employee.className]}`}>
+      <div className={styles.toolArt}><Image src={imageSource} alt="" width={800} height={450} sizes="(max-width: 760px) 90vw, (max-width: 1000px) 46vw, 360px" unoptimized /></div>
+      <div className={styles.toolBody}>
+        <div className={styles.toolIdentity}>
+          <p className={styles.toolName}><employee.icon size={19} aria-hidden="true" />{employee.name}</p>
+          {status && <span className={`${styles.employeeBadge} ${status === "插件可用" ? styles.availableBadge : ""}`}>{status}</span>}
+        </div>
+        <Heading>{employee.label}</Heading>
+        <p>{employee.description}</p>
+      </div>
+    </article>
+  );
+}
 
 export default function EbaoStudioPage() {
   return (
@@ -102,22 +147,24 @@ export default function EbaoStudioPage() {
             <div className={styles.sectionHeading}>
               <p className={styles.kicker}>MEET YOUR DIGITAL TEAM</p>
               <h2 id="tools-title">先认识几位数字员工。</h2>
-              <p>图片、视频、内容发布，是这支团队已有的部分工作场景。每位数字员工各有所长，帮你处理不同的任务。</p>
+              <p>从图片、视频和内容发布，到销售沟通、学术研究与知识整理，每位数字员工各有所长。更多工作方向也在建设中。</p>
             </div>
-            <div className={styles.toolGrid}>
-              {tools.map(tool => (
-                <article key={tool.name} className={`${styles.toolCard} ${styles[tool.className]}`}>
-                  <div className={styles.toolArt}><Image src={`/images/ebao-studio/${tool.image}`} alt="" width={800} height={450} sizes="(max-width: 760px) 90vw, 360px" unoptimized /></div>
-                  <div className={styles.toolBody}>
-                    <p className={styles.toolName}><tool.icon size={19} aria-hidden="true" />{tool.name}</p>
-                    <h3>{tool.label}</h3>
-                    <p>{tool.description}</p>
-                  </div>
-                </article>
-              ))}
+            <div className={styles.toolGrid} id="extensions">
+              {tools.map(tool => <EmployeeCard key={tool.name} employee={tool} />)}
+              {pluginTools.map(tool => <EmployeeCard key={tool.name} employee={tool} status="插件可用" />)}
             </div>
-            <div className={styles.teamNotice}><p><Puzzle size={20} aria-hidden="true" /><strong>更多数字员工正在开发中</strong></p><span>这些只是团队中的几位帮手。随着新的员工加入，e宝能帮你处理的工作也会逐步丰富。</span></div>
-            <p className={styles.sectionNote}>当前展示的是部分数字员工，实际可用功能以所用版本为准。</p>
+            {employeeGroups.map(group => (
+              <section key={group.id} className={styles.employeeTeam} id={group.id} aria-labelledby={`${group.id}-title`}>
+                <div className={styles.employeeHeading}>
+                  <h3 id={`${group.id}-title`}><group.icon size={22} aria-hidden="true" />{group.title}</h3>
+                  <p>{group.description}</p>
+                </div>
+                <div className={styles.toolGrid}>
+                  {group.employees.map(employee => <EmployeeCard key={employee.name} employee={employee} status={group.status} headingLevel={4} />)}
+                </div>
+              </section>
+            ))}
+            <p className={styles.sectionNote}>当前展示的是部分数字员工，实际可用功能以软件版本和已启用插件为准。</p>
           </div>
         </section>
 
@@ -185,7 +232,7 @@ export default function EbaoStudioPage() {
         <section className={`${styles.container} ${styles.faq}`} aria-labelledby="faq-title">
           <h2 id="faq-title">开始之前，你可能还想了解</h2>
           <details><summary>e宝和数字员工是什么关系？</summary><p>e宝是和你沟通、帮你调度工作的私人助理；数字员工是负责具体任务的帮手，各有专长。你把需求告诉 e宝，由它调度合适的员工参与工作。</p></details>
-          <details><summary>现在有哪些数字员工？</summary><p>本页展示了 e图宝、e剪宝和多平台发布等部分员工。更多数字员工正在开发中，实际可用的员工与功能以当前软件版本为准。</p></details>
+          <details><summary>现在有哪些数字员工？</summary><p>本页展示了 e图宝、e剪宝和多平台发布，以及已提供插件的 e销宝、e研宝和知识库。e文宝、e客宝、创作白板、e恋爱宝和 e家宝正在建设中。插件需安装并启用后使用，实际可用的员工与功能以当前软件版本和已启用插件为准。</p></details>
           <details><summary>需要配置模型或复杂环境吗？</summary><p>不用。e宝工坊已内置适合工作场景的模型，无需先自行配置复杂环境。使用重庆AI创享俱乐部会员账号在软件中登录，即可开始使用。</p></details>
           <details><summary>使用哪个账号登录？</summary><p>使用重庆AI创享俱乐部会员账号。下载并安装 e宝工坊后，在软件中登录；账号相关事项可前往 <Link href="/member">会员中心</Link> 查看。</p></details>
           <details><summary>可以扩展更多功能吗？</summary><p>可以。e宝工坊支持通过插件扩展能力，也支持用 Profile 管理不同工作配置。插件安装、启用和开发方式请查看项目文档。</p></details>
