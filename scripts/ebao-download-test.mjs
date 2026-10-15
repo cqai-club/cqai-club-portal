@@ -32,7 +32,7 @@ const repositories = {
 };
 
 function installer(source, version, platform = 'windows', overrides = {}) {
-  const name = overrides.name ?? `eBao-Studio-${version}-${platform === 'windows' ? 'x64-Setup.exe' : 'universal.dmg'}`;
+  const name = overrides.name ?? `eBao-Studio-${version}${platform === 'windows' ? '-x64-Setup.exe' : '.dmg'}`;
   return {
     name,
     browser_download_url: `${repositories[source].releases}/download/v${version}/${name}`,
@@ -128,6 +128,17 @@ for (const source of ['github', 'gitcode']) {
     }
   });
 
+  test(`${source}: new macOS filenames outrank later-mirrored legacy universal DMGs`, async () => {
+    const latest = installer(source, '0.0.15', 'macos');
+    const legacy = installer(source, '0.0.14', 'macos', { name: 'eBao-Studio-0.0.14-universal.dmg' });
+    const payload = [
+      release('2026-10-16T00:00:00Z', [legacy], { tag_name: 'v0.0.14' }),
+      release('2026-10-15T00:00:00Z', [latest], { tag_name: 'v0.0.15' }),
+    ];
+    assert.equal(await resolveEbaoDownload('macos', source, mockReleaseFetch(payload)), latest.browser_download_url);
+    assert.equal(await resolveEbaoDownload('macos', source, mockReleaseFetch(payload.slice(0, 1))), legacy.browser_download_url);
+  });
+
   test(`${source}: drafts are skipped and a newer published prerelease remains downloadable`, async () => {
     const stable = installer(source, '1.0.0');
     const beta = installer(source, '1.1.0-beta.1');
@@ -183,6 +194,10 @@ for (const source of ['github', 'gitcode']) {
         installer(source, '2.0.0', 'macos', { name: 'Source-code.zip' }),
         installer(source, '2.0.0', 'macos', { name: 'eBao-Studio-2.0.0.dmg.blockmap' }),
         installer(source, '2.0.0', 'macos', { name: 'other-app-2.0.0.dmg' }),
+        installer(source, '2.0.0', 'macos', { name: 'eBao-Studio-2.0.0-arm64.dmg' }),
+        installer(source, '2.0.0', 'macos', { name: 'eBao-Studio-2.0.0-x64.dmg' }),
+        installer(source, '2.0.0', 'macos', { name: 'eBao-Studio-2.0.0-arm64-universal.dmg' }),
+        installer(source, '2.0.0', 'macos', { name: 'eBao-Studio-not-a-version.dmg' }),
         installer(source, '2.0.0'),
       ]),
       release('2026-01-01T00:00:00Z', [wanted]),

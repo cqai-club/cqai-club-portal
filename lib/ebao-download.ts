@@ -48,7 +48,7 @@ function installerUrl(asset: unknown, platform: DownloadPlatform, source: Downlo
   if (entry.type === "source" || (entry.state !== undefined && entry.state !== "uploaded")) return null;
   const pattern = platform === "windows"
     ? /^eBao-Studio-.+-x64-Setup\.exe$/i
-    : /^eBao-Studio-.+-universal\.dmg$/i;
+    : /^eBao-Studio-\d+\.\d+\.\d+(?:-universal)?\.dmg$/i;
   if (!pattern.test(entry.name)) return null;
 
   try {
