@@ -29,17 +29,6 @@ const nextConfig: NextConfig = {
     ],
     dangerouslyAllowSVG: true,
   },
-  async headers() {
-    return [
-      {
-        // Match the old Express static caching behavior for the site's images.
-        source: '/images/:path*',
-        headers: [
-          { key: 'Cache-Control', value: 'public, max-age=604800' },
-        ],
-      },
-    ];
-  },
 };
 
 export default nextConfig;

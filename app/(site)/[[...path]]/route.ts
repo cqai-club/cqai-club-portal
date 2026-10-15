@@ -70,6 +70,13 @@ function fileExtension(pathname: string): string {
   return dotIndex === -1 ? "" : lastSegment.slice(dotIndex).toLowerCase();
 }
 
+function notFoundResponse(): NextResponse {
+  return new NextResponse("Not found", {
+    status: 404,
+    headers: { "Cache-Control": "no-store" },
+  });
+}
+
 export async function GET(
   request: Request,
   context: { params: Promise<{ path?: string[] }> }
@@ -78,7 +85,7 @@ export async function GET(
 
   // Guard: this route group must never intercept the member surface.
   if (pathname.startsWith("/member")) {
-    return new NextResponse("Not found", { status: 404 });
+    return notFoundResponse();
   }
 
   if (["/collect", "/collect/", "/collect/index.html", "/collect.html"].includes(pathname)) {
@@ -118,12 +125,12 @@ export async function GET(
   // Only serve files that live under the site root.
   const siteRoot = join(process.cwd(), "site");
   if (!resolved.startsWith(siteRoot)) {
-    return new NextResponse("Not found", { status: 404 });
+    return notFoundResponse();
   }
 
   const buffer = await readIfExists(resolved);
   if (!buffer) {
-    return new NextResponse("Not found", { status: 404 });
+    return notFoundResponse();
   }
 
   const extension = fileExtension(pathname);
