@@ -1,7 +1,7 @@
 // Homepage interface copy. Public project and activity content comes from their APIs.
 window.CQAI_HOME_MESSAGES = {
     zh: {
-        'meta.title': '重庆AI创享俱乐部 | 在重庆，做AI',
+        'meta.title': '重庆AI创享俱乐部官网 | 重庆AI社群、技术交流与项目共创',
         'meta.description': '重庆AI创享俱乐部连接产业、学术与资本，汇聚AI开发者、创业者、行业专家与投资人，通过学习交流、项目共创与资源对接，推动AI应用落地。',
         'brand.name': '重庆AI创享俱乐部',
         'brand.short': '重庆AI创享俱乐部',
@@ -210,7 +210,7 @@ window.CQAI_HOME_MESSAGES = {
         'develop.close': '知道了'
     },
     en: {
-        'meta.title': 'Chongqing AI Innovation Club | Build AI in Chongqing',
+        'meta.title': 'Chongqing AI Innovation Club Official Website | Build AI in Chongqing',
         'meta.description': 'Chongqing AI Innovation Club connects industry, academia and capital. We bring together AI developers, founders, experts and investors to learn, build projects and put AI into practice.',
         'brand.name': 'Chongqing AI Innovation Club',
         'brand.short': 'CQAI Club',

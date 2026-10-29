@@ -2,34 +2,74 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 
 import { ActivitySignup } from "@/components/activities/ActivitySignup";
 import { MarkdownContent } from "@/components/markdown/MarkdownContent";
 import { ActivityError, getPublicActivity } from "@/lib/club-activities";
+import { absoluteUrl, breadcrumbJsonLd, createPageMetadata, serializeJsonLd, SITE_NAME } from "@/lib/seo";
 import styles from "../activities.module.css";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "活动详情 | 重庆 AI 创享俱乐部",
-  description: "查看重庆 AI 创享俱乐部的活动时间、地点、介绍与报名信息。",
-};
+const getActivity = cache(async (id: string) => {
+  try {
+    return await getPublicActivity(id);
+  } catch (error) {
+    if (error instanceof ActivityError && error.status === 404) notFound();
+    throw error;
+  }
+});
+
+type ActivityDetailProps = { params: Promise<{ id: string }> };
+
+export async function generateMetadata({ params }: ActivityDetailProps): Promise<Metadata> {
+  const activity = await getActivity((await params).id);
+  return createPageMetadata({
+    title: `${activity.title} | 活动交流 | 重庆AI创享俱乐部`,
+    description: activity.summary,
+    path: `/activities/${encodeURIComponent(activity.id)}/`,
+    image: activity.coverUrl ?? undefined,
+    type: "article",
+    publishedTime: activity.publishedAt ?? undefined,
+    modifiedTime: activity.updatedAt,
+  });
+}
 
 const dateText = (iso: string) => new Intl.DateTimeFormat("zh-CN", {
   timeZone: "Asia/Shanghai", dateStyle: "full", timeStyle: "short",
 }).format(new Date(iso));
 
-export default async function ActivityDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ActivityDetailPage({ params }: ActivityDetailProps) {
   const { id } = await params;
-  let activity;
-  try {
-    activity = await getPublicActivity(id);
-  } catch (error) {
-    if (error instanceof ActivityError && error.status === 404) notFound();
-    throw error;
-  }
+  const activity = await getActivity(id);
+  const activityPath = `/activities/${encodeURIComponent(activity.id)}/`;
+  const onlineUrl = /^https?:\/\//i.test(activity.location) ? activity.location : undefined;
   return (
     <main id="activities-main" className={styles.main}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd([
+        breadcrumbJsonLd([
+          { name: "俱乐部首页", path: "/" },
+          { name: "活动交流", path: "/events/" },
+          { name: activity.title, path: activityPath },
+        ]),
+        {
+          "@context": "https://schema.org",
+          "@type": "Event",
+          name: activity.title,
+          description: activity.summary,
+          url: absoluteUrl(activityPath),
+          startDate: activity.startsAt,
+          endDate: activity.endsAt,
+          eventStatus: activity.status === "cancelled" ? "https://schema.org/EventCancelled" : "https://schema.org/EventScheduled",
+          eventAttendanceMode: activity.mode === "online" ? "https://schema.org/OnlineEventAttendanceMode" : "https://schema.org/OfflineEventAttendanceMode",
+          location: activity.mode === "online"
+            ? { "@type": "VirtualLocation", name: activity.location, ...(onlineUrl ? { url: onlineUrl } : {}) }
+            : { "@type": "Place", name: activity.location, address: activity.location },
+          organizer: { "@type": "Organization", name: SITE_NAME, url: absoluteUrl("/") },
+          ...(activity.coverUrl ? { image: absoluteUrl(activity.coverUrl) } : {}),
+        },
+      ]) }} />
       <div className={`${styles.container} ${styles.detailMain}`}>
         <nav className={styles.breadcrumb} aria-label="面包屑导航">
           <Link href="/">俱乐部首页</Link>
@@ -57,7 +97,7 @@ export default async function ActivityDetailPage({ params }: { params: Promise<{
         </header>
 
         {activity.coverUrl && (
-          <img className={styles.detailCover} src={activity.coverUrl} alt="" width="1600" height="1000" />
+          <img className={styles.detailCover} src={activity.coverUrl} alt={`${activity.title}活动封面`} width="1600" height="1000" />
         )}
 
         <div className={styles.detailGrid}>

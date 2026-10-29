@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="连接产业、学术与资本的本地化 AI 技术共创社群。在重庆，做 AI，我们陪你从入门到顶尖。">
-    <title>重庆AI创享俱乐部 | 在重庆，做AI</title>
-    <script src="/home-i18n.js?v=8b11e44fdcfd"></script>
+    <!-- seo:head:start -->
+    <title>重庆AI创享俱乐部官网 | 重庆AI社群、技术交流与项目共创</title>
+    <meta name="description" content="重庆AI创享俱乐部连接产业、学术与资本，汇聚AI开发者、创业者、行业专家与投资人，通过学习交流、项目共创与资源对接，推动AI应用落地。">
+    <!-- seo:head:end -->
+    <script src="/home-i18n.js?v=177aaf6e5c48"></script>
     <script src="/home-language.js"></script>
     <script src="/home-membership.js?v=dbd908d2f22e" defer></script>
     <link rel="icon" type="image/png" sizes="256x256" href="/images/logo-nav.png">
@@ -2172,6 +2174,7 @@
         </div>
     </header>
 
+    <main id="home-main">
     <!-- ========== Hero ========== -->
     <section class="hero" id="home">
         <div class="hero-bg" id="heroBg"></div>
@@ -2369,7 +2372,9 @@
                 <a data-i18n="events.all" href="/events/#upcoming-title">查看全部活动 →</a>
             </div>
             <div class="club-events-grid" id="clubEventsGrid" aria-live="polite">
-                <p data-i18n="events.loading" class="club-events-empty">正在读取活动安排…</p>
+                <!-- home:activities:start -->
+                <p class="club-events-empty"><a href="/events/">查看活动交流与历史回顾 →</a></p>
+                <!-- home:activities:end -->
             </div>
         </div>
     </section>
@@ -2473,10 +2478,12 @@
                 </div>
             </div>
             <div class="project-grid" id="featuredProjectGrid" aria-live="polite" aria-busy="true">
+                <!-- home:projects:start -->
                 <div class="project-state">
-                    <strong data-i18n="projects.loadingTitle">正在加载推荐项目</strong>
-                    <p data-i18n="projects.loadingDescription">请稍候，项目内容马上呈现。</p>
+                    <strong>重庆AI创研项目</strong>
+                    <p><a href="/projects/">浏览项目广场，发现已发布的AI项目 →</a></p>
                 </div>
+                <!-- home:projects:end -->
             </div>
         </div>
     </section>
@@ -2583,6 +2590,9 @@
         </div>
     </section>
 
+    </main>
+    <!-- home:public-data -->
+
     <!-- ========== 页脚 ========== -->
     <footer>
         <div class="container">
@@ -2684,6 +2694,7 @@
         // ========== 导航 ==========
         const homeI18n = window.CQAI_HOME_I18N;
         const t = (key, params) => homeI18n.t(key, params);
+        const homePublicData = JSON.parse(document.getElementById('home-public-data')?.textContent || '{}');
         const header = document.getElementById('header');
         const navToggle = document.getElementById('navToggle');
         const navLinks = document.getElementById('navLinks');
@@ -2718,7 +2729,10 @@
             pilot: 'projects.stage.pilot',
             live: 'projects.stage.live'
         };
-        const projectsView = { status: 'loading', items: [] };
+        const projectsView = {
+            status: Array.isArray(homePublicData.projects) ? 'ready' : 'loading',
+            items: homePublicData.projects || []
+        };
 
         function appendProjectState(title, description, actions) {
             featuredProjectGrid.replaceChildren();
@@ -2859,10 +2873,14 @@
             }
         }
 
-        loadFeaturedProjects();
+        if (projectsView.status === 'ready') renderFeaturedProjects();
+        else loadFeaturedProjects();
 
         const clubEventsGrid = document.getElementById('clubEventsGrid');
-        const eventsView = { status: 'loading', items: [] };
+        const eventsView = {
+            status: Array.isArray(homePublicData.activities) ? 'ready' : 'loading',
+            items: homePublicData.activities || []
+        };
 
         function renderClubEvents() {
             if (!clubEventsGrid) return;
@@ -2878,13 +2896,13 @@
             clubEventsGrid.replaceChildren(...eventsView.items.map(item => {
                     const card = document.createElement('a');
                     card.className = 'club-event-card';
-                    card.href = `/activities/${encodeURIComponent(item.id)}`;
+                    card.href = `/activities/${encodeURIComponent(item.id)}/`;
                     if (typeof item.coverUrl === 'string' && /^\/api\/v1\/activities\/[^/]+\/cover(?:\?|$)/.test(item.coverUrl)) {
                         const cover = document.createElement('div');
                         cover.className = 'club-event-cover';
                         const image = document.createElement('img');
                         image.src = item.coverUrl;
-                        image.alt = '';
+                        image.alt = String(item.title || t('events.untitled'));
                         image.width = 1600;
                         image.height = 1000;
                         image.loading = 'lazy';
@@ -2931,7 +2949,8 @@
             }
         }
 
-        loadClubEvents();
+        if (eventsView.status === 'ready') renderClubEvents();
+        else loadClubEvents();
 
         // ========== 联系弹窗 ==========
         const modal = document.getElementById('contactModal');

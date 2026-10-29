@@ -4,14 +4,15 @@
  * The club's official website consists of static HTML files that
  * historically lived under the Express `web/` + `public/` directories. They
  * now live under `site/` in this Next app and are returned here as raw file
- * bytes so the HTML (and its own `<head>`, fonts, inline styles) is served
- * verbatim — never rendered through the React app layout.
+ * bytes, outside the React app layout. The homepage gets current SEO tags
+ * and published project/activity cards on the server before being returned.
  */
 
 import { NextResponse } from "next/server";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { MEMBER_PROJECT_SUBMISSION_PATH } from "@/lib/member/return-to";
+import { renderHomepage } from "@/lib/site/homepage";
 
 const CONTENT_TYPE: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -81,7 +82,11 @@ export async function GET(
   request: Request,
   context: { params: Promise<{ path?: string[] }> }
 ): Promise<NextResponse> {
-  const { pathname } = new URL(request.url);
+  const { pathname, search } = new URL(request.url);
+
+  if (pathname === "/index.html") {
+    return new NextResponse(null, { status: 308, headers: { Location: `/${search}` } });
+  }
 
   // Guard: this route group must never intercept the member surface.
   if (pathname.startsWith("/member")) {
@@ -151,7 +156,11 @@ export async function GET(
     (isDirectoryStyle ? HTML_FALLBACK : CONTENT_TYPE[resolvedExtension]) ||
     "application/octet-stream";
 
-  return new NextResponse(new Uint8Array(buffer), {
+  const body = resolved === join(siteRoot, "index.html")
+    ? new TextEncoder().encode(await renderHomepage(buffer.toString("utf8")))
+    : new Uint8Array(buffer);
+
+  return new NextResponse(body, {
     headers: {
       "Content-Type": contentType,
       "Cache-Control": cacheControl,

@@ -367,7 +367,7 @@ const main = async () => {
 
   const portalPage = await request(baseUrl, '/');
   assert.equal(portalPage.response.status, 200, 'official portal should load');
-  assert.match(portalPage.body, /重庆AI创享俱乐部 \| 在重庆，做AI/);
+  assert.ok(/<title>重庆AI创享俱乐部官网 \| [^<]+<\/title>/.test(portalPage.body), 'homepage should have a descriptive official website title with the club name');
   assertNavigationLink(portalPage.body, '/member', '会员中心', 'homepage should retain its member center link');
   assert.equal(portalPage.response.headers.get('x-powered-by'), null, 'server signature should be hidden');
 

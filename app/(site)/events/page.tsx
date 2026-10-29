@@ -5,14 +5,19 @@ import Link from "next/link";
 import { ArrowRight, CalendarDays, MapPin, UsersRound } from "lucide-react";
 
 import { listPublishedActivityRecaps, listUpcomingPublicActivities, type ActivityRecapView, type ActivityView } from "@/lib/club-activities";
+import { absoluteUrl, breadcrumbJsonLd, createPageMetadata, serializeJsonLd } from "@/lib/seo";
 import styles from "./events.module.css";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "活动交流 | 重庆 AI 创享俱乐部",
-  description: "查看重庆 AI 创享俱乐部即将开始的活动并报名，回顾茶话会、工作坊和项目路演等历史活动。",
-};
+export function generateMetadata(): Metadata {
+  return createPageMetadata({
+    title: "重庆 AI 活动报名、沙龙与工作坊 | 重庆AI创享俱乐部",
+    description: "查看重庆 AI 创享俱乐部即将开始的 AI 活动、技术沙龙、实战工作坊与项目路演，了解时间地点并报名，阅读历史活动的现场图文回顾。",
+    path: "/events/",
+    image: "/images/tl-6.jpg",
+  });
+}
 
 const highlights = [
   {
@@ -147,6 +152,27 @@ export default async function EventsPage() {
 
   return (
     <main id="events-main" className={styles.main}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd([
+        breadcrumbJsonLd([{ name: "俱乐部首页", path: "/" }, { name: "活动交流", path: "/events/" }]),
+        {
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          name: "重庆 AI 活动与历史回顾",
+          url: absoluteUrl("/events/"),
+          mainEntity: {
+            "@type": "ItemList",
+            itemListElement: [
+              ...upcoming.map(activity => ({ name: activity.title, path: `/activities/${encodeURIComponent(activity.id)}/` })),
+              ...publishedRecaps.filter(recap => recap.content.trim()).map(recap => ({ name: recap.title, path: `/events/recaps/${encodeURIComponent(recap.activityId)}/` })),
+            ].map((item, index) => ({
+              "@type": "ListItem",
+              position: index + 1,
+              name: item.name,
+              url: absoluteUrl(item.path),
+            })),
+          },
+        },
+      ]) }} />
       <section className={styles.hero}>
         <div className={styles.container}>
           <span className={styles.eyebrow}>CQAI CLUB EVENTS</span>
