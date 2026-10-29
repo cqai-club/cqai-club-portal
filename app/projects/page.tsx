@@ -1,19 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { absoluteUrl, breadcrumbJsonLd, createPageMetadata, serializeJsonLd } from "@/lib/seo";
 
 import { EmptyState, ProjectCard } from "./_components";
 import { getPublishedProjects } from "./_data";
 import styles from "./projects.module.css";
 
 export const dynamic = "force-dynamic";
-
-export const metadata: Metadata = {
-  title: "项目广场 | 重庆 AI 创享俱乐部",
-  description:
-    "发现重庆 AI 创享俱乐部正在孵化与共创的 AI 项目，连接项目、技术、场景与合作伙伴。",
-  robots: { index: true, follow: true },
-};
 
 const PAGE_SIZE = 12;
 
@@ -25,6 +19,22 @@ function positivePage(value: string | string[] | undefined): number {
   const raw = Array.isArray(value) ? value[0] : value;
   const parsed = Number.parseInt(raw ?? "1", 10);
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : 1;
+}
+
+export async function generateMetadata({ searchParams }: ProjectsPageProps): Promise<Metadata> {
+  const page = positivePage((await searchParams).page);
+  let noIndex = false;
+  try {
+    await getPublishedProjects(page, PAGE_SIZE);
+  } catch {
+    noIndex = true;
+  }
+  return createPageMetadata({
+    title: `${page > 1 ? `项目广场第 ${page} 页` : "AI 项目广场与项目合作"} | 重庆AI创享俱乐部`,
+    description: `${page > 1 ? `项目广场第 ${page} 页。` : ""}发现重庆 AI 创享俱乐部公开发布的 AI 创研项目，了解项目介绍、应用方向与合作需求，连接技术、产业场景与共创伙伴。`,
+    path: page > 1 ? `/projects/?page=${page}` : "/projects/",
+    noIndex,
+  });
 }
 
 export default async function ProjectsPage({ searchParams }: ProjectsPageProps) {
@@ -56,12 +66,30 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
     );
   }
 
-  if (result.total > 0 && requestedPage > result.totalPages) {
-    redirect(`/projects/?page=${result.totalPages}`);
+  if (requestedPage > Math.max(result.totalPages, 1)) {
+    redirect(result.totalPages > 1 ? `/projects/?page=${result.totalPages}` : "/projects/");
   }
 
   return (
     <main id="projects-main">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd([
+        breadcrumbJsonLd([{ name: "俱乐部首页", path: "/" }, { name: "项目广场", path: "/projects/" }]),
+        {
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          name: "AI 项目广场",
+          url: absoluteUrl(result.page > 1 ? `/projects/?page=${result.page}` : "/projects/"),
+          mainEntity: {
+            "@type": "ItemList",
+            itemListElement: result.data.map((project, index) => ({
+              "@type": "ListItem",
+              position: (result.page - 1) * PAGE_SIZE + index + 1,
+              name: project.name,
+              url: absoluteUrl(`/projects/${encodeURIComponent(project.slug)}/`),
+            })),
+          },
+        },
+      ]) }} />
       <section className={styles.hero}>
         <div className={styles.heroInner}>
           <span className={styles.eyebrow}>PROJECT SQUARE</span>
@@ -98,7 +126,7 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
             {result.totalPages > 1 && (
               <nav className={styles.pagination} aria-label="项目分页">
                 {result.page > 1 && (
-                  <Link className={styles.paginationLink} href={`/projects/?page=${result.page - 1}`}>
+                  <Link className={styles.paginationLink} href={result.page === 2 ? "/projects/" : `/projects/?page=${result.page - 1}`}>
                     ← 上一页
                   </Link>
                 )}

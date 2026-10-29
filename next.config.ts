@@ -3,6 +3,12 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: 'standalone',
   serverExternalPackages: ['geoip-country'],
+  async headers() {
+    return ['/member/:path*', '/preview/:path*', '/api/admin/:path*', '/mcp/:path*', '/catalog-source.json'].map(source => ({
+      source,
+      headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+    }));
+  },
   outputFileTracingIncludes: {
     '/api/ebao-studio/download': [
       './node_modules/geoip-country/data/**/*',

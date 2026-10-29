@@ -43,6 +43,7 @@ jobs:
         run: |
           npm run test:deployment
           npm run test:ebao-downloads
+          npm run test:seo
           node scripts/member-login-error-test.js
           node scripts/member-return-to-test.js
           node scripts/ci-smoke-test.js

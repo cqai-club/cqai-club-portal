@@ -6,7 +6,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import LoadingBar from "./components/LoadingBar";
 import { Toaster } from "@/components/ui/toaster";
-import { t } from "@/lib/i18n";
+import { absoluteUrl, getSiteUrl, SITE_DESCRIPTION, SITE_NAME, siteVerification } from "@/lib/seo";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,13 +18,21 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: process.env.APP_NAME?.trim() || t("meta.fullTitle", "zh"),
-  description: t("meta.description", "zh"),
-  icons: {
-    icon: "/favicon.ico",
-  },
-};
+export function generateMetadata(): Metadata {
+  return {
+    metadataBase: new URL(getSiteUrl()),
+    title: process.env.APP_NAME?.trim() || SITE_NAME,
+    description: SITE_DESCRIPTION,
+    applicationName: SITE_NAME,
+    icons: { icon: "/favicon.ico", apple: "/images/logo-nav.png" },
+    openGraph: {
+      siteName: SITE_NAME, locale: "zh_CN", type: "website",
+      images: [{ url: absoluteUrl("/images/hero-hd.webp"), alt: SITE_NAME }],
+    },
+    twitter: { card: "summary_large_image", images: [absoluteUrl("/images/hero-hd.webp")] },
+    verification: siteVerification(),
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { MarkdownContent } from "@/components/markdown/MarkdownContent";
+import { absoluteUrl, breadcrumbJsonLd, createPageMetadata, serializeJsonLd } from "@/lib/seo";
 import { projectStageLabel, PublicContactAction } from "../_components";
 import { getPublishedProject } from "../_data";
 import styles from "../projects.module.css";
@@ -27,22 +28,20 @@ export async function generateMetadata({ params }: ProjectDetailPageProps): Prom
       };
     }
 
-    return {
-      title: `${project.name} | 项目广场`,
+    return createPageMetadata({
+      title: `${project.name} | 项目广场 | 重庆AI创享俱乐部`,
       description: project.summary,
-      robots: { index: true, follow: true },
-      openGraph: {
-        title: project.name,
-        description: project.summary,
-        type: "article",
-        publishedTime: project.publishedAt ?? undefined,
-        modifiedTime: project.updatedAt,
-      },
-    };
+      path: `/projects/${encodeURIComponent(project.slug)}/`,
+      image: project.coverUrl ?? undefined,
+      type: "article",
+      publishedTime: project.publishedAt ?? undefined,
+      modifiedTime: project.updatedAt,
+    });
   } catch {
     return {
       title: "项目广场 | 重庆 AI 创享俱乐部",
       description: "查看重庆 AI 创享俱乐部公开发布的创研项目。",
+      robots: { index: false, follow: true },
     };
   }
 }
@@ -53,9 +52,27 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
   if (!project) notFound();
 
   const stage = projectStageLabel(project.stage);
+  const projectPath = `/projects/${encodeURIComponent(project.slug)}/`;
 
   return (
     <main id="projects-main" className={styles.detailMain}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd([
+        breadcrumbJsonLd([
+          { name: "俱乐部首页", path: "/" },
+          { name: "项目广场", path: "/projects/" },
+          { name: project.name, path: projectPath },
+        ]),
+        {
+          "@context": "https://schema.org",
+          "@type": "CreativeWork",
+          name: project.name,
+          description: project.summary,
+          url: absoluteUrl(projectPath),
+          ...(project.coverUrl ? { image: absoluteUrl(project.coverUrl) } : {}),
+          ...(project.ownerName ? { creator: { "@type": "Person", name: project.ownerName } } : {}),
+          inLanguage: "zh-CN",
+        },
+      ]) }} />
       <nav className={styles.breadcrumb} aria-label="面包屑导航">
         <Link href="/">俱乐部首页</Link>
         <span aria-hidden="true">/</span>

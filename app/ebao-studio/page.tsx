@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 
 import { SiteFooter, SiteHeader } from "@/app/projects/_components";
+import { absoluteUrl, breadcrumbJsonLd, createPageMetadata, serializeJsonLd } from "@/lib/seo";
 import siteStyles from "@/app/projects/projects.module.css";
 import styles from "./studio.module.css";
 
@@ -15,16 +16,16 @@ const download = "/api/ebao-studio/download";
 const guide = `${repository}/blob/master/docs/user-guide.md`;
 const employeeArtworkVersion = "20261014";
 
-export const metadata: Metadata = {
-  title: "e宝工坊 · 能帮你干活的私人助理 | 重庆 AI 创享俱乐部",
-  description: "e宝工坊是能帮你干活的私人助理，调度数字员工帮你处理任务。基于重庆AI创享俱乐部会员体系，内置适合的模型，无需配置复杂环境，会员账号登录即可使用。",
-  openGraph: {
-    title: "e宝工坊 · 能帮你干活的私人助理",
-    description: "一个助理，一群帮手。内置适合的模型，使用重庆AI创享俱乐部会员账号登录，让数字员工帮你干活。",
-    type: "website",
-    locale: "zh_CN",
-  },
-};
+export const dynamic = "force-dynamic";
+
+export function generateMetadata(): Metadata {
+  return createPageMetadata({
+    title: "e宝工坊 AI 私人助理与数字员工下载 | 重庆AI创享俱乐部",
+    description: "e宝工坊是能帮你干活的私人助理，调度数字员工帮你处理任务。基于重庆AI创享俱乐部会员体系，内置适合的模型，无需配置复杂环境，会员账号登录即可使用。",
+    path: "/ebao-studio/",
+    image: "/images/ebao-studio/desktop-home.webp",
+  });
+}
 
 const tools = [
   { icon: ImagePlus, name: "e图宝", label: "帮你生成和编辑图片", description: "图片生成与编辑、提示词模板、无限画布，把零散灵感整理成可继续创作的图像。", image: "imagegen.webp", className: "imageTool" },
@@ -89,6 +90,24 @@ export default function EbaoStudioPage() {
       <a className={siteStyles.skipLink} href="#studio-main">跳到主要内容</a>
       <SiteHeader current="ebao" />
       <main id="studio-main">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd([
+          breadcrumbJsonLd([{ name: "俱乐部首页", path: "/" }, { name: "e宝工坊", path: "/ebao-studio/" }]),
+          {
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            name: "e宝工坊",
+            alternateName: "EBAO STUDIO",
+            description: "能帮你干活的 AI 私人助理，调度数字员工处理图片、视频、内容发布与知识整理等任务。使用重庆AI创享俱乐部会员账号登录。",
+            url: absoluteUrl("/ebao-studio/"),
+            image: absoluteUrl("/images/ebao-studio/app-icon.webp"),
+            screenshot: absoluteUrl("/images/ebao-studio/desktop-home.webp"),
+            operatingSystem: ["Windows", "macOS"],
+            applicationCategory: "ProductivityApplication",
+            downloadUrl: absoluteUrl(download),
+            sameAs: repository,
+            inLanguage: "zh-CN",
+          },
+        ]) }} />
         <section className={styles.hero} aria-labelledby="studio-title">
           <div className={`${styles.container} ${styles.heroGrid}`}>
             <div className={styles.heroCopy}>
