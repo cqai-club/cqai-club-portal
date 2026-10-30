@@ -1,9 +1,32 @@
 import { listPublicActivities, type ActivityView } from "@/lib/club-activities";
 import { listPublicProjects, type PublicProject } from "@/lib/project-market";
+import { listPublicPartnerGroups } from "@/lib/partners";
 import { absoluteUrl, DEFAULT_SOCIAL_IMAGE, HOME_TITLE, serializeJsonLd, SITE_DESCRIPTION, SITE_NAME } from "@/lib/seo";
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]!);
+}
+
+function localizedAttributes(nameZh: string, nameEn: string): string {
+  return `data-home-zh="${escapeHtml(nameZh)}" data-home-en="${escapeHtml(nameEn)}"`;
+}
+
+function partnerGroups(groups: Awaited<ReturnType<typeof listPublicPartnerGroups>>): string {
+  if (!groups.length) {
+    return '<p class="desc" data-home-zh="合作伙伴信息正在整理。" data-home-en="Partner information is being updated.">合作伙伴信息正在整理。</p>';
+  }
+  return `<div class="partner-groups">${groups.map(group => {
+    const names = (duplicate = false) => group.partners.map(partner => {
+      const attributes = localizedAttributes(partner.nameZh, partner.nameEn);
+      const name = escapeHtml(partner.nameZh);
+      const element = partner.url
+        ? `<a href="${escapeHtml(partner.url)}" target="_blank" rel="noopener noreferrer"${duplicate ? ' tabindex="-1"' : ""} ${attributes}>${name}</a>`
+        : `<span ${attributes}>${name}</span>`;
+      return `<span class="sep">·</span>${element}`;
+    }).join("");
+    return `<div class="partner-group reveal"><h4 ${localizedAttributes(group.nameZh, group.nameEn)}>${escapeHtml(group.nameZh)}</h4>
+      <div class="v-marquee"><div class="v-track"><div class="v-group">${names()}</div><div class="v-group" aria-hidden="true">${names(true)}</div></div></div></div>`;
+  }).join("")}</div>`;
 }
 
 function projectCard(project: PublicProject): string {
@@ -67,8 +90,9 @@ function homepageHead(): string {
 
 /** Render the same published records to every visitor, including non-JS crawlers. */
 export async function renderHomepage(template: string): Promise<string> {
-  const [projects, activities] = await Promise.allSettled([
+  const [projects, activities, partners] = await Promise.allSettled([
     listPublicProjects({ featured: true, limit: 6 }), listPublicActivities(30, false),
+    listPublicPartnerGroups(),
   ]);
   const data: { projects?: PublicProject[]; activities?: ActivityView[] } = {};
   let html = template.replace(/<!-- seo:head:start -->[\s\S]*?<!-- seo:head:end -->/, () => homepageHead());
@@ -87,6 +111,11 @@ export async function renderHomepage(template: string): Promise<string> {
   } else {
     console.error("[seo] Homepage activities unavailable");
   }
+  const partnerContent = partners.status === "fulfilled"
+    ? partnerGroups(partners.value)
+    : '<p class="desc" data-home-zh="合作伙伴信息暂时不可用，请稍后刷新。" data-home-en="Partner information is temporarily unavailable. Please refresh later.">合作伙伴信息暂时不可用，请稍后刷新。</p>';
+  if (partners.status === "rejected") console.error("[homepage] Partners unavailable");
+  html = html.replace(/<!-- home:partners:start -->[\s\S]*?<!-- home:partners:end -->/, () => partnerContent);
   const seed = {
     projects: data.projects?.map(({ slug, name, summary, stage, focus, coverUrl, publicContact }) => ({ slug, name, summary, stage, focus, coverUrl, publicContact })),
     activities: data.activities?.map(({ id, title, summary, coverUrl, startsAt }) => ({ id, title, summary, coverUrl, startsAt })),

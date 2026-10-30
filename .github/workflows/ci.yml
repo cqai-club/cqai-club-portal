@@ -53,3 +53,4 @@ jobs:
           npm run test:mcp-bridge
           npm run test:resources
           npm run test:member-organizations
+          npm run test:partners

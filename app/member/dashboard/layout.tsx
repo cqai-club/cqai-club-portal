@@ -5,7 +5,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Navbar } from "@/components/layout/navbar";
 import { ProfileDrawerProvider } from "@/components/member/profile-drawer";
 import { logger } from "@/lib/logger";
-import { hasMemberAdminPermission, hasPluginAdminPermission } from "@/lib/member/permissions";
+import { hasMemberAdminPermission, hasPluginAdminPermission, hasPartnerAdminPermission } from "@/lib/member/permissions";
 import { hasInnovationMemberAccess } from "@/lib/member/innovation-access";
 import { canManageActivities } from "@/lib/club-activity-auth";
 import { normalizeLocale, t } from "@/lib/i18n";
@@ -58,13 +58,14 @@ export default async function DashboardLayout({
     avatar: accountInfo?.avatar ?? claims?.picture ?? undefined,
   };
   const locale = normalizeLocale(accountInfo?.profile?.locale);
-  const [canAccessMemberAdmin, canAccessPluginAdmin, canAccessActivityAdmin, canAccessInnovationMember] = await Promise.all([
+  const [canAccessMemberAdmin, canAccessPluginAdmin, canAccessActivityAdmin, canAccessPartnerAdmin, canAccessInnovationMember] = await Promise.all([
     hasMemberAdminPermission(),
     hasPluginAdminPermission(),
     canManageActivities(),
+    hasPartnerAdminPermission(),
     hasInnovationMemberAccess(),
   ]);
-  const canAccessAdmin = canAccessMemberAdmin || canAccessPluginAdmin || canAccessActivityAdmin;
+  const canAccessAdmin = canAccessMemberAdmin || canAccessPluginAdmin || canAccessActivityAdmin || canAccessPartnerAdmin;
 
   async function handleSignOut() {
     "use server";
@@ -81,11 +82,11 @@ export default async function DashboardLayout({
         {t("nav.skipToContent", locale)}
       </a>
       {/* Desktop Sidebar */}
-      <Sidebar canAccessAdmin={canAccessAdmin} canAccessMemberAdmin={canAccessMemberAdmin} canAccessPluginAdmin={canAccessPluginAdmin} canAccessActivityAdmin={canAccessActivityAdmin} canAccessInnovationMember={canAccessInnovationMember} />
+      <Sidebar canAccessAdmin={canAccessAdmin} canAccessMemberAdmin={canAccessMemberAdmin} canAccessPluginAdmin={canAccessPluginAdmin} canAccessActivityAdmin={canAccessActivityAdmin} canAccessPartnerAdmin={canAccessPartnerAdmin} canAccessInnovationMember={canAccessInnovationMember} />
 
       {/* Main Content */}
       <div className="min-w-0 md:pl-64">
-        <Navbar user={user} onSignOut={handleSignOut} canAccessAdmin={canAccessAdmin} canAccessMemberAdmin={canAccessMemberAdmin} canAccessPluginAdmin={canAccessPluginAdmin} canAccessActivityAdmin={canAccessActivityAdmin} canAccessInnovationMember={canAccessInnovationMember} />
+        <Navbar user={user} onSignOut={handleSignOut} canAccessAdmin={canAccessAdmin} canAccessMemberAdmin={canAccessMemberAdmin} canAccessPluginAdmin={canAccessPluginAdmin} canAccessActivityAdmin={canAccessActivityAdmin} canAccessPartnerAdmin={canAccessPartnerAdmin} canAccessInnovationMember={canAccessInnovationMember} />
         <main id="main-content" tabIndex={-1} className="scroll-mt-20 p-4 outline-none sm:p-6 lg:p-10">
           <div className="mx-auto w-full max-w-6xl">{children}</div>
         </main>

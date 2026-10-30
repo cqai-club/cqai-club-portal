@@ -17,16 +17,18 @@ interface SidebarProps {
   canAccessMemberAdmin?: boolean;
   canAccessPluginAdmin?: boolean;
   canAccessActivityAdmin?: boolean;
+  canAccessPartnerAdmin?: boolean;
   canAccessInnovationMember?: boolean;
 }
 
-export function Sidebar({ canAccessAdmin = false, canAccessMemberAdmin = false, canAccessPluginAdmin = false, canAccessActivityAdmin = false, canAccessInnovationMember = false }: SidebarProps) {
+export function Sidebar({ canAccessAdmin = false, canAccessMemberAdmin = false, canAccessPluginAdmin = false, canAccessActivityAdmin = false, canAccessPartnerAdmin = false, canAccessInnovationMember = false }: SidebarProps) {
   const pathname = usePathname();
   const { t, language } = useTranslations();
   const visibleMainNavItems = getVisibleMainNavItems(canAccessInnovationMember);
   const visibleAdminNavItems = adminNavItems.filter(item =>
     item.titleKey === "nav.adminPlugins" ? canAccessPluginAdmin
       : item.titleKey === "nav.adminActivities" ? canAccessActivityAdmin
+        : item.titleKey === "nav.adminPartners" ? canAccessPartnerAdmin
         : canAccessMemberAdmin
   );
 

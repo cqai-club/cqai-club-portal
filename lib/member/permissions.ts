@@ -6,6 +6,7 @@ import { logger } from "@/lib/logger";
 export const PLUGIN_ADMIN_PERMISSION = "plugin:admin";
 export const MEMBER_ADMIN_PERMISSION = "member:admin";
 export const PROJECT_PUBLISH_PERMISSION = "project:publish";
+export const PARTNER_ADMIN_PERMISSION = "partner:admin";
 
 type PermissionContext = {
   isAuthenticated: boolean;
@@ -53,6 +54,11 @@ export function hasPluginAdminPermission(): Promise<boolean> {
 /** Only the super-admin role should receive this resource permission. */
 export function hasProjectPublishPermission(): Promise<boolean> {
   return hasResourcePermission(PROJECT_PUBLISH_PERMISSION);
+}
+
+/** Partner management is granted only to the super-admin role. */
+export function hasPartnerAdminPermission(): Promise<boolean> {
+  return hasResourcePermission(PARTNER_ADMIN_PERMISSION);
 }
 
 /** The actor is read only after project:publish has been checked. */

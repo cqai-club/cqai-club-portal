@@ -58,6 +58,7 @@ export const zh = {
     aiGateway: "AI 网关平台",
     application: "创享会员申请",
     adminActivities: "活动管理",
+    adminPartners: "合作伙伴管理",
     adminMemberSettings: "会员设置",
     adminMembers: "会员申请",
     adminCollections: "项目征集",

@@ -19,9 +19,10 @@
     "test:mcp": "node scripts/mcp-smoke-test.js",
     "test:mcp-bridge": "node --test packages/cqai-club-mcp-bridge/test/*.test.mjs",
     "test:resources": "node scripts/member-resources-smoke-test.js",
-    "test": "npm run build && npm run test:deployment && npm run test:ebao-downloads && node scripts/ci-smoke-test.js && npm run test:activities && npm run test:plugin-submissions && npm run test:mcp && npm run test:mcp-bridge && npm run test:resources && npm run test:member-organizations && npm run test:seo",
+    "test": "npm run build && npm run test:deployment && npm run test:ebao-downloads && node scripts/ci-smoke-test.js && npm run test:activities && npm run test:plugin-submissions && npm run test:mcp && npm run test:mcp-bridge && npm run test:resources && npm run test:member-organizations && npm run test:seo && npm run test:partners",
     "test:member-organizations": "node scripts/member-organizations-smoke-test.js",
-    "test:seo": "node scripts/seo-smoke-test.js"
+    "test:seo": "node scripts/seo-smoke-test.js",
+    "test:partners": "node scripts/partners-smoke-test.js"
   },
   "dependencies": {
     "@logto/api": "^1.43.0",
