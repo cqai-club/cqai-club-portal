@@ -7,6 +7,36 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model PartnerGroup {
+  id        String    @id @default(uuid())
+  nameZh    String
+  nameEn    String
+  sortOrder Int       @default(0)
+  enabled   Boolean   @default(true)
+  revision  Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  partners  Partner[]
+
+  @@index([enabled, sortOrder])
+}
+
+model Partner {
+  id        String       @id @default(uuid())
+  groupId   String
+  nameZh    String
+  nameEn    String
+  url       String?
+  sortOrder Int          @default(0)
+  enabled   Boolean      @default(true)
+  revision  Int          @default(0)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  group     PartnerGroup @relation(fields: [groupId], references: [id], onDelete: Restrict)
+
+  @@index([groupId, enabled, sortOrder])
+}
+
 model MemberResource {
   id              String   @id @default(uuid())
   description     String

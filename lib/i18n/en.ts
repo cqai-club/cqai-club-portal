@@ -56,6 +56,7 @@ export const en = {
     aiGateway: "AI Gateway Platform",
     application: "Chuangxiang Membership Application",
     adminActivities: "Activity Management",
+    adminPartners: "Partner management",
     adminMemberSettings: "Member Settings",
     adminMembers: "Member Applications",
     adminCollections: "Project submissions",

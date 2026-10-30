@@ -29,6 +29,7 @@ export const logtoConfig: LogtoNextConfig = {
     "plugin:admin",
     "member:admin",
     "project:publish",
+    "partner:admin",
     ...(process.env.CQAI_ACTIVITY_PUBLISH_SCOPE_ENABLED === "true" ? ["activity:publish"] : []),
   ],
   resources: [CQAI_API_RESOURCE],

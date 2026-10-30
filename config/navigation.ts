@@ -11,6 +11,7 @@ import {
   Crown,
   Settings2,
   Network,
+  Handshake,
 } from "lucide-react";
 import { t, type Language } from "@/lib/i18n";
 
@@ -70,6 +71,12 @@ export const mainNavItems: NavItem[] = [
 ];
 
 export const adminNavItems: NavItem[] = [
+  {
+    href: "/member/dashboard/admin/partners",
+    title: "合作伙伴管理",
+    titleKey: "nav.adminPartners",
+    icon: Handshake,
+  },
   {
     href: "/member/dashboard/admin/member-settings",
     title: "会员设置",

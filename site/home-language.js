@@ -40,6 +40,10 @@
                 else element.setAttribute(attribute, value);
             });
         }
+        // Database-managed homepage names do not require a compiled dictionary key.
+        document.querySelectorAll('[data-home-zh][data-home-en]').forEach(element => {
+            element.textContent = element.getAttribute(language === 'en' ? 'data-home-en' : 'data-home-zh');
+        });
         const button = document.getElementById('languageSwitch');
         if (button) {
             button.hidden = false;

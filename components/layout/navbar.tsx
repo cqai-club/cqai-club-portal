@@ -44,6 +44,7 @@ interface NavbarProps {
   canAccessMemberAdmin?: boolean;
   canAccessPluginAdmin?: boolean;
   canAccessActivityAdmin?: boolean;
+  canAccessPartnerAdmin?: boolean;
   canAccessInnovationMember?: boolean;
   user?: {
     name?: string;
@@ -54,7 +55,7 @@ interface NavbarProps {
   onSignOut?: () => void;
 }
 
-export function Navbar({ user, onSignOut, canAccessAdmin = false, canAccessMemberAdmin = false, canAccessPluginAdmin = false, canAccessActivityAdmin = false, canAccessInnovationMember = false }: NavbarProps) {
+export function Navbar({ user, onSignOut, canAccessAdmin = false, canAccessMemberAdmin = false, canAccessPluginAdmin = false, canAccessActivityAdmin = false, canAccessPartnerAdmin = false, canAccessInnovationMember = false }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
@@ -66,6 +67,7 @@ export function Navbar({ user, onSignOut, canAccessAdmin = false, canAccessMembe
   const visibleAdminNavItems = adminNavItems.filter(item =>
     item.titleKey === "nav.adminPlugins" ? canAccessPluginAdmin
       : item.titleKey === "nav.adminActivities" ? canAccessActivityAdmin
+        : item.titleKey === "nav.adminPartners" ? canAccessPartnerAdmin
         : canAccessMemberAdmin
   );
   const currentNavItem = [...visibleMainNavItems, ...visibleAdminNavItems].find(item => isNavItemActive(item.href, pathname));
