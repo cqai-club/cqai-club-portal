@@ -280,6 +280,19 @@ model ClubActivity {
   @@index([recapPublishedAt, endsAt])
 }
 
+model ClubActivityContentImage {
+  id              String   @id @default(uuid())
+  storageKey      String   @unique
+  originalName    String
+  mimeType        String   @default("image/jpeg")
+  size            Int
+  createdByIssuer String
+  createdBySub    String
+  createdAt       DateTime @default(now())
+
+  @@index([createdByIssuer, createdBySub, createdAt])
+}
+
 model ClubActivityRecapImage {
   id           String       @id @default(uuid())
   activityId   String

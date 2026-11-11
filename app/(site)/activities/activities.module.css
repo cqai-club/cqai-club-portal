@@ -372,6 +372,135 @@
   line-height: 1.65;
 }
 
+.dateTime {
+  display: grid;
+  gap: 8px;
+}
+
+.dateLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.dateLine > span {
+  white-space: nowrap;
+}
+
+.weekday {
+  color: var(--project-muted);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.timeRange {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 20px;
+  line-height: 28px;
+  font-variant-numeric: tabular-nums;
+}
+
+.timeRange time,
+.deadlineTime {
+  white-space: nowrap;
+}
+
+.rangeSeparator,
+.endpointLabel {
+  color: var(--project-muted);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.dateEndpoint {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.endpointLabel {
+  flex-shrink: 0;
+}
+
+.deadlineTime {
+  font-size: 18px;
+  line-height: 28px;
+  font-variant-numeric: tabular-nums;
+}
+
+.locationRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.locationLink {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  gap: 8px;
+  border-radius: 4px;
+  color: var(--project-ink);
+  text-decoration: none;
+}
+
+.locationAddress {
+  min-width: 0;
+  flex: 1;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.mapAction {
+  color: var(--project-primary-deep);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.locationLink:hover .locationAddress,
+.locationLink:hover .mapAction {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.locationLink:active {
+  background: #f6f2ff;
+}
+
+.copyAddressButton {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--project-primary-deep);
+  background: transparent;
+  cursor: pointer;
+}
+
+.copyAddressButton:hover,
+.copyAddressButton:active {
+  background: #f6f2ff;
+}
+
+.copyAddressButton[aria-disabled="true"] {
+  cursor: wait;
+  opacity: 0.6;
+}
+
 .signupSlot {
   grid-column: 2;
   grid-row: 1 / span 2;
@@ -395,6 +524,8 @@
 .primaryAction:focus-visible,
 .secondaryAction:focus-visible,
 .archiveLink:focus-visible,
+.locationLink:focus-visible,
+.copyAddressButton:focus-visible,
 .breadcrumb a:focus-visible {
   outline: 3px solid rgba(109, 40, 217, 0.55);
   outline-offset: 3px;
