@@ -3,10 +3,10 @@
 
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FileText, ImagePlus, X } from "lucide-react";
 
-import { MarkdownField } from "@/components/markdown/MarkdownField";
+import { ActivityContentEditor } from "@/components/activities/ActivityContentEditor";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { MAX_RECAP_IMAGE_BYTES, MAX_RECAP_IMAGES } from "@/lib/club-activity-recap-config";
 import type { ActivityRecapView, ActivityView } from "@/lib/club-activities";
@@ -40,9 +40,23 @@ export function ActivityRecapDrawer({
   const [hasPublishedDetail, setHasPublishedDetail] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [contentUploading, setContentUploading] = useState(false);
+  const contentUploadingRef = useRef(false);
+  const [contentValid, setContentValid] = useState(true);
+  const contentValidRef = useRef(true);
+  const contentValidationChanged = useCallback((valid: boolean) => {
+    contentValidRef.current = valid;
+    setContentValid(valid);
+  }, []);
+  const contentUploadChanged = useCallback((uploading: boolean) => {
+    contentUploadingRef.current = uploading;
+    setContentUploading(uploading);
+  }, []);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const baselineRef = useRef({ form, imageIds: [] as string[] });
+  const formRef = useRef(form);
+  const savingRef = useRef(false);
   const pendingRef = useRef<PendingImage[]>([]);
   const requestRef = useRef(0);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -54,9 +68,10 @@ export function ActivityRecapDrawer({
   const activitySummary = activity?.summary;
   const dirty = JSON.stringify(form) !== JSON.stringify(baselineRef.current.form) ||
     JSON.stringify(existingImages.map(image => image.id)) !== JSON.stringify(baselineRef.current.imageIds) ||
-    pendingImages.length > 0;
+    pendingImages.length > 0 || contentUploading;
 
   useEffect(() => { pendingRef.current = pendingImages; }, [pendingImages]);
+  useEffect(() => { formRef.current = form; }, [form]);
   useEffect(() => () => { pendingRef.current.forEach(image => URL.revokeObjectURL(image.previewUrl)); }, []);
 
   useEffect(() => {
@@ -122,7 +137,7 @@ export function ActivityRecapDrawer({
   }
 
   function requestClose() {
-    if (saving) return;
+    if (saving || contentUploadingRef.current) return;
     if (dirty && !window.confirm("回顾内容尚未提交，确定关闭并放弃修改吗？")) return;
     requestRef.current += 1;
     clearPending();
@@ -149,11 +164,17 @@ export function ActivityRecapDrawer({
   }
 
   async function importText(file: File | undefined) {
-    if (!file) return;
+    if (!file || saving || contentUploadingRef.current) return;
     if (file.size > 100_000 || !/\.txt$/i.test(file.name)) {
       setError("请选择不超过 100KB 的 TXT 文字稿。");
     } else if (!form.content.trim() || window.confirm("导入文字稿会替换当前回顾正文，确定继续吗？")) {
+      const requestId = requestRef.current;
+      const previousContent = form.content;
       const content = await file.text();
+      if (requestId !== requestRef.current || savingRef.current || contentUploadingRef.current || formRef.current.content !== previousContent) {
+        if (textInputRef.current) textInputRef.current.value = "";
+        return;
+      }
       if (content.length > 20_000) {
         setError("文字稿不能超过 20000 字。");
       } else {
@@ -166,7 +187,12 @@ export function ActivityRecapDrawer({
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!activity || saving || loading || preview) return;
+    if (!activity || saving || contentUploadingRef.current || loading || preview) return;
+    if (!contentValidRef.current) {
+      setError("请先修正回顾正文中的图片地址或正文长度。");
+      return;
+    }
+    savingRef.current = true;
     setSaving(true);
     setError("");
     setSuccess("");
@@ -195,6 +221,7 @@ export function ActivityRecapDrawer({
       setError(caught instanceof Error ? caught.message : "活动回顾提交失败。");
       window.requestAnimationFrame(() => errorRef.current?.focus());
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }
@@ -209,7 +236,7 @@ export function ActivityRecapDrawer({
           <SheetTitle ref={headingRef} tabIndex={-1} className="text-xl outline-none">{publishedAt ? "编辑活动回顾" : "提交活动回顾"}</SheetTitle>
           <SheetDescription className="break-words">{activity?.title ?? "活动"} · 提交后生成历史回顾卡片；填写正文时还会生成图文详情页。</SheetDescription>
         </SheetHeader>
-        <button type="button" disabled={saving} onClick={requestClose} className="absolute right-5 top-5 min-h-11 rounded-lg border px-3 text-sm font-medium hover:bg-muted disabled:opacity-50">关闭</button>
+        <button type="button" disabled={saving || contentUploading} onClick={requestClose} className="absolute right-5 top-5 min-h-11 rounded-lg border px-3 text-sm font-medium hover:bg-muted disabled:opacity-50">关闭</button>
         {preview && <p className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">当前为示例预览，可体验填写和上传界面；提交请前往真实管理页。</p>}
         {error && <p ref={errorRef} tabIndex={-1} role="alert" className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive outline-none">{error}</p>}
         {success && <p role="status" className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm">{success} {hasPublishedDetail && <Link href={`/events/recaps/${encodeURIComponent(activity?.id ?? "")}/`} target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline">查看回顾</Link>}</p>}
@@ -222,11 +249,12 @@ export function ActivityRecapDrawer({
               <div><label htmlFor="recap-title" className="text-sm font-medium">回顾标题</label><Input id="recap-title" maxLength={120} value={form.title} onChange={event => setForm(current => ({ ...current, title: event.target.value }))} disabled={saving} className={inputClass} /></div>
               <div><label htmlFor="recap-summary" className="text-sm font-medium">回顾摘要 <span className="font-normal text-muted-foreground">· 可选</span></label><textarea id="recap-summary" rows={3} maxLength={300} value={form.summary} onChange={event => setForm(current => ({ ...current, summary: event.target.value }))} placeholder="留空则使用活动摘要" disabled={saving} className={inputClass + " resize-y"} /></div>
               <div>
-                <div className="flex justify-end"><button type="button" disabled={saving} onClick={() => textInputRef.current?.click()} className="inline-flex min-h-11 items-center gap-1.5 text-xs font-medium text-primary hover:underline disabled:opacity-50"><FileText aria-hidden="true" className="size-4" />导入 TXT 文字稿</button></div>
-                <MarkdownField id="recap-content" label="回顾正文 · 可选" value={form.content}
+                <div className="flex justify-end"><button type="button" disabled={saving || contentUploading} onClick={() => textInputRef.current?.click()} className="inline-flex min-h-11 items-center gap-1.5 text-xs font-medium text-primary hover:underline disabled:opacity-50"><FileText aria-hidden="true" className="size-4" />导入 TXT 文字稿</button></div>
+                <ActivityContentEditor key={activityId} id="recap-content" label="回顾正文 · 可选" value={form.content}
                   onChange={value => setForm(current => ({ ...current, content: value }))} maxLength={20000} rows={11}
                   placeholder="记录活动亮点、嘉宾观点、现场讨论与后续成果…" disabled={saving}
-                  help="留空也可生成回顾卡片；填写后会生成图文详情页。支持 Markdown 标题、列表、链接、图片、代码与表格。" />
+                  preview={preview} onBusyChange={contentUploadChanged} onValidationChange={contentValidationChanged}
+                  help="留空也可生成回顾卡片；填写后会生成图文详情页。可直接排版、上传、粘贴或拖入正文图片。" />
                 <input ref={textInputRef} type="file" accept=".txt,text/plain" className="hidden" tabIndex={-1} aria-hidden="true" onChange={event => void importText(event.target.files?.[0])} />
               </div>
             </section>
@@ -243,7 +271,7 @@ export function ActivityRecapDrawer({
           </>}
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-3 border-t bg-background px-5 py-4 sm:px-7">
-          <button type="submit" disabled={loading || saving || preview || (Boolean(publishedAt) && !dirty)} className="min-h-11 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-50">{saving ? "正在生成回顾…" : publishedAt ? "保存回顾修改" : "提交并生成回顾"}</button>
+          <button type="submit" disabled={loading || saving || contentUploading || !contentValid || preview || (Boolean(publishedAt) && !dirty)} className="min-h-11 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-50">{contentUploading ? "图片上传中…" : saving ? "正在生成回顾…" : publishedAt ? "保存回顾修改" : "提交并生成回顾"}</button>
           {publishedAt && activity && hasPublishedDetail && <Link href={`/events/recaps/${encodeURIComponent(activity.id)}/`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-primary hover:underline">查看公开回顾</Link>}
           {!dirty && <span className="text-xs text-muted-foreground">{publishedAt ? "当前没有未保存的修改" : "可以直接提交，也可以补充回顾内容"}</span>}
         </div>

@@ -8,7 +8,7 @@ import { ExternalLink, ImagePlus, MoreHorizontal, RefreshCw, Search } from "luci
 
 import { ProjectCoverCropDialog } from "@/components/project-cover-crop-dialog";
 import { ActivityRecapDrawer } from "@/components/activities/ActivityRecapDrawer";
-import { MarkdownField } from "@/components/markdown/MarkdownField";
+import { ActivityContentEditor } from "@/components/activities/ActivityContentEditor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -152,6 +152,18 @@ export function ActivityManager({ previewData }: { previewData?: ActivityManager
   const [loading, setLoading] = useState(!previewData);
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
+  const [contentUploading, setContentUploading] = useState(false);
+  const contentUploadingRef = useRef(false);
+  const [contentValid, setContentValid] = useState(true);
+  const contentValidRef = useRef(true);
+  const contentValidationChanged = useCallback((valid: boolean) => {
+    contentValidRef.current = valid;
+    setContentValid(valid);
+  }, []);
+  const contentUploadChanged = useCallback((uploading: boolean) => {
+    contentUploadingRef.current = uploading;
+    setContentUploading(uploading);
+  }, []);
   const loadRequestRef = useRef(0);
   const [filter, setFilter] = useState<ActivityFilter>("all");
   const [draftFilter, setDraftFilter] = useState<ActivityFilter>("all");
@@ -264,7 +276,7 @@ export function ActivityManager({ previewData }: { previewData?: ActivityManager
   }, []);
 
   const dirtyDetails = JSON.stringify(form) !== JSON.stringify(baselineRef.current);
-  const dirty = dirtyDetails || Boolean(coverFile);
+  const dirty = dirtyDetails || Boolean(coverFile) || contentUploading;
   const now = Date.now();
   const currentActivity = items.find(item => item.id === editingId);
   const lockedDetails = Boolean(currentActivity && (
@@ -310,7 +322,7 @@ export function ActivityManager({ previewData }: { previewData?: ActivityManager
   }, [dirty, drawerOpen]);
 
   async function execute(action: () => Promise<void>): Promise<boolean> {
-    if (busyRef.current) return false;
+    if (busyRef.current || contentUploadingRef.current) return false;
     busyRef.current = true;
     setBusy(true);
     setMessage("");
@@ -339,7 +351,7 @@ export function ActivityManager({ previewData }: { previewData?: ActivityManager
   }
 
   function requestDrawerClose() {
-    if (busyRef.current || coverCropOpen) return;
+    if (busyRef.current || contentUploadingRef.current || coverCropOpen) return;
     if (dirty && !window.confirm("当前活动有未保存的修改，确定关闭并放弃吗？")) return;
     setError("");
     setMessage("");
@@ -347,7 +359,7 @@ export function ActivityManager({ previewData }: { previewData?: ActivityManager
   }
 
   function edit(activity: ActivityView, trigger: HTMLButtonElement) {
-    if (busyRef.current || activity.id === editingId || (dirty && !window.confirm("当前活动有未保存的修改，确定放弃并切换吗？"))) return;
+    if (busyRef.current || contentUploadingRef.current || activity.id === editingId || (dirty && !window.confirm("当前活动有未保存的修改，确定放弃并切换吗？"))) return;
     drawerTriggerRef.current = trigger;
     clearPendingCover();
     setEditingId(activity.id);
@@ -361,7 +373,7 @@ export function ActivityManager({ previewData }: { previewData?: ActivityManager
   }
 
   function createNew(trigger: HTMLButtonElement) {
-    if (busyRef.current || (dirty && !window.confirm("当前活动有未保存的修改，确定放弃并新建吗？"))) return;
+    if (busyRef.current || contentUploadingRef.current || (dirty && !window.confirm("当前活动有未保存的修改，确定放弃并新建吗？"))) return;
     drawerTriggerRef.current = trigger;
     clearPendingCover();
     const nextForm = emptyForm();
@@ -375,7 +387,7 @@ export function ActivityManager({ previewData }: { previewData?: ActivityManager
   }
 
   function discardChanges() {
-    if (busyRef.current || (dirty && !window.confirm("确定放弃当前未保存的修改吗？"))) return;
+    if (busyRef.current || contentUploadingRef.current || (dirty && !window.confirm("确定放弃当前未保存的修改吗？"))) return;
     clearPendingCover();
     setForm(baselineRef.current);
     setFormErrors({});
@@ -448,6 +460,11 @@ export function ActivityManager({ previewData }: { previewData?: ActivityManager
   }
 
   async function save(publish = false): Promise<boolean> {
+    if (contentUploadingRef.current) return false;
+    if (!contentValidRef.current) {
+      setError("请先修正活动介绍中的图片地址或正文长度。");
+      return false;
+    }
     if (lockedDetails) {
       setError("该活动已开始或取消，基本信息不可修改；封面可单独保存。");
       return false;
@@ -719,7 +736,7 @@ export function ActivityManager({ previewData }: { previewData?: ActivityManager
               <SheetTitle ref={editorHeadingRef} tabIndex={-1} className="text-xl outline-none">{editingId ? "编辑活动" : "新建活动"}</SheetTitle>
               <SheetDescription>{lockedDetails ? "活动已开始或取消，基本信息已锁定；仍可更新封面。" : currentActivity?.status === "published" ? "修改保存后会同步更新前台活动信息。" : "填写基本信息，保存草稿后再发布。"}</SheetDescription>
             </SheetHeader>
-            <button type="button" disabled={busy} onClick={requestDrawerClose} className="absolute right-5 top-5 min-h-11 rounded-lg border px-3 text-sm font-medium hover:bg-muted disabled:opacity-50">关闭</button>
+            <button type="button" disabled={busy || contentUploading} onClick={requestDrawerClose} className="absolute right-5 top-5 min-h-11 rounded-lg border px-3 text-sm font-medium hover:bg-muted disabled:opacity-50">关闭</button>
             {currentActivity && <span className="mt-3 inline-flex rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">{phaseLabel(phaseOf(currentActivity, now))}</span>}
             {dirty && <p role="status" className="mt-2 text-xs font-medium text-amber-700 dark:text-amber-300">有未保存的修改</p>}
             {error && <p role="alert" className="mt-3 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{error}</p>}
@@ -764,10 +781,11 @@ export function ActivityManager({ previewData }: { previewData?: ActivityManager
                 <Input id="activity-summary" maxLength={300} value={form.summary} onChange={event => update("summary", event.target.value)} aria-invalid={Boolean(formErrors.summary)} aria-describedby={formErrors.summary ? "activity-summary-error" : undefined} className={controlClass} />
                 <FieldError field="summary" errors={formErrors} />
               </div>
-              <MarkdownField id="activity-content" label="活动介绍" value={form.content}
+              <ActivityContentEditor key={editingId ?? "new"} id="activity-content" label="活动介绍" value={form.content}
                 onChange={value => update("content", value)} maxLength={20000} rows={8}
                 disabled={busy || lockedDetails} previewOnly={lockedDetails}
-                placeholder="使用 Markdown 介绍活动内容、议程和参与方式…" />
+                preview={Boolean(previewData)} onBusyChange={contentUploadChanged} onValidationChange={contentValidationChanged}
+                placeholder="介绍活动内容、议程和参与方式，可直接排版或插入图片…" />
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label htmlFor="activity-mode" className="text-sm font-medium">形式</label>
@@ -800,10 +818,10 @@ export function ActivityManager({ previewData }: { previewData?: ActivityManager
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2 border-t bg-background px-5 py-4 sm:px-7">
             {!lockedDetails && <>
-              <button type="submit" disabled={busy || (Boolean(editingId) && !dirty)} className="min-h-11 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-50">{busy ? "正在保存…" : editingId ? "保存修改" : "保存草稿"}</button>
-              {(!currentActivity || currentActivity.status === "draft") && <button type="button" disabled={busy} onClick={() => { if (window.confirm("确认保存当前内容并发布活动？发布后前台会立即可见。")) void save(true); }} className="min-h-11 rounded-lg border px-4 text-sm font-medium text-primary hover:bg-muted disabled:opacity-50">保存并发布</button>}
+              <button type="submit" disabled={busy || contentUploading || !contentValid || (Boolean(editingId) && !dirty)} className="min-h-11 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-50">{contentUploading ? "图片上传中…" : busy ? "正在保存…" : editingId ? "保存修改" : "保存草稿"}</button>
+              {(!currentActivity || currentActivity.status === "draft") && <button type="button" disabled={busy || contentUploading || !contentValid} onClick={() => { if (window.confirm("确认保存当前内容并发布活动？发布后前台会立即可见。")) void save(true); }} className="min-h-11 rounded-lg border px-4 text-sm font-medium text-primary hover:bg-muted disabled:opacity-50">保存并发布</button>}
             </>}
-            {dirty && <button type="button" disabled={busy} onClick={discardChanges} className="min-h-11 rounded-lg px-3 text-sm font-medium text-muted-foreground hover:bg-muted disabled:opacity-50">放弃修改</button>}
+            {dirty && <button type="button" disabled={busy || contentUploading} onClick={discardChanges} className="min-h-11 rounded-lg px-3 text-sm font-medium text-muted-foreground hover:bg-muted disabled:opacity-50">放弃修改</button>}
             {!dirty && editingId && <span className="self-center text-xs text-muted-foreground">当前没有未保存的修改</span>}
           </div>
         </form>

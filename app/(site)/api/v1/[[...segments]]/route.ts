@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { activityActor } from "@/lib/club-activity-auth";
+import { MAX_ACTIVITY_CONTENT_IMAGE_BYTES } from "@/lib/club-activity-content-image-config";
+import { createActivityContentImage, isActivityContentImagePublic, readActivityContentImage } from "@/lib/club-activity-content-image";
 import { readActivityCover, removeActivityCover, saveActivityCover } from "@/lib/club-activity-cover";
 import { MAX_RECAP_IMAGE_BYTES, MAX_RECAP_IMAGES } from "@/lib/club-activity-recap-config";
 import { readRecapImage, removeRecapImage, saveRecapImage, type StoredRecapImage } from "@/lib/club-activity-recap-image";
@@ -87,6 +89,39 @@ async function run(request: Request): Promise<NextResponse> {
   const path = pathOf(request);
   const method = request.method;
   const [first, second, third, fourth, fifth] = path;
+
+  if (method === "GET" && path.length === 2 && first === "activity-content-images") {
+    const image = await prisma.clubActivityContentImage.findUnique({ where: { id: second } });
+    if (!image || image.mimeType !== "image/jpeg") {
+      throw new ActivityError(404, "CONTENT_IMAGE_NOT_FOUND", "活动正文图片不存在。");
+    }
+    const origins = [new URL(request.url).origin];
+    for (const value of [process.env.BASE_URL_PROD, process.env.BASE_URL_DEV]) {
+      if (!value) continue;
+      try { origins.push(new URL(value).origin); } catch { /* Invalid runtime URLs are handled by configuration validation. */ }
+    }
+    if (!await isActivityContentImagePublic(image.id, origins)) {
+      try {
+        await activityActor(request, { manage: true });
+      } catch {
+        throw new ActivityError(404, "CONTENT_IMAGE_NOT_FOUND", "活动正文图片不存在。");
+      }
+    }
+    try {
+      const buffer = await readActivityContentImage(image.storageKey);
+      return new NextResponse(new Uint8Array(buffer), {
+        headers: {
+          "Content-Type": "image/jpeg",
+          "Content-Length": String(buffer.length),
+          "Cache-Control": "no-store",
+          "X-Content-Type-Options": "nosniff",
+        },
+      });
+    } catch (error) {
+      console.error("Club activity content image unavailable:", error);
+      throw new ActivityError(404, "CONTENT_IMAGE_NOT_FOUND", "活动正文图片不存在。");
+    }
+  }
 
   if (method === "GET" && path.length === 1 && first === "activities") {
     const queryLimit = new URL(request.url).searchParams.get("limit");
@@ -198,6 +233,26 @@ async function run(request: Request): Promise<NextResponse> {
     return json(await listActivityRegistrations(second));
   }
 
+  if (method === "POST" && path.length === 1 && first === "activity-content-images") {
+    const actor = await activityActor(request, { manage: true, write: true });
+    limitWrites(actor);
+    const contentLength = Number(request.headers.get("content-length"));
+    if (Number.isFinite(contentLength) && contentLength > MAX_ACTIVITY_CONTENT_IMAGE_BYTES + 64_000) {
+      throw new ActivityError(413, "BODY_TOO_LARGE", "图片大小不能超过 5MB。");
+    }
+    let formData: FormData;
+    try {
+      formData = await request.formData();
+    } catch {
+      throw new ActivityError(400, "INVALID_UPLOAD", "图片上传数据无法解析。");
+    }
+    const candidates = formData.getAll("image");
+    const files = [...formData.values()].filter(value => typeof value !== "string");
+    if (candidates.length !== 1 || typeof candidates[0] === "string" || files.length !== 1) {
+      throw new ActivityError(400, "INVALID_UPLOAD", "请每次上传一张正文图片。");
+    }
+    return json(await createActivityContentImage(candidates[0], actor), 201);
+  }
   if (method === "POST" && path.length === 1 && first === "activities") {
     const actor = await activityActor(request, { manage: true, write: true });
     limitWrites(actor);

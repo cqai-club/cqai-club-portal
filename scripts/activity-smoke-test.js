@@ -72,6 +72,7 @@ async function main() {
     env: {
       ...process.env,
       DATABASE_URL: databaseUrl,
+      CQAI_STORAGE_ROOT: path.join(tempDirectory, 'storage'),
       LOGTO_ENDPOINT: `http://127.0.0.1:${jwksPort}`,
       LOGTO_APP_ID: 'activity-smoke-web',
       LOGTO_APP_SECRET: 'activity-smoke-secret',
@@ -120,10 +121,60 @@ async function main() {
     assert.equal((await request('/api/v1/me/activity-registrations')).status, 401);
     assert.equal((await request('/api/v1/me/activity-registrations', { token: wrongAudience })).status, 401);
 
+    const contentImageBytes = await sharp({ create: { width: 2400, height: 1200, channels: 4, background: '#6d28d980' } }).png().toBuffer();
+    const contentWebpBytes = await sharp(contentImageBytes).webp().toBuffer();
+    const contentImageBody = (bytes = contentImageBytes, type = 'image/png', name = 'activity-content.png') => {
+      const form = new FormData();
+      form.append('image', new Blob([bytes], { type }), name);
+      return form;
+    };
+    const uploadContentImage = (token, body = contentImageBody(), origin = baseUrl) => fetch(`${baseUrl}/api/v1/activity-content-images`, {
+      method: 'POST',
+      headers: { Origin: origin, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body,
+    });
+    assert.equal((await uploadContentImage()).status, 401);
+    assert.equal((await uploadContentImage(undefined, contentImageBody(), 'https://untrusted.invalid')).status, 403);
+    assert.equal((await uploadContentImage(memberA)).status, 403);
+    assert.equal((await uploadContentImage(managerA, contentImageBody(Buffer.from('<svg/>')))).status, 400);
+    assert.equal((await uploadContentImage(managerA, contentImageBody(contentImageBytes, 'image/webp'))).status, 400);
+    assert.equal((await uploadContentImage(managerA, contentImageBody(Buffer.alloc(5 * 1024 * 1024 + 1)))).status, 413);
+    const multipleImages = contentImageBody();
+    multipleImages.append('image', new Blob([contentImageBytes], { type: 'image/png' }), 'second.png');
+    assert.equal((await uploadContentImage(managerA, multipleImages)).status, 400);
+
+    const contentUpload = await uploadContentImage(managerA);
+    assert.equal(contentUpload.status, 201, await contentUpload.clone().text());
+    const contentImage = await contentUpload.json();
+    assert.match(contentImage.url, /^\/api\/v1\/activity-content-images\/[a-f0-9-]+$/);
+    assert.equal(contentImage.mimeType, 'image/jpeg');
+    assert.equal(contentImage.originalName, 'activity-content.png');
+    assert.equal((await fetch(`${baseUrl}${contentImage.url}`)).status, 404);
+    assert.equal((await fetch(`${baseUrl}${contentImage.url}`, { headers: { Authorization: `Bearer ${memberA}` } })).status, 404);
+    // Any manager may preview an unattached image, including another manager's upload.
+    const privateContentImage = await fetch(`${baseUrl}${contentImage.url}`, { headers: { Authorization: `Bearer ${managerB}` } });
+    assert.equal(privateContentImage.status, 200);
+    assert.equal(privateContentImage.headers.get('content-type'), 'image/jpeg');
+    assert.equal(privateContentImage.headers.get('x-content-type-options'), 'nosniff');
+    assert.equal(privateContentImage.headers.get('cache-control'), 'no-store');
+    const normalizedContentBytes = Buffer.from(await privateContentImage.arrayBuffer());
+    assert.equal(normalizedContentBytes.length, contentImage.size);
+    const normalizedContent = await sharp(normalizedContentBytes).metadata();
+    assert.equal(normalizedContent.format, 'jpeg');
+    assert.equal(normalizedContent.width, 1800);
+    assert.equal(normalizedContent.height, 900);
+    const webpUpload = await uploadContentImage(managerB, contentImageBody(contentWebpBytes, 'image/webp', 'activity-content.webp'));
+    assert.equal(webpUpload.status, 201, await webpUpload.clone().text());
+    const recapContentImage = await webpUpload.json();
+    assert.equal((await fetch(`${baseUrl}${recapContentImage.url}`)).status, 404);
+    assert.equal((await fetch(`${baseUrl}/api/v1/activity-content-images/00000000-0000-0000-0000-000000000000`)).status, 404);
+
     const now = Date.now();
     const startsAt = new Date(now + 3 * 86_400_000).toISOString();
+    const activityContent = '## 活动议程\n\n- 主题分享\n- 现场交流';
     const input = {
-      title: '活动接口联调', summary: '报名和权限回归验证', content: '## 活动议程\n\n- 主题分享\n- 现场交流',
+      title: '活动接口联调', summary: '报名和权限回归验证',
+      content: `${activityContent}\n\n![活动现场](${contentImage.url})\n\n伪路径 ${recapContentImage.url}-suffix\n\n外站链接：https://example.invalid${recapContentImage.url}`,
       mode: 'offline', location: '重庆', startsAt,
       endsAt: new Date(now + 3 * 86_400_000 + 2 * 3_600_000).toISOString(),
       registrationOpensAt: new Date(now - 3_600_000).toISOString(),
@@ -136,6 +187,7 @@ async function main() {
     const id = created.body.id;
     assert.equal(created.body.status, 'draft');
     assert.equal((await request(`/api/v1/activities/${id}`)).status, 404);
+    assert.equal((await fetch(`${baseUrl}${contentImage.url}`)).status, 404);
 
     const coverBytes = await sharp({ create: { width: 64, height: 40, channels: 3, background: '#6d28d9' } }).png().toBuffer();
     const coverBody = () => {
@@ -162,6 +214,8 @@ async function main() {
     assert.equal(published.status, 200, JSON.stringify(published.body));
     assert.equal(published.body.status, 'published');
     assert.equal((await fetch(`${baseUrl}${withCover.coverUrl}`)).status, 200);
+    assert.equal((await fetch(`${baseUrl}${contentImage.url}`)).status, 200);
+    assert.equal((await fetch(`${baseUrl}${recapContentImage.url}`)).status, 404, 'External URLs and ID prefixes must not publish private images');
     assert.equal((await request('/api/v1/activities')).body.items.length, 1);
     const listingPage = await fetch(`${baseUrl}/activities`);
     assert.equal(listingPage.status, 200);
@@ -175,6 +229,7 @@ async function main() {
     assert.match(detailHtml, /<h2>活动议程<\/h2>/);
     assert.match(detailHtml, /<li>主题分享<\/li>/);
     assert.ok(detailHtml.includes(withCover.coverUrl));
+    assert.ok(detailHtml.includes(contentImage.url));
 
     const simultaneous = await Promise.all([
       request(`/api/v1/activities/${id}/registration`, { method: 'POST', token: memberA }),
@@ -189,13 +244,17 @@ async function main() {
     assert.equal((await request(`/api/v1/activities/${id}/registrations`, { token: memberA })).status, 403);
     assert.equal((await request(`/api/v1/activities/${id}/registrations`, { token: managerA })).body.items.length, 1);
 
-    const edited = await request(`/api/v1/activities/${id}`, { method: 'PATCH', token: managerB, body: { ...input, title: '已更新的活动' } });
+    const edited = await request(`/api/v1/activities/${id}`, { method: 'PATCH', token: managerB, body: { ...input, title: '已更新的活动', content: activityContent } });
     assert.equal(edited.status, 200, JSON.stringify(edited.body));
     assert.equal(edited.body.title, '已更新的活动');
     assert.ok(edited.body.detailsChangedAt);
+    assert.equal((await fetch(`${baseUrl}${contentImage.url}`)).status, 404, 'Removing the last public reference must make the image private again');
+    assert.equal((await request(`/api/v1/activities/${id}`, { method: 'PATCH', token: managerB, body: { ...input, title: '已更新的活动' } })).status, 200);
+    assert.equal((await fetch(`${baseUrl}${contentImage.url}`)).status, 200);
     assert.equal((await request(`/api/v1/activities/${id}`, { method: 'DELETE', token: memberA })).status, 403);
     assert.equal((await request(`/api/v1/activities/${id}`, { method: 'DELETE', token: managerB })).status, 204);
     assert.equal((await request(`/api/v1/activities/${id}`)).status, 404);
+    assert.equal((await fetch(`${baseUrl}${contentImage.url}`)).status, 404, 'Soft-deleted activities must not publish images');
     const mine = await request('/api/v1/me/activity-registrations', { token: loser });
     assert.equal(mine.body.items[0].activity.deletedAt !== null, true);
     const repeatActivity = await request('/api/v1/activities', { method: 'POST', token: managerA, body: { ...input, capacity: 2 } });
@@ -243,7 +302,7 @@ async function main() {
       if (withImage) form.append('images', new Blob([coverBytes], { type: 'image/png' }), 'recap.png');
       return form;
     };
-    const recapContent = '## 现场亮点\n\n- 智能体应用讨论\n- 产品实践与合作计划';
+    const recapContent = `## 现场亮点\n\n- 智能体应用讨论\n- 产品实践与合作计划\n\n![回顾现场](${baseUrl}${recapContentImage.url})`;
     const prematureRecap = await fetch(`${baseUrl}/api/v1/activities/${recapId}/recap`, {
       method: 'PUT', headers: { Authorization: `Bearer ${managerA}` }, body: recapForm(recapContent),
     });
@@ -292,6 +351,7 @@ async function main() {
     assert.ok(!cardHtml.includes(`/events/recaps/${recapId}/`));
     assert.ok(!cardHtml.includes('阅读图文回顾'));
     assert.equal((await fetch(`${baseUrl}/events/recaps/${recapId}/`)).status, 404);
+    assert.equal((await fetch(`${baseUrl}${recapContentImage.url}`)).status, 404);
 
     const recapUpload = await fetch(`${baseUrl}/api/v1/activities/${recapId}/recap`, {
       method: 'PUT', headers: { Authorization: `Bearer ${managerA}` }, body: recapForm(recapContent, [], true),
@@ -302,6 +362,7 @@ async function main() {
     assert.equal(recap.summary, input.summary);
     assert.ok(recap.publishedAt);
     assert.equal(recap.images.length, 1);
+    assert.equal((await fetch(`${baseUrl}${recapContentImage.url}`)).status, 200, 'Published recap body images must be public');
     assert.equal((await request(`/api/v1/activities/${recapId}/recap`)).status, 200);
     const recapImage = await fetch(`${baseUrl}${recap.images[0].url}`);
     assert.equal(recapImage.status, 200);
@@ -328,10 +389,11 @@ async function main() {
     assert.equal((await request(`/api/v1/activities/${recapId}/recap`)).status, 404);
     assert.equal((await fetch(`${baseUrl}/events/recaps/${recapId}/`)).status, 404);
     assert.equal((await fetch(`${baseUrl}${recap.images[0].url}`)).status, 404);
+    assert.equal((await fetch(`${baseUrl}${recapContentImage.url}`)).status, 404, 'Clearing the recap must make its body images private');
     assert.equal((await request(`/api/v1/activities/${recapId}`, { method: 'DELETE', token: managerA })).status, 204);
     assert.equal((await request(`/api/v1/activities/${recapId}/recap`)).status, 404);
 
-    console.log('Club activities: bearer audience, manager pagination, cover upload, signup capacity, recap publishing and soft deletion passed.');
+    console.log('Club activities: bearer audience, content-image validation/privacy, manager pagination, cover upload, signup capacity, recap publishing and soft deletion passed.');
   } finally {
     app.kill('SIGTERM');
     await new Promise(resolve => app.once('exit', resolve));

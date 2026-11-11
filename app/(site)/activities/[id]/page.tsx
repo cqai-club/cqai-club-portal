@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 
 import { ActivitySignup } from "@/components/activities/ActivitySignup";
+import { CopyActivityAddress } from "@/components/activities/CopyActivityAddress";
 import { MarkdownContent } from "@/components/markdown/MarkdownContent";
 import { ActivityError, getPublicActivity } from "@/lib/club-activities";
 import { absoluteUrl, breadcrumbJsonLd, createPageMetadata, serializeJsonLd, SITE_NAME } from "@/lib/seo";
@@ -36,15 +37,52 @@ export async function generateMetadata({ params }: ActivityDetailProps): Promise
   });
 }
 
-const dateText = (iso: string) => new Intl.DateTimeFormat("zh-CN", {
-  timeZone: "Asia/Shanghai", dateStyle: "full", timeStyle: "short",
-}).format(new Date(iso));
+const dateFormatter = new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", dateStyle: "long" });
+const weekdayFormatter = new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", weekday: "short" });
+const timeFormatter = new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+
+function ActivityDate({ iso }: { iso: string }) {
+  const date = new Date(iso);
+  return <span className={styles.dateLine}>
+    <span>{dateFormatter.format(date)}</span>
+    <span className={styles.weekday}>（{weekdayFormatter.format(date)}）</span>
+  </span>;
+}
+
+function ActivityTimeRange({ startsAt, endsAt }: { startsAt: string; endsAt: string }) {
+  const start = new Date(startsAt);
+  const end = new Date(endsAt);
+  if (dateFormatter.format(start) === dateFormatter.format(end)) {
+    return <div className={styles.dateTime}>
+      <ActivityDate iso={startsAt} />
+      <span className={styles.timeRange}>
+        <time dateTime={startsAt}>{timeFormatter.format(start)}</time>
+        <span className={styles.rangeSeparator}>至</span>
+        <time dateTime={endsAt}>{timeFormatter.format(end)}</time>
+      </span>
+    </div>;
+  }
+  return <div className={styles.dateTime}>
+    {[{ label: "开始", iso: startsAt }, { label: "结束", iso: endsAt }].map(({ label, iso }) => (
+      <div key={label} className={styles.dateEndpoint}>
+        <span className={styles.endpointLabel}>{label}</span>
+        <time dateTime={iso} className={styles.dateTime}>
+          <ActivityDate iso={iso} />
+          <span className={styles.timeRange}>{timeFormatter.format(new Date(iso))}</span>
+        </time>
+      </div>
+    ))}
+  </div>;
+}
 
 export default async function ActivityDetailPage({ params }: ActivityDetailProps) {
   const { id } = await params;
   const activity = await getActivity(id);
   const activityPath = `/activities/${encodeURIComponent(activity.id)}/`;
   const onlineUrl = /^https?:\/\//i.test(activity.location) ? activity.location : undefined;
+  // Room and building numbers can prevent map searches from finding the venue.
+  const mapLocation = activity.location.replace(/\s*(?:[A-Za-z]+\d*|\d+)(?:号楼|[栋幢座楼层室]).*$/u, "").trim() || activity.location;
+  const mapUrl = `https://apis.map.qq.com/uri/v1/search?keyword=${encodeURIComponent(mapLocation)}&referer=cqai-club-portal`;
   return (
     <main id="activities-main" className={styles.main}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd([
@@ -84,12 +122,6 @@ export default async function ActivityDetailPage({ params }: ActivityDetailProps
             此活动已取消，无法继续报名。
           </p>
         )}
-        {activity.detailsChangedAt && (
-          <p className={styles.notice} role="status">
-            活动信息曾更新，请重新核对时间和地点。
-          </p>
-        )}
-
         <header className={styles.detailHero}>
           <span className={styles.eyebrow}>CQAI CLUB EVENT</span>
           <h1>{activity.title}</h1>
@@ -105,16 +137,31 @@ export default async function ActivityDetailPage({ params }: ActivityDetailProps
             <h2 id="activity-facts-title">活动信息</h2>
             <dl className={styles.factGrid}>
               <div>
-                <dt>活动时间</dt>
-                <dd>{dateText(activity.startsAt)} 至 {dateText(activity.endsAt)}</dd>
+                <dt>活动时间（北京时间）</dt>
+                <dd><ActivityTimeRange startsAt={activity.startsAt} endsAt={activity.endsAt} /></dd>
               </div>
               <div>
                 <dt>活动地点</dt>
-                <dd>{activity.mode === "online" ? "线上" : "线下"} · {activity.location}</dd>
+                <dd>
+                  <div className={styles.locationRow}>
+                    {activity.mode === "online" ? <span className={styles.locationAddress}>线上 · {activity.location}</span> : (
+                      <a className={styles.locationLink} href={mapUrl} target="_blank" rel="noopener noreferrer">
+                        <span className={styles.locationAddress}>线下 · {activity.location}</span>
+                        <span className={styles.mapAction}>打开地图导航 <span aria-hidden="true">↗</span></span>
+                      </a>
+                    )}
+                    <CopyActivityAddress address={activity.location} className={styles.copyAddressButton} />
+                  </div>
+                </dd>
               </div>
               <div>
                 <dt>报名截止</dt>
-                <dd>{dateText(activity.registrationClosesAt)}</dd>
+                <dd>
+                  <time dateTime={activity.registrationClosesAt} className={styles.dateTime}>
+                    <ActivityDate iso={activity.registrationClosesAt} />
+                    <span className={styles.deadlineTime}>{timeFormatter.format(new Date(activity.registrationClosesAt))}</span>
+                  </time>
+                </dd>
               </div>
               <div>
                 <dt>报名人数</dt>
