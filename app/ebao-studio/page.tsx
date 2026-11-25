@@ -12,34 +12,36 @@ import siteStyles from "@/app/projects/projects.module.css";
 import styles from "./studio.module.css";
 
 const repository = "https://github.com/cqai-club/ebao-studio";
-const download = "/api/ebao-studio/download";
-const guide = `${repository}/blob/master/docs/user-guide.md`;
+const download = "/api/ebao-studio/download/";
+const windowsDownload = { href: `${download}?platform=windows`, label: "Windows x64" };
+const macDownloads = [
+  { href: `${download}?platform=macos&arch=arm64`, label: "Mac Apple 芯片版" },
+  { href: `${download}?platform=macos&arch=x64`, label: "Mac Intel 芯片版" },
+];
+const guide = `${repository}/blob/master/docs/development-release.md`;
 const employeeArtworkVersion = "20261014";
+const description = "e宝工坊是基于 DeepSeek Harness 的桌面 AI 工作台，支持 Windows 和 macOS。使用 e宝工坊账号登录，重庆 AI 创享俱乐部现有账号可以直接使用。";
 
 export const dynamic = "force-dynamic";
 
 export function generateMetadata(): Metadata {
   return createPageMetadata({
-    title: "e宝工坊 AI 私人助理与数字员工下载 | 重庆AI创享俱乐部",
-    description: "e宝工坊是能帮你干活的私人助理，调度数字员工帮你处理任务。基于重庆AI创享俱乐部会员体系，内置适合的模型，无需配置复杂环境，会员账号登录即可使用。",
+    title: "e宝工坊 AI 工作台下载 | 重庆AI创享俱乐部",
+    description,
     path: "/ebao-studio/",
-    image: "/images/ebao-studio/desktop-home.webp",
+    image: "/images/ebao-studio/app-icon.webp",
   });
 }
 
-const tools = [
+const historicalPlugins = [
   { icon: ImagePlus, name: "e图宝", label: "帮你生成和编辑图片", description: "图片生成与编辑、提示词模板、无限画布，把零散灵感整理成可继续创作的图像。", image: "imagegen.webp", className: "imageTool" },
   { icon: Video, name: "e剪宝", label: "帮你制作视频", description: "在统一视频工作区中，选择数字人、短视频或口播制作流程，组织素材、文案和制作设置。", image: "video.webp", className: "videoTool" },
   { icon: Send, name: "多平台发布", label: "帮你整理和发布内容", description: "管理平台账号，整理文章、图文与视频草稿，预览内容，确认后提交到所选账号。", image: "publisher.webp", className: "publishTool" },
-] as const;
-
-const pluginTools = [
   { icon: MessagesSquare, name: "e销宝", label: "帮你准备销售沟通", description: "结合客户原话和产品知识，辅助准备销售话术、应对异议，并复盘沟通过程。", image: "employee-sales.webp", className: "purpleTool" },
   { icon: GraduationCap, name: "e研宝", label: "帮你推进学术研究", description: "提供文献研究、论文写作、同行评审与研究流程四套学术技能，辅助推进研究任务。", image: "employee-research.webp", className: "blueTool" },
   { icon: BookOpen, name: "知识库", label: "帮你整理和检索知识", description: "导入资料、整理知识，通过带来源引用的问答找到依据，也让 e宝按需检索项目资料。", image: "employee-knowledge.webp", className: "blueTool" },
 ] as const;
 
-// Follow desktop-presentation's roster: installed employees replace same-name planned cards.
 const employeeGroups = [
   {
     id: "upcoming", icon: Puzzle, title: "正在建设的数字员工", status: "建设中",
@@ -56,18 +58,18 @@ const employeeGroups = [
 
 const features = [
   { icon: Bot, title: "交代任务", description: "告诉 e宝你想做什么，围绕当前任务与私人助理沟通，把需求说清楚。" },
-  { icon: Layers3, title: "调度帮手", description: "让私人助理调度合适的数字员工，由各有专长的帮手参与具体工作。" },
+  { icon: Layers3, title: "选择模型", description: "登录后从工作台选择模型，也可以在模型设置中管理自己的 API Key。" },
   { icon: FolderOpen, title: "围绕项目工作", description: "带上自己的文件与素材，在工作区中处理任务，接着已有的工作往下做。" },
-  { icon: Puzzle, title: "团队持续扩充", description: "更多数字员工正在开发中，团队的专长会逐步丰富，帮你处理更多工作场景。" },
+  { icon: Puzzle, title: "管理插件", description: "在桌面插件管理器查看和安装所需的官方 Harness 插件。" },
 ];
 
 function EmployeeCard({ employee, status, headingLevel = 3 }: {
-  employee: (typeof tools)[number] | (typeof pluginTools)[number] | (typeof employeeGroups)[number]["employees"][number];
-  status?: "插件可用" | "建设中";
+  employee: (typeof historicalPlugins)[number] | (typeof employeeGroups)[number]["employees"][number];
+  status: "历史插件" | "建设中";
   headingLevel?: 3 | 4;
 }) {
   const Heading = headingLevel === 4 ? "h4" : "h3";
-  const imageSource = `/images/ebao-studio/${employee.image}${status ? `?v=${employeeArtworkVersion}` : ""}`;
+  const imageSource = `/images/ebao-studio/${employee.image}?v=${employeeArtworkVersion}`;
 
   return (
     <article className={`${styles.toolCard} ${styles[employee.className]}`}>
@@ -75,12 +77,21 @@ function EmployeeCard({ employee, status, headingLevel = 3 }: {
       <div className={styles.toolBody}>
         <div className={styles.toolIdentity}>
           <p className={styles.toolName}><employee.icon size={19} aria-hidden="true" />{employee.name}</p>
-          {status && <span className={`${styles.employeeBadge} ${status === "插件可用" ? styles.availableBadge : ""}`}>{status}</span>}
+          <span className={styles.employeeBadge}>{status}</span>
         </div>
         <Heading>{employee.label}</Heading>
         <p>{employee.description}</p>
       </div>
     </article>
+  );
+}
+
+function DownloadLinks({ href, label, buttonClass }: { href: string; label: string; buttonClass: string }) {
+  return (
+    <div>
+      <a className={buttonClass} href={href} target="_blank" rel="noopener noreferrer">下载 {label}<ArrowUpRight size={18} aria-hidden="true" /></a>
+      <small>手动选择 <a href={`${href}&source=gitcode`} target="_blank" rel="noopener noreferrer" aria-label={`从 GitCode 下载 ${label}`}>GitCode</a> · <a href={`${href}&source=github`} target="_blank" rel="noopener noreferrer" aria-label={`从 GitHub 下载 ${label}`}>GitHub</a></small>
+    </div>
   );
 }
 
@@ -97,13 +108,12 @@ export default function EbaoStudioPage() {
             "@type": "SoftwareApplication",
             name: "e宝工坊",
             alternateName: "EBAO STUDIO",
-            description: "能帮你干活的 AI 私人助理，调度数字员工处理图片、视频、内容发布与知识整理等任务。使用重庆AI创享俱乐部会员账号登录。",
+            description,
             url: absoluteUrl("/ebao-studio/"),
             image: absoluteUrl("/images/ebao-studio/app-icon.webp"),
-            screenshot: absoluteUrl("/images/ebao-studio/desktop-home.webp"),
             operatingSystem: ["Windows", "macOS"],
             applicationCategory: "ProductivityApplication",
-            downloadUrl: absoluteUrl(download),
+            downloadUrl: [windowsDownload, ...macDownloads].map(({ href }) => absoluteUrl(href)),
             sameAs: repository,
             inLanguage: "zh-CN",
           },
@@ -116,27 +126,23 @@ export default function EbaoStudioPage() {
                 <Image src="/images/ebao-studio/app-icon.webp" alt="" width={48} height={48} unoptimized />
                 <span>e宝工坊 <small>EBAO STUDIO</small></span>
               </div>
-              <h1 id="studio-title">一个助理，<br />一群<span>帮手。</span></h1>
-              <p className={styles.lead}>告诉 e宝你要做什么。<br />它会调度不同专长的数字员工，<br className={styles.desktopBreak} />帮你处理任务，让工作一步步往前。</p>
+              <h1 id="studio-title">你的桌面<br /><span>AI 工作台。</span></h1>
+              <p className={styles.lead}>和 e宝讨论任务，在工作区里整理文件、素材和会话。</p>
               <div className={styles.actions}>
                 <a className={styles.primaryButton} href="#download"><Download size={18} aria-hidden="true" />下载 e宝工坊</a>
                 <Link className={styles.secondaryButton} href="/member"><LogIn size={18} aria-hidden="true" />会员中心</Link>
               </div>
-              <p className={styles.memberHint}><BadgeCheck size={18} aria-hidden="true" />内置模型，会员账号登录即可使用</p>
+              <p className={styles.memberHint}><BadgeCheck size={18} aria-hidden="true" />使用 e宝工坊账号登录</p>
               <p className={styles.heroNote}><Monitor size={15} aria-hidden="true" />Windows · macOS<span>开源桌面应用</span></p>
             </div>
             <div className={styles.heroVisual}>
               <div className={styles.orbit} aria-hidden="true" />
-              <span className={`${styles.floatingLabel} ${styles.labelImage}`}><ImagePlus size={18} aria-hidden="true" />图片员工</span>
               <Image className={styles.robot} src="/images/ebao-studio/robot.webp" alt="E宝私人助理形象：举着星星的机器人" width={720} height={586} sizes="(max-width: 760px) 85vw, 520px" unoptimized loading="eager" />
-              <span className={`${styles.floatingLabel} ${styles.labelVideo}`}><Video size={18} aria-hidden="true" />视频员工</span>
-              <span className={`${styles.floatingLabel} ${styles.labelPublish}`}><Send size={18} aria-hidden="true" />发布员工</span>
               <p className={styles.visualCaption}>我是 E宝，你的私人助理。<span>需要帮忙的事，交给我来安排。</span></p>
             </div>
           </div>
           <div className={`${styles.container} ${styles.heroBottom}`}>
-            <span>一位私人助理，一支数字员工团队</span>
-            <a href="#workspace">看看如何帮你干活<ArrowDown size={16} aria-hidden="true" /></a>
+            <a href="#workspace">了解账号与工作区<ArrowDown size={16} aria-hidden="true" /></a>
           </div>
         </section>
 
@@ -144,16 +150,15 @@ export default function EbaoStudioPage() {
           <section className={styles.membership} id="membership" aria-labelledby="membership-title">
             <div className={styles.membershipCopy}>
               <p className={styles.kicker}>MEMBER LOGIN, READY TO WORK</p>
-              <h2 id="membership-title">内置模型，会员登录即用。</h2>
-              <p>e宝工坊基于 <Link href="/">重庆AI创享俱乐部</Link> 的会员体系，已内置适合工作场景的模型，无需配置复杂环境。</p>
-              <p>下载并安装后，在 e宝工坊中使用俱乐部会员账号登录，就可以让私人助理和数字员工开始帮你干活。</p>
+              <h2 id="membership-title">用 e宝工坊账号登录</h2>
+              <p>安装后，在欢迎页选择 e宝工坊账号。已有 <Link href="/">重庆 AI 创享俱乐部</Link> 账号可以直接使用，登录后可在工作台选择模型。</p>
             </div>
             <Link className={styles.secondaryButton} href="/member"><LogIn size={18} aria-hidden="true" />前往会员中心</Link>
           </section>
           <div className={styles.sectionHeading}>
             <p className={styles.kicker}>MEET YOUR ASSISTANT</p>
-            <h2 id="workspace-title">你交代任务，e宝调度帮手。</h2>
-            <p>e宝是和你沟通的私人助理，数字员工是负责具体工作的帮手。说出需求，让不同专长的员工参与到你的任务中。</p>
+            <h2 id="workspace-title">早期工作区界面</h2>
+            <p>这张截图来自旧版。v0.0.17 采用 DeepSeek Harness 桌面工作区。</p>
           </div>
           <figure className={styles.screenshot}>
             <Image src="/images/ebao-studio/desktop-home.webp" alt="e宝工坊真实首页：对话输入区、E宝机器人，以及 e图宝、e剪宝和多平台发布数字员工入口" width={1632} height={988} sizes="(max-width: 1120px) 94vw, 1120px" unoptimized />
@@ -165,12 +170,11 @@ export default function EbaoStudioPage() {
           <div className={styles.container}>
             <div className={styles.sectionHeading}>
               <p className={styles.kicker}>MEET YOUR DIGITAL TEAM</p>
-              <h2 id="tools-title">先认识几位数字员工。</h2>
-              <p>从图片、视频和内容发布，到销售沟通、学术研究与知识整理，每位数字员工各有所长。更多工作方向也在建设中。</p>
+              <h2 id="tools-title">历史插件与开发计划</h2>
+              <p>以下图片、视频、发布和知识整理等插件来自旧版。v0.0.17 默认使用官方 Harness 插件，这些历史插件仍待重新接入。</p>
             </div>
             <div className={styles.toolGrid} id="extensions">
-              {tools.map(tool => <EmployeeCard key={tool.name} employee={tool} />)}
-              {pluginTools.map(tool => <EmployeeCard key={tool.name} employee={tool} status="插件可用" />)}
+              {historicalPlugins.map(tool => <EmployeeCard key={tool.name} employee={tool} status="历史插件" />)}
             </div>
             {employeeGroups.map(group => (
               <section key={group.id} className={styles.employeeTeam} id={group.id} aria-labelledby={`${group.id}-title`}>
@@ -183,15 +187,14 @@ export default function EbaoStudioPage() {
                 </div>
               </section>
             ))}
-            <p className={styles.sectionNote}>当前展示的是部分数字员工，实际可用功能以软件版本和已启用插件为准。</p>
           </div>
         </section>
 
         <section className={`${styles.section} ${styles.container} ${styles.videoSection}`} aria-labelledby="video-title">
           <div className={styles.videoCopy}>
             <p className={styles.kicker}>ONE TASK, THE RIGHT HELPER</p>
-            <h2 id="video-title">比如视频任务，<br />就有专门的帮手。</h2>
-            <p>e剪宝是团队里的视频制作员工。以已有口播素材为例：选择制作流程，放入素材，填写文案，再调整画面和制作设置，在专门的工作区里推进这项任务。</p>
+            <h2 id="video-title">旧版 e剪宝的工作区</h2>
+            <p>旧版 e剪宝提供过独立的视频制作工作区。下图是口播制作表单，可导入素材、填写文案和调整制作设置。</p>
             <ul className={styles.checkList}>
               <li><Check size={18} aria-hidden="true" />数字人、短视频、口播制作入口</li>
               <li><Check size={18} aria-hidden="true" />围绕素材和文案组织工作</li>
@@ -208,8 +211,7 @@ export default function EbaoStudioPage() {
           <div className={styles.container}>
             <div className={styles.sectionHeading}>
               <p className={styles.kicker}>BUILT AROUND YOUR WORK</p>
-              <h2 id="foundation-title">从交代任务，到找到帮手。</h2>
-              <p>由私人助理和你沟通，再调度数字员工参与工作。不同的任务，可以有不同专长的帮手。</p>
+              <h2 id="foundation-title">在桌面工作区处理任务</h2>
             </div>
             <div className={styles.featureGrid}>
               {features.map(feature => (
@@ -219,30 +221,30 @@ export default function EbaoStudioPage() {
                 </article>
               ))}
             </div>
-            <p className={styles.privacyNote}>工作区、会话和配置默认保存在本机；使用云端模型、联网工具或发布功能时，会连接相应服务。</p>
+            <p className={styles.privacyNote}>工作区、会话和配置默认保存在本机。使用云端模型或联网工具时，应用会连接相应服务。</p>
           </div>
         </section>
 
         <section className={`${styles.section} ${styles.container}`} id="download" aria-labelledby="download-title">
           <div className={styles.downloadHeading}>
-            <div><p className={styles.kicker}>READY WHEN YOU ARE</p><h2 id="download-title">让私人助理和数字员工，来到你的桌面。</h2><p>选择适合你的系统，下载安装后，在软件中使用重庆AI创享俱乐部会员账号登录即可开始。</p></div>
+            <div><p className={styles.kicker}>READY WHEN YOU ARE</p><h2 id="download-title">下载 e宝工坊</h2><p>选择适合你电脑的安装包。安装后，使用 e宝工坊账号登录，俱乐部现有账号可以直接使用。</p></div>
             <Sparkles size={38} aria-hidden="true" />
           </div>
           <div className={styles.downloadGrid}>
             <article className={styles.downloadCard}>
-              <Monitor size={28} aria-hidden="true" /><h3>Windows</h3><p>x64 安装包 · Portable ZIP</p>
-              <a className={styles.primaryButton} href={`${download}?platform=windows`} target="_blank" rel="noopener noreferrer">下载 Windows 最新版<ArrowUpRight size={18} aria-hidden="true" /></a>
-              <small>默认下载 x64 安装包。手动选择：<a href={`${download}?platform=windows&source=gitcode`} target="_blank" rel="noopener noreferrer">GitCode</a> · <a href={`${download}?platform=windows&source=github`} target="_blank" rel="noopener noreferrer">GitHub</a></small>
+              <Monitor size={28} aria-hidden="true" /><h3>Windows</h3><p>x64 安装包</p>
+              <DownloadLinks {...windowsDownload} buttonClass={styles.primaryButton} />
             </article>
             <article className={styles.downloadCard}>
-              <Monitor size={28} aria-hidden="true" /><h3>macOS</h3><p>Universal · Intel 与 Apple Silicon</p>
-              <a className={styles.secondaryButton} href={`${download}?platform=macos`} target="_blank" rel="noopener noreferrer">下载 macOS 最新版<ArrowUpRight size={18} aria-hidden="true" /></a>
-              <small>默认下载 Universal DMG。手动选择：<a href={`${download}?platform=macos&source=gitcode`} target="_blank" rel="noopener noreferrer">GitCode</a> · <a href={`${download}?platform=macos&source=github`} target="_blank" rel="noopener noreferrer">GitHub</a></small>
+              <Monitor size={28} aria-hidden="true" /><h3>macOS</h3><p>在「关于本机」查看芯片或处理器。</p>
+              <div className={styles.downloadOptions}>
+                {macDownloads.map(target => <DownloadLinks key={target.href} {...target} buttonClass={styles.secondaryButton} />)}
+              </div>
             </article>
           </div>
-          <div className={styles.releaseNote}><strong>当前提供测试预发布版本</strong><p>按访问 IP 自动选择下载源：中国大陆使用 GitCode，其他地区使用 GitHub；也可手动切换。安装包暂未签名。平台支持、安装提示与更新说明，请以对应 Release 为准；安装版自带核心运行环境。</p><p>便携版、ZIP 与历史版本：<a href="https://gitcode.com/g-dxw/ebao-studio/releases" target="_blank" rel="noopener noreferrer">GitCode 发行版本</a> · <a href={`${repository}/releases`} target="_blank" rel="noopener noreferrer">GitHub 发行版本</a></p></div>
+          <div className={styles.releaseNote}><strong>测试预发布与安装说明</strong><p>v0.0.17 通过安装包手动安装，使用独立的数据目录。安装包暂未签名，支持范围及系统提示请查看对应的发行说明。</p><p>中国大陆默认从 GitCode 下载，其他地区默认从 GitHub 下载。也可以手动选择下载源。</p><p>浏览安装说明和历史版本 <a href="https://gitcode.com/g-dxw/ebao-studio/releases" target="_blank" rel="noopener noreferrer">GitCode 发行版本</a> · <a href={`${repository}/releases`} target="_blank" rel="noopener noreferrer">GitHub 发行版本</a></p></div>
           <div className={styles.resourceLinks}>
-            <a href={guide} target="_blank" rel="noopener noreferrer">阅读使用指南<ArrowUpRight size={15} aria-hidden="true" /></a>
+            <a href={guide} target="_blank" rel="noopener noreferrer">阅读开发与安装说明<ArrowUpRight size={15} aria-hidden="true" /></a>
             <a href={`${repository}/issues`} target="_blank" rel="noopener noreferrer">反馈与交流<ArrowUpRight size={15} aria-hidden="true" /></a>
             <a href={repository} target="_blank" rel="noopener noreferrer">查看项目源码<ArrowUpRight size={15} aria-hidden="true" /></a>
           </div>
@@ -251,9 +253,9 @@ export default function EbaoStudioPage() {
         <section className={`${styles.container} ${styles.faq}`} aria-labelledby="faq-title">
           <h2 id="faq-title">开始之前，你可能还想了解</h2>
           <details><summary>e宝和数字员工是什么关系？</summary><p>e宝是和你沟通、帮你调度工作的私人助理；数字员工是负责具体任务的帮手，各有专长。你把需求告诉 e宝，由它调度合适的员工参与工作。</p></details>
-          <details><summary>现在有哪些数字员工？</summary><p>本页展示了 e图宝、e剪宝和多平台发布，以及已提供插件的 e销宝、e研宝和知识库。e文宝、e客宝、创作白板、e恋爱宝和 e家宝正在建设中。插件需安装并启用后使用，实际可用的员工与功能以当前软件版本和已启用插件为准。</p></details>
-          <details><summary>需要配置模型或复杂环境吗？</summary><p>不用。e宝工坊已内置适合工作场景的模型，无需先自行配置复杂环境。使用重庆AI创享俱乐部会员账号在软件中登录，即可开始使用。</p></details>
-          <details><summary>使用哪个账号登录？</summary><p>使用重庆AI创享俱乐部会员账号。下载并安装 e宝工坊后，在软件中登录；账号相关事项可前往 <Link href="/member">会员中心</Link> 查看。</p></details>
+          <details><summary>现在有哪些插件？</summary><p>v0.0.17 默认使用官方 Harness 插件，旧版的 e图宝、e剪宝和多平台发布等插件仍待重新接入。已安装的插件可在桌面工作区内查看和管理。</p></details>
+          <details><summary>登录后如何选择模型？</summary><p>在工作台打开模型设置，选择 e宝工坊账号提供的模型。若你使用自己的 DeepSeek API Key，可在模型设置中单独配置。</p></details>
+          <details><summary>使用哪个账号登录？</summary><p>在欢迎页选择 e宝工坊账号。已有的重庆 AI 创享俱乐部账号可以直接使用，账号相关事项可前往 <Link href="/member">会员中心</Link> 查看。</p></details>
           <details><summary>可以扩展更多功能吗？</summary><p>可以。e宝工坊支持通过插件扩展能力，也支持用 Profile 管理不同工作配置。插件安装、启用和开发方式请查看项目文档。</p></details>
           <details><summary>这是 DeepSeek 官方软件吗？</summary><p>e宝工坊基于 DeepSeek Harness，由社区独立维护，与深度求索及上游官方团队没有隶属或背书关系。</p></details>
         </section>

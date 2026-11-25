@@ -1,10 +1,10 @@
 # e宝工坊下载分流
 
-下载按钮访问 `/api/ebao-studio/download?platform=windows` 或 `platform=macos`。接口使用本地 IPv4/IPv6 国家数据库识别访问 IP：中国大陆（CN）走 `g-dxw/ebao-studio` 的 GitCode，其他地区走 `cqai-club/ebao-studio` 的 GitHub。没有可识别公网 IP 时默认 GitHub；不依据浏览器语言或时区判断。识别的是网络出口，使用代理时可在下载卡片手动选择源（`source=gitcode` 或 `source=github`）。
+下载按钮访问 `/api/ebao-studio/download?platform=windows` 或 `platform=macos&arch=arm64`（Apple 芯片）、`platform=macos&arch=x64`（Intel 芯片）。接口使用本地 IPv4/IPv6 国家数据库识别访问 IP：中国大陆（CN）走 `g-dxw/ebao-studio` 的 GitCode，其他地区走 `cqai-club/ebao-studio` 的 GitHub。没有可识别公网 IP 时默认 GitHub；不依据浏览器语言或时区判断。识别的是网络出口，使用代理时可在下载卡片手动选择源（`source=gitcode` 或 `source=github`）。
 
 应用延续现有门户的可信代理约定：先读取由 `deploy/nginx-club.conf` 覆盖的 `X-Real-IP`，没有该字段才读取 `X-Forwarded-For` 的最后一个地址。生产应用必须保持仅可信反向代理可访问。如果未来在 Nginx 前增加 CDN，需要先配置真实客户端 IP 还原；不能直接把 CDN 节点 IP 当作用户 IP。
 
-每次点击都会以 `cache: no-store` 查询对应平台最近 100 个公开 Release，优先按语义版本号选择具有对应安装包的最高版本，包含当前测试预发布。补传旧版本不会覆盖新版本；同版本以发布时间排序，无法解析版本号的条目排在标准版本之后并按发布时间（GitCode 使用创建时间）排序。GitHub 的 `/releases/latest` 会跳过预发布，不能用于当前版本。Windows 下载 x64 Setup EXE，macOS 下载 Universal DMG；便携 ZIP 和历史版本保留在发行页面入口。国内外下载源各自获取最新可用版本，GitCode 镜像尚未同步时可能暂时落后于 GitHub。
+每次点击都会以 `cache: no-store` 查询对应平台最近 100 个公开 Release，优先按语义版本号选择具有对应安装包的最高版本，包含当前测试预发布。补传旧版本不会覆盖新版本。同版本以发布时间排序，无法解析版本号的条目排在标准版本之后并按发布时间（GitCode 使用创建时间）排序。Windows 支持新版 `-win-x64-unsigned.exe` 和历史 `-x64-Setup.exe`。macOS 优先使用同版本的指定芯片 DMG，也支持历史通用 DMG。旧的 `platform=macos` 链接在最新可用版本按芯片分包且没有通用包时，跳转到所选来源的发行列表。界面由访客选择芯片。便携 ZIP 和历史版本保留在发行页面入口，GitCode 镜像同步前可能暂时落后于 GitHub。
 
 只接受对应仓库 HTTPS `/releases/download/` 路径的永久附件地址，不缓存临时 CDN 签名 URL。应用返回 `302` 和 `Cache-Control: private, no-store`，安装包由平台 CDN 提供。API 限流、超过 5 秒或没有有效安装包时跳转到同一下载源的发行列表。
 
