@@ -158,7 +158,7 @@ export default function EbaoStudioPage() {
           <div className={styles.sectionHeading}>
             <p className={styles.kicker}>MEET YOUR ASSISTANT</p>
             <h2 id="workspace-title">早期工作区界面</h2>
-            <p>这张截图来自旧版。v0.0.17 采用 DeepSeek Harness 桌面工作区。</p>
+            <p>这张截图来自旧版。当前预览版采用 DeepSeek Harness 桌面工作区。</p>
           </div>
           <figure className={styles.screenshot}>
             <Image src="/images/ebao-studio/desktop-home.webp" alt="e宝工坊真实首页：对话输入区、E宝机器人，以及 e图宝、e剪宝和多平台发布数字员工入口" width={1632} height={988} sizes="(max-width: 1120px) 94vw, 1120px" unoptimized />
@@ -171,7 +171,7 @@ export default function EbaoStudioPage() {
             <div className={styles.sectionHeading}>
               <p className={styles.kicker}>MEET YOUR DIGITAL TEAM</p>
               <h2 id="tools-title">历史插件与开发计划</h2>
-              <p>以下图片、视频、发布和知识整理等插件来自旧版。v0.0.17 默认使用官方 Harness 插件，这些历史插件仍待重新接入。</p>
+              <p>以下图片、视频、发布和知识整理等插件来自旧版。当前预览版默认使用官方 Harness 插件，这些历史插件仍待重新接入。</p>
             </div>
             <div className={styles.toolGrid} id="extensions">
               {historicalPlugins.map(tool => <EmployeeCard key={tool.name} employee={tool} status="历史插件" />)}
@@ -242,7 +242,7 @@ export default function EbaoStudioPage() {
               </div>
             </article>
           </div>
-          <div className={styles.releaseNote}><strong>测试预发布与安装说明</strong><p>v0.0.17 通过安装包手动安装，使用独立的数据目录。安装包暂未签名，支持范围及系统提示请查看对应的发行说明。</p><p>中国大陆默认从 GitCode 下载，其他地区默认从 GitHub 下载。也可以手动选择下载源。</p><p>浏览安装说明和历史版本 <a href="https://gitcode.com/g-dxw/ebao-studio/releases" target="_blank" rel="noopener noreferrer">GitCode 发行版本</a> · <a href={`${repository}/releases`} target="_blank" rel="noopener noreferrer">GitHub 发行版本</a></p></div>
+          <div className={styles.releaseNote}><strong>测试预发布与安装说明</strong><p>请下载安装包手动安装。预览版使用独立的数据目录，安装包暂未签名。支持范围及系统提示请查看对应的发行说明。</p><p>中国大陆默认从 GitCode 下载，其他地区默认从 GitHub 下载。也可以手动选择下载源。</p><p>浏览安装说明和历史版本 <a href="https://gitcode.com/g-dxw/ebao-studio/releases" target="_blank" rel="noopener noreferrer">GitCode 发行版本</a> · <a href={`${repository}/releases`} target="_blank" rel="noopener noreferrer">GitHub 发行版本</a></p></div>
           <div className={styles.resourceLinks}>
             <a href={guide} target="_blank" rel="noopener noreferrer">阅读开发与安装说明<ArrowUpRight size={15} aria-hidden="true" /></a>
             <a href={`${repository}/issues`} target="_blank" rel="noopener noreferrer">反馈与交流<ArrowUpRight size={15} aria-hidden="true" /></a>
@@ -253,7 +253,7 @@ export default function EbaoStudioPage() {
         <section className={`${styles.container} ${styles.faq}`} aria-labelledby="faq-title">
           <h2 id="faq-title">开始之前，你可能还想了解</h2>
           <details><summary>e宝和数字员工是什么关系？</summary><p>e宝是和你沟通、帮你调度工作的私人助理；数字员工是负责具体任务的帮手，各有专长。你把需求告诉 e宝，由它调度合适的员工参与工作。</p></details>
-          <details><summary>现在有哪些插件？</summary><p>v0.0.17 默认使用官方 Harness 插件，旧版的 e图宝、e剪宝和多平台发布等插件仍待重新接入。已安装的插件可在桌面工作区内查看和管理。</p></details>
+          <details><summary>现在有哪些插件？</summary><p>当前预览版默认使用官方 Harness 插件，旧版的 e图宝、e剪宝和多平台发布等插件仍待重新接入。已安装的插件可在桌面工作区内查看和管理。</p></details>
           <details><summary>登录后如何选择模型？</summary><p>在工作台打开模型设置，选择 e宝工坊账号提供的模型。若你使用自己的 DeepSeek API Key，可在模型设置中单独配置。</p></details>
           <details><summary>使用哪个账号登录？</summary><p>在欢迎页选择 e宝工坊账号。已有的重庆 AI 创享俱乐部账号可以直接使用，账号相关事项可前往 <Link href="/member">会员中心</Link> 查看。</p></details>
           <details><summary>可以扩展更多功能吗？</summary><p>可以。e宝工坊支持通过插件扩展能力，也支持用 Profile 管理不同工作配置。插件安装、启用和开发方式请查看项目文档。</p></details>
