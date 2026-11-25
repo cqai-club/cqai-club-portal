@@ -4,6 +4,7 @@ import semver from "semver";
 
 export type DownloadSource = "gitcode" | "github";
 export type DownloadPlatform = "windows" | "macos";
+export type MacArchitecture = "arm64" | "x64";
 
 const repositories = {
   gitcode: "https://gitcode.com/g-dxw/ebao-studio",
@@ -42,13 +43,17 @@ function compareReleases(a: Record<string, unknown>, b: Record<string, unknown>)
   return publishedTime(b) - publishedTime(a);
 }
 
-function installerUrl(asset: unknown, platform: DownloadPlatform, source: DownloadSource): string | null {
+const windowsInstaller = /^eBao-Studio-.+-(?:x64-Setup|win-x64-unsigned)\.exe$/i;
+const universalMacInstaller = /^eBao-Studio-\d+\.\d+\.\d+(?:-universal)?\.dmg$/i;
+const macInstallers = {
+  arm64: /^eBao-Studio-\d+\.\d+\.\d+-mac-arm64-unsigned\.dmg$/i,
+  x64: /^eBao-Studio-\d+\.\d+\.\d+-mac-x64-unsigned\.dmg$/i,
+};
+
+function installerUrl(asset: unknown, pattern: RegExp, source: DownloadSource): string | null {
   const entry = asRecord(asset);
   if (!entry || typeof entry.name !== "string" || typeof entry.browser_download_url !== "string") return null;
   if (entry.type === "source" || (entry.state !== undefined && entry.state !== "uploaded")) return null;
-  const pattern = platform === "windows"
-    ? /^eBao-Studio-.+-x64-Setup\.exe$/i
-    : /^eBao-Studio-\d+\.\d+\.\d+(?:-universal)?\.dmg$/i;
   if (!pattern.test(entry.name)) return null;
 
   try {
@@ -70,8 +75,13 @@ export async function resolveEbaoDownload(
   platform: DownloadPlatform,
   source: DownloadSource,
   fetcher: typeof fetch = fetch,
+  macArchitecture?: MacArchitecture,
 ): Promise<string> {
   const fallback = `${repositories[source]}/releases`;
+  const genericMacDownload = platform === "macos" && macArchitecture === undefined;
+  const patterns = platform === "windows" ? [windowsInstaller]
+    : macArchitecture === undefined ? [universalMacInstaller, macInstallers.arm64, macInstallers.x64]
+      : [macInstallers[macArchitecture], universalMacInstaller];
   const endpoint = source === "gitcode"
     ? "https://api.gitcode.com/api/v5/repos/g-dxw/ebao-studio/releases?direction=desc&per_page=100"
     : "https://api.github.com/repos/cqai-club/ebao-studio/releases?per_page=100";
@@ -93,9 +103,14 @@ export async function resolveEbaoDownload(
       .sort(compareReleases);
     for (const release of releases) {
       if (!Array.isArray(release.assets)) continue;
-      for (const asset of release.assets) {
-        const url = installerUrl(asset, platform, source);
-        if (url) return url;
+      for (const pattern of patterns) {
+        for (const asset of release.assets) {
+          const url = installerUrl(asset, pattern, source);
+          if (url) {
+            // Old unqualified Mac links must not guess the visitor's chip or send an older installer.
+            return genericMacDownload && pattern !== universalMacInstaller ? fallback : url;
+          }
+        }
       }
     }
   } catch {

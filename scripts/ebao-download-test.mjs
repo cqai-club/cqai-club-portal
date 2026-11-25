@@ -7,18 +7,19 @@ import ts from 'typescript';
 
 // CI uses Node 20, which cannot import TypeScript directly. Use the same
 // in-memory transpilation approach as the portal's other module tests.
-const filename = new URL('../lib/ebao-download.ts', import.meta.url);
-const compiled = ts.transpileModule(readFileSync(filename, 'utf8'), {
-  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
-  fileName: filename.pathname,
-}).outputText;
-const moduleExports = {};
-runInNewContext(compiled, {
-  exports: moduleExports,
-  require: createRequire(import.meta.url),
-  process, fetch, URL, AbortSignal,
-}, { filename: filename.pathname });
-const { resolveEbaoDownload, selectDownloadSource } = moduleExports;
+function loadTypeScript(path, { fetcher = fetch, require = createRequire(import.meta.url) } = {}) {
+  const filename = new URL(path, import.meta.url);
+  const compiled = ts.transpileModule(readFileSync(filename, 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
+    fileName: filename.pathname,
+  }).outputText;
+  const exports = {};
+  runInNewContext(compiled, { exports, require, process, fetch: fetcher, URL, AbortSignal, Response }, { filename: filename.pathname });
+  return exports;
+}
+
+const lib = loadTypeScript('../lib/ebao-download.ts');
+const { resolveEbaoDownload, selectDownloadSource } = lib;
 
 const repositories = {
   github: {
@@ -57,6 +58,33 @@ function mockReleaseFetch(payload, calls = []) {
     return responseFor(payload);
   };
 }
+
+test('download route passes the requested Mac chip and mirror through to the resolver', async () => {
+  const name = 'eBao-Studio-0.0.17-mac-arm64-unsigned.dmg';
+  const asset = installer('gitcode', '0.0.17', 'macos', { name });
+  const calls = [];
+  const { GET } = loadTypeScript('../app/api/ebao-studio/download/route.ts', {
+    require: () => lib,
+    fetcher: mockReleaseFetch([release('2026-11-25T00:00:00Z', [asset])], calls),
+  });
+  const response = await GET(new Request('https://cqaiclub.asia/api/ebao-studio/download/?platform=macos&arch=arm64&source=gitcode'));
+  assert.equal(response.status, 302);
+  assert.equal(response.headers.get('x-download-source'), 'gitcode');
+  assert.equal(response.headers.get('cache-control'), 'private, no-store');
+  assert.equal(response.headers.get('location'), asset.browser_download_url);
+  assert.equal(calls[0].url.pathname, repositories.gitcode.apiPath);
+});
+
+test('download route rejects unsupported architecture before requesting release metadata', async () => {
+  const { GET } = loadTypeScript('../app/api/ebao-studio/download/route.ts', {
+    require: () => lib,
+    fetcher: () => assert.fail('invalid architecture must not call a release API'),
+  });
+  for (const query of ['platform=macos&arch=universal', 'platform=windows&arch=arm64', 'platform=macos&arch=']) {
+    const response = await GET(new Request(`https://cqaiclub.asia/api/ebao-studio/download/?${query}`));
+    assert.equal(response.status, 400);
+  }
+});
 
 test('visitor IP selects GitCode for China and GitHub for overseas IPv4 and IPv6', () => {
   for (const [ip, expected] of [
@@ -139,6 +167,36 @@ for (const source of ['github', 'gitcode']) {
     assert.equal(await resolveEbaoDownload('macos', source, mockReleaseFetch(payload.slice(0, 1))), legacy.browser_download_url);
   });
 
+  test(`${source}: new unsigned packages resolve to the requested chip on the same release`, async () => {
+    const arm64 = installer(source, '0.0.17', 'macos', { name: 'eBao-Studio-0.0.17-mac-arm64-unsigned.dmg' });
+    const x64 = installer(source, '0.0.17', 'macos', { name: 'eBao-Studio-0.0.17-mac-x64-unsigned.dmg' });
+    const windows = installer(source, '0.0.17', 'windows', { name: 'eBao-Studio-0.0.17-win-x64-unsigned.exe' });
+    const oldMac = installer(source, '0.0.16', 'macos');
+    const sameVersionUniversal = installer(source, '0.0.17', 'macos');
+    const payload = [
+      release('2026-11-20T00:00:00Z', [x64, sameVersionUniversal, windows, arm64], { tag_name: 'v0.0.17' }),
+      release('2026-11-21T00:00:00Z', [oldMac, installer(source, '0.0.16')], { tag_name: 'v0.0.16' }),
+    ];
+    const fetcher = mockReleaseFetch(payload);
+    assert.equal(await resolveEbaoDownload('macos', source, fetcher, 'arm64'), arm64.browser_download_url);
+    assert.equal(await resolveEbaoDownload('macos', source, fetcher, 'x64'), x64.browser_download_url);
+    assert.equal(await resolveEbaoDownload('macos', source, fetcher), sameVersionUniversal.browser_download_url);
+    assert.equal(await resolveEbaoDownload('windows', source, fetcher), windows.browser_download_url);
+  });
+
+  test(`${source}: unspecified Mac architecture goes to releases when the latest installer is split by chip`, async () => {
+    const onlyIntel = installer(source, '0.0.17', 'macos', { name: 'eBao-Studio-0.0.17-mac-x64-unsigned.dmg' });
+    const universal = installer(source, '0.0.16', 'macos', { name: 'eBao-Studio-0.0.16-universal.dmg' });
+    const payload = [
+      release('2026-11-20T00:00:00Z', [onlyIntel], { tag_name: 'v0.0.17' }),
+      release('2026-11-19T00:00:00Z', [universal], { tag_name: 'v0.0.16' }),
+    ];
+    assert.equal(await resolveEbaoDownload('macos', source, mockReleaseFetch(payload)), repositories[source].releases);
+    assert.equal(await resolveEbaoDownload('macos', source, mockReleaseFetch(payload), 'arm64'), universal.browser_download_url);
+    assert.equal(await resolveEbaoDownload('macos', source, mockReleaseFetch(payload.slice(0, 1)), 'arm64'), repositories[source].releases);
+    assert.equal(await resolveEbaoDownload('macos', source, mockReleaseFetch(payload), 'x64'), onlyIntel.browser_download_url);
+  });
+
   test(`${source}: drafts are skipped and a newer published prerelease remains downloadable`, async () => {
     const stable = installer(source, '1.0.0');
     const beta = installer(source, '1.1.0-beta.1');
@@ -212,6 +270,7 @@ for (const source of ['github', 'gitcode']) {
         installer(source, '2.0.0', 'windows', { state: 'new' }),
         installer(source, '2.0.0', 'windows', { type: 'source' }),
         installer(source, '2.0.0', 'windows', { name: 'eBao-Studio-2.0.0-arm64-Setup.exe' }),
+        installer(source, '2.0.0', 'windows', { name: 'eBao-Studio-2.0.0-win-arm64-unsigned.exe' }),
       ]),
       release('2026-01-01T00:00:00Z', [wanted]),
     ];
